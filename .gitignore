@@ -1,0 +1,34 @@
+# Java y Maven
+**/target/
+**/.mvn/timing.properties
+
+# Gradle, si llegara a utilizarse
+**/build/
+**/.gradle/
+
+# IntelliJ IDEA
+.idea/
+**/*.iml
+
+# Visual Studio Code
+.vscode/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Variables y secretos
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+tmp/
+*.tmp
+
+# Evidencias locales
+docs/demo/evidence/
