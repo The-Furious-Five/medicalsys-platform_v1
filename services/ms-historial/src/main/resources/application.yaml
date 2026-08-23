@@ -1,3 +1,113 @@
+# =====================================================================================
+# ms-historial - configuracion base.
+# No contiene localhost ni secretos: Compose inyecta DB_URL, DB_USER y DB_PASSWORD.
+# Para ejecutar fuera de Docker usar el perfil "local" (application-local.yaml).
+# =====================================================================================
+server:
+  port: ${SERVER_PORT:8088}
+  shutdown: graceful
+  error:
+    whitelabel:
+      enabled: false
+
 spring:
   application:
-    name: historial
+    name: ms-historial
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: historial-pool
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 5000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway crea y evoluciona el esquema; Hibernate solo comprueba su correspondencia.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
+  jackson:
+    # Los campos nulos no viajan en la respuesta y las fechas salen en ISO-8601, no como
+    # numero de epoch (Jackson 3 mueve la opcion a datatype.datetime).
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    db:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  service: ms-historial
+  responsibility: expediente, encuentro, diagnostico, receta, orden y resultado de estudio
+  database: medical_records_db
+
+medicalsys:
+  crypto:
+    # LOCAL: cifrado AES-256-GCM en proceso con DEMO_MASTER_KEY (MVP local).
+    # REMOTE: delega en ms-criptografia por HTTP.
+    mode: ${CRYPTO_MODE:LOCAL}
+    base-url: ${CRYPTO_BASE_URL:http://ms-criptografia:8084}
+    demo-master-key: ${DEMO_MASTER_KEY:}
+    key-public-id: ${CRYPTO_KEY_PUBLIC_ID:00000000-0000-4000-8000-0000000000c4}
+    connect-timeout: 2s
+    read-timeout: 3s
+  catalogs:
+    # LOCAL:      valida formato y pertenencia a la lista de abajo, para que un CIE-10
+    #             inexistente se rechace mientras ms-catalogos no publique su endpoint.
+    # REMOTE:     consulta ms-catalogos por HTTP.
+    # PERMISSIVE: solo valida el formato. Util para depurar, nunca para evidencia de Review.
+    validation-mode: ${CATALOGS_VALIDATION_MODE:LOCAL}
+    base-url: ${CATALOGS_BASE_URL:http://ms-catalogos:8083}
+    connect-timeout: 2s
+    read-timeout: 3s
+    # Codigos aceptados en modo LOCAL. Son los mismos valores ficticios que ms-catalogos
+    # siembra en el entorno de demostracion; al pasar a REMOTE esta lista deja de usarse.
+    local:
+      icd10-codes: ${CATALOGS_ICD10_CODES:J00,M54.5,R51,S52.50}
+      study-type-codes: ${CATALOGS_STUDY_TYPE_CODES:X_RAY,LAB_HEMOGRAM}
+      medication-codes: ${CATALOGS_MEDICATION_CODES:PARACETAMOL_500,IBUPROFENO_400}
+  numbering:
+    record-number-prefix: EXP
+    prescription-folio-prefix: REC
+    max-attempts: 5
+
+logging:
+  level:
+    root: INFO
+    com.medicalsys.historial: ${LOG_LEVEL:INFO}
+    org.flywaydb: INFO
