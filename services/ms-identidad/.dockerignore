@@ -1,0 +1,15 @@
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.DS_Store
+*.iml
+.env
+.env.*
+HELP.md
+README.md
+mvnw.cmd
+compose.dev.yaml
+scripts/

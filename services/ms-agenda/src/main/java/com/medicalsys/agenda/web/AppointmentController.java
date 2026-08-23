@@ -1,0 +1,115 @@
+package com.medicalsys.agenda.web;
+
+import com.medicalsys.agenda.domain.AppointmentStatus;
+import com.medicalsys.agenda.service.AppointmentService;
+import com.medicalsys.agenda.web.dto.AppointmentHistoryResponse;
+import com.medicalsys.agenda.web.dto.AppointmentResponse;
+import com.medicalsys.agenda.web.dto.CreateAppointmentRequest;
+import com.medicalsys.agenda.web.dto.PageResponse;
+import com.medicalsys.agenda.web.dto.RescheduleAppointmentRequest;
+import com.medicalsys.agenda.web.dto.StatusChangeRequest;
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/scheduling/appointments")
+public class AppointmentController {
+
+    private final AppointmentService appointments;
+
+    public AppointmentController(AppointmentService appointments) {
+        this.appointments = appointments;
+    }
+
+    @PostMapping
+    public ResponseEntity<AppointmentResponse> create(@Valid @RequestBody CreateAppointmentRequest request) {
+        AppointmentResponse created = appointments.create(request);
+        return ResponseEntity
+                .created(URI.create("/api/v1/scheduling/appointments/" + created.publicId()))
+                .body(created);
+    }
+
+    @GetMapping
+    public PageResponse<AppointmentResponse> search(
+            @RequestParam UUID organizationPublicId,
+            @RequestParam(required = false) UUID branchPublicId,
+            @RequestParam(required = false) UUID healthProfessionalPublicId,
+            @RequestParam(required = false) UUID patientPublicId,
+            @RequestParam(required = false) AppointmentStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return appointments.search(organizationPublicId, branchPublicId, healthProfessionalPublicId, patientPublicId,
+                status, from, to, PageRequest.of(page, Math.min(size, 100), Sort.by("startsAt").ascending()));
+    }
+
+    @GetMapping("/{publicId}")
+    public AppointmentResponse get(@PathVariable UUID publicId) {
+        return appointments.get(publicId);
+    }
+
+    @GetMapping("/{publicId}/history")
+    public List<AppointmentHistoryResponse> history(@PathVariable UUID publicId) {
+        return appointments.history(publicId);
+    }
+
+    @PostMapping("/{publicId}/confirm")
+    public AppointmentResponse confirm(@PathVariable UUID publicId,
+                                       @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.CONFIRMED, request);
+    }
+
+    @PostMapping("/{publicId}/check-in")
+    public AppointmentResponse checkIn(@PathVariable UUID publicId,
+                                       @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.WAITING, request);
+    }
+
+    @PostMapping("/{publicId}/start")
+    public AppointmentResponse start(@PathVariable UUID publicId,
+                                     @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.IN_PROGRESS, request);
+    }
+
+    @PostMapping("/{publicId}/complete")
+    public AppointmentResponse complete(@PathVariable UUID publicId,
+                                        @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.ATTENDED, request);
+    }
+
+    @PostMapping("/{publicId}/no-show")
+    public AppointmentResponse noShow(@PathVariable UUID publicId,
+                                      @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.NO_SHOW, request);
+    }
+
+    @PostMapping("/{publicId}/cancel")
+    public AppointmentResponse cancel(@PathVariable UUID publicId,
+                                      @RequestBody(required = false) StatusChangeRequest request) {
+        return appointments.changeStatus(publicId, AppointmentStatus.CANCELLED, request);
+    }
+
+    @PostMapping("/{publicId}/reschedule")
+    public ResponseEntity<AppointmentResponse> reschedule(@PathVariable UUID publicId,
+                                                          @Valid @RequestBody RescheduleAppointmentRequest request) {
+        AppointmentResponse created = appointments.reschedule(publicId, request);
+        return ResponseEntity
+                .created(URI.create("/api/v1/scheduling/appointments/" + created.publicId()))
+                .body(created);
+    }
+}

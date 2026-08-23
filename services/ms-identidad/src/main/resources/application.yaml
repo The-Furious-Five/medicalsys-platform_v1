@@ -1,3 +1,53 @@
+server:
+  port: ${SERVER_PORT:8081}
+
 spring:
   application:
-    name: identidad
+    name: ms-identidad
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
+
+  health:
+    redis:
+      enabled: true
+
+medicalsys:
+  identity:
+    jwt:
+      issuer: ${JWT_ISSUER:medicalsys-ms-identidad}
+      secret: ${JWT_SECRET}
+      access-token-ttl: ${JWT_ACCESS_TTL:PT1H}
+    lockout:
+      max-failed-attempts: ${IDENTITY_MAX_FAILED_ATTEMPTS:5}
+      lock-duration: ${IDENTITY_LOCK_DURATION:PT15M}
+    demo-users:
+      enabled: ${IDENTITY_DEMO_USERS_ENABLED:true}
+      organization-public-id: ${IDENTITY_DEMO_ORGANIZATION:11111111-1111-1111-1111-111111111111}
+      password: ${IDENTITY_DEMO_PASSWORD:Demo1234!}
