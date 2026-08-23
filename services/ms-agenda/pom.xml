@@ -11,8 +11,8 @@
 	<groupId>com.medicalsys</groupId>
 	<artifactId>agenda</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>ms-agenda</name>
+	<description>MedicalSys - microservicio de agenda, citas y recursos</description>
 	<url/>
 	<licenses>
 		<license/>

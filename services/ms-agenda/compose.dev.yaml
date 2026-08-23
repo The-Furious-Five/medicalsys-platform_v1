@@ -1,0 +1,57 @@
+# Entorno local aislado para probar SOLO ms-agenda.
+#
+# No reemplaza al compose.yaml de la raiz, que es el entorno compartido y lo administra el
+# equipo de integracion. Este archivo existe para que cualquiera pueda levantar el servicio
+# con su base sin depender del resto de la plataforma:
+#
+#   docker compose -f services/ms-agenda/compose.dev.yaml up -d --build
+#   bash services/ms-agenda/scripts/smoke.sh http://localhost:8087
+#   bash services/ms-agenda/scripts/concurrency.sh http://localhost:8087
+#   docker compose -f services/ms-agenda/compose.dev.yaml down -v
+#
+# Las contrasenas de abajo son de desarrollo local y no son secretas: la base solo escucha en
+# esta red de Compose. Se pueden sobreescribir exportando las variables antes de levantar.
+
+name: ms-agenda-dev
+
+services:
+  postgres-agenda:
+    # PostgreSQL 16 no es opcional: el antisolapamiento usa btree_gist y EXCLUDE USING gist.
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scheduling_db
+      POSTGRES_USER: scheduling_user
+      POSTGRES_PASSWORD: ${AGENDA_DB_PASSWORD:-scheduling_pass}
+    ports:
+      # Puerto desplazado para no chocar con un PostgreSQL instalado en la maquina.
+      - "15432:5432"
+    volumes:
+      - scheduling-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scheduling_user -d scheduling_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  ms-agenda:
+    build:
+      context: .
+    depends_on:
+      postgres-agenda:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8087
+      DB_URL: jdbc:postgresql://postgres-agenda:5432/scheduling_db
+      DB_USER: scheduling_user
+      DB_PASSWORD: ${AGENDA_DB_PASSWORD:-scheduling_pass}
+      SCHEDULING_ZONE: America/La_Paz
+      # ms-pacientes y ms-profesionales no existen en este entorno aislado.
+      SCHEDULING_VALIDATION_ENABLED: "false"
+    ports:
+      # Solo para probar el servicio aislado. En el entorno compartido nadie publica este puerto:
+      # el unico puerto expuesto al host es el 8080 del gateway.
+      - "8087:8087"
+
+volumes:
+  scheduling-postgres-data:
