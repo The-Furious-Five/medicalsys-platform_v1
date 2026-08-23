@@ -1,0 +1,32 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: ms-catalogos-test
+
+  datasource:
+    url: jdbc:h2:mem:catalogs_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    url: jdbc:h2:mem:catalogs_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    user: sa
+    password:
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
