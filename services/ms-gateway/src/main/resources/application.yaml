@@ -10,10 +10,55 @@ spring:
       server:
         webmvc:
           routes:
+            - id: identity-service
+              uri: ${IDENTITY_SERVICE_URL:htto://localhost:8081}
+              predicates:
+                - Path=/api/v1/identity/**
+
             - id: tenancy-service
               uri: ${TENANCY_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/tenancy/**
+
+            - id: catalogs-service
+              uri: ${CATALOGS_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/catalogs/**
+            
+            - id: cryptography-service
+              uri: ${CRYPTOGRAPHY_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/cryptography/**
+
+            - id: patients-service
+              uri: ${PATIENTS_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/patients/**
+
+            - id: professionals-service
+              uri: ${PROFESSIONALS_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/professionals/**
+
+            - id: scheduling-service
+              uri: ${SCHEDULING_SERVICE_URL:http://localhost:8087}
+              predicates:
+                - Path=/api/v1/scheduling/**
+
+            - id: medical-records-service
+              uri: ${MEDICAL_RECORDS_SERVICE_URL:http://localhost:8088}
+              predicates:
+                - Path=/api/v1/medical-records/**
+
+            - id: documents-service
+              uri: ${DOCUMENTS_SERVICE_URL:http://localhost:8089}
+              predicates:
+                - Path=/api/v1/documents/**
+
+            - id: billing-service
+              uri: ${BILLING_SERVICE_URL:http://localhost:8090}
+              predicates:
+                - Path=/api/v1/billing/**      
 
 management:
   endpoints:
