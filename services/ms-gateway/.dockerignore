@@ -1,0 +1,13 @@
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.iml
+.DS_Store
+.env
+.env.*
+HELP.md
+README.md
+mvnw.cmd

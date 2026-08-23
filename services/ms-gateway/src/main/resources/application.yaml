@@ -1,3 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
   application:
-    name: gateway
+    name: ms-gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: tenancy-service
+              uri: ${TENANCY_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/tenancy/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
