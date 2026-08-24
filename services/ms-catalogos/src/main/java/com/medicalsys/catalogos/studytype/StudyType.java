@@ -13,7 +13,7 @@ public class StudyType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Short id;
 
     @Column(nullable = false, unique = true, length = 30)
     private String code;
@@ -49,7 +49,7 @@ public class StudyType {
 
     protected StudyType() {}
 
-    public Integer  getId()              { return id; }
+    public Short    getId()              { return id; }
     public String   getCode()            { return code; }
     public String   getName()            { return name; }
     public Category getCategory()        { return category; }

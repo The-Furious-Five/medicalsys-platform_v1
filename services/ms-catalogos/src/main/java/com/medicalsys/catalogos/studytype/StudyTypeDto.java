@@ -3,7 +3,7 @@ package com.medicalsys.catalogos.studytype;
 import java.math.BigDecimal;
 
 public record StudyTypeDto(
-        Integer id,
+        Short id,
         String code,
         String name,
         String category,
