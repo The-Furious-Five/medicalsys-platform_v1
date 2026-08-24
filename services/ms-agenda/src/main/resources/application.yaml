@@ -1,3 +1,44 @@
+server:
+  port: ${SERVER_PORT:8087}
+
 spring:
   application:
-    name: agenda
+    name: ms-agenda
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
+
+medicalsys:
+  scheduling:
+    # schedule_availability guarda TIME local; esta zona traduce esas horas a instantes.
+    zone: ${SCHEDULING_ZONE:America/La_Paz}
+
+    # Agenda valida paciente y profesional por contrato HTTP antes de crear una cita.
+    # Se deja apagado hasta que ms-pacientes y ms-profesionales esten disponibles en la red Compose.
+    validation:
+      enabled: ${SCHEDULING_VALIDATION_ENABLED:false}
+      patients-base-url: ${PATIENTS_BASE_URL:http://ms-pacientes:8085}
+      professionals-base-url: ${PROFESSIONALS_BASE_URL:http://ms-profesionales:8086}
+      timeout: ${SCHEDULING_VALIDATION_TIMEOUT:PT3S}
+    slots:
+      max-days-ahead: ${SCHEDULING_MAX_DAYS_AHEAD:120}

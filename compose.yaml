@@ -3,10 +3,8 @@ name: medicalsys
 services:
   mysql:
     image: mysql:8.4
-
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-
       IDENTIDAD_DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD}
       TENENCIA_DB_PASSWORD: ${TENENCIA_DB_PASSWORD}
       CATALOGOS_DB_PASSWORD: ${CATALOGOS_DB_PASSWORD}
@@ -16,66 +14,285 @@ services:
       HISTORIAL_DB_PASSWORD: ${HISTORIAL_DB_PASSWORD}
       DOCUMENTAL_DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD}
       FACTURACION_DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
-
+    ports:
+      - "${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./infra/mysql/init:/docker-entrypoint-initdb.d:ro
-
     healthcheck:
       test:
-        [
-	  "CMD-SHELL",
-	  "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"
-	]
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent
       interval: 5s
       timeout: 10s
       retries: 20
       start_period: 20s
 
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scheduling_db
+      POSTGRES_USER: scheduling_user
+      POSTGRES_PASSWORD: ${AGENDA_DB_PASSWORD}
+    ports:
+      - "${POSTGRES_HOST_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_HOST_PORT:-16379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_HOST_PORT:-19000}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-19001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://localhost:9000/minio/health/live || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${MINIO_BUCKET}"
+    restart: "no"
+
+  ms-identidad:
+    build:
+      context: ./services/ms-identidad
+      dockerfile: Dockerfile
+    image: medicalsys/ms-identidad:local
+    environment:
+      SERVER_PORT: "8081"
+      DB_URL: jdbc:mysql://mysql:3306/identity_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: identity_user
+      DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${IDENTITY_HOST_PORT:-8081}:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   ms-tenencia:
     build:
       context: ./services/ms-tenencia
       dockerfile: Dockerfile
-
     image: medicalsys/ms-tenencia:local
-
     environment:
       SERVER_PORT: "8082"
-
       DB_URL: jdbc:mysql://mysql:3306/tenancy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: tenancy_user
       DB_PASSWORD: ${TENENCIA_DB_PASSWORD}
-
-      # Temporal: V1__create_schema.sql todavía está vacío.
-      SPRING_FLYWAY_ENABLED: "false"
-
     ports:
       - "${TENANCY_HOST_PORT:-8082}:8082"
-
     depends_on:
       mysql:
         condition: service_healthy
 
+  ms-catalogos:
+    build:
+      context: ./services/ms-catalogos
+      dockerfile: Dockerfile
+    image: medicalsys/ms-catalogos:local
+    environment:
+      SERVER_PORT: "8083"
+      DB_URL: jdbc:mysql://mysql:3306/catalogs_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: catalogs_user
+      DB_PASSWORD: ${CATALOGOS_DB_PASSWORD}
+    ports:
+      - "${CATALOGS_HOST_PORT:-8083}:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ms-criptografia:
+    build:
+      context: ./services/ms-criptografia
+      dockerfile: Dockerfile
+    image: medicalsys/ms-criptografia:local
+    environment:
+      SERVER_PORT: "8084"
+      DB_URL: jdbc:mysql://mysql:3306/cryptography_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: cryptography_user
+      DB_PASSWORD: ${CRIPTOGRAFIA_DB_PASSWORD}
+      DEMO_MASTER_KEY: ${DEMO_MASTER_KEY}
+    ports:
+      - "${CRYPTOGRAPHY_HOST_PORT:-8084}:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ms-pacientes:
+    build:
+      context: ./services/ms-pacientes
+      dockerfile: Dockerfile
+    image: medicalsys/ms-pacientes:local
+    environment:
+      SERVER_PORT: "8085"
+      DB_URL: jdbc:mysql://mysql:3306/patients_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: patients_user
+      DB_PASSWORD: ${PACIENTES_DB_PASSWORD}
+    ports:
+      - "${PATIENTS_HOST_PORT:-8085}:8085"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ms-profesionales:
+    build:
+      context: ./services/ms-profesionales
+      dockerfile: Dockerfile
+    image: medicalsys/ms-profesionales:local
+    environment:
+      SERVER_PORT: "8086"
+      DB_URL: jdbc:mysql://mysql:3306/professionals_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: professionals_user
+      DB_PASSWORD: ${PROFESIONALES_DB_PASSWORD}
+    ports:
+      - "${PROFESSIONALS_HOST_PORT:-8086}:8086"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ms-agenda:
+    build:
+      context: ./services/ms-agenda
+      dockerfile: Dockerfile
+    image: medicalsys/ms-agenda:local
+    environment:
+      SERVER_PORT: "8087"
+      DB_URL: jdbc:postgresql://postgres:5432/scheduling_db
+      DB_USER: scheduling_user
+      DB_PASSWORD: ${AGENDA_DB_PASSWORD}
+    ports:
+      - "${SCHEDULING_HOST_PORT:-8087}:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ms-historial:
+    build:
+      context: ./services/ms-historial
+      dockerfile: Dockerfile
+    image: medicalsys/ms-historial:local
+    environment:
+      SERVER_PORT: "8088"
+      DB_URL: jdbc:mysql://mysql:3306/medical_records_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: medical_records_user
+      DB_PASSWORD: ${HISTORIAL_DB_PASSWORD}
+    ports:
+      - "${MEDICAL_RECORDS_HOST_PORT:-8088}:8088"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ms-documental:
+    build:
+      context: ./services/ms-documental
+      dockerfile: Dockerfile
+    image: medicalsys/ms-documental:local
+    environment:
+      SERVER_PORT: "8089"
+      DB_URL: jdbc:mysql://mysql:3306/documents_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: documents_user
+      DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+    ports:
+      - "${DOCUMENTS_HOST_PORT:-8089}:8089"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  ms-facturacion:
+    build:
+      context: ./services/ms-facturacion
+      dockerfile: Dockerfile
+    image: medicalsys/ms-facturacion:local
+    environment:
+      SERVER_PORT: "8090"
+      DB_URL: jdbc:mysql://mysql:3306/billing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: billing_user
+      DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
+    ports:
+      - "${BILLING_HOST_PORT:-8090}:8090"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   ms-gateway:
     build:
       context: ./services/ms-gateway
       dockerfile: Dockerfile
-
     image: medicalsys/ms-gateway:local
-
     environment:
       SERVER_PORT: "8080"
+      IDENTITY_SERVICE_URL: http://ms-identidad:8081
       TENANCY_SERVICE_URL: http://ms-tenencia:8082
-
+      CATALOGS_SERVICE_URL: http://ms-catalogos:8083
+      CRYPTOGRAPHY_SERVICE_URL: http://ms-criptografia:8084
+      PATIENTS_SERVICE_URL: http://ms-pacientes:8085
+      PROFESSIONALS_SERVICE_URL: http://ms-profesionales:8086
+      SCHEDULING_SERVICE_URL: http://ms-agenda:8087
+      MEDICAL_RECORDS_SERVICE_URL: http://ms-historial:8088
+      DOCUMENTS_SERVICE_URL: http://ms-documental:8089
+      BILLING_SERVICE_URL: http://ms-facturacion:8090
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
 
-    depends_on:
-      ms-tenencia:
-        condition: service_started
-
-
 volumes:
   mysql_data:
+  postgres_data:
+  redis_data:
+  minio_data:
