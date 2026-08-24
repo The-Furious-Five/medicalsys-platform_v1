@@ -25,17 +25,18 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 @EnabledIf(AbstractMySqlContainerTest.DOCKER_CONDITION)
 class SchemaConformanceContainerTest extends AbstractMySqlContainerTest {
 
-    /** Alcance fiscal reducido del MVP; las cinco tablas restantes del capitulo 11 llegan en V2. */
-    private static final List<String> MVP_TABLES = List.of(
-            "billing_configuration", "point_of_sale", "cuis", "cufd", "document_sequence",
-            "invoice", "invoice_item");
+    /** Las doce tablas del capitulo 11: siete las crea V1 y las cinco restantes V2. */
+    private static final List<String> DICTIONARY_TABLES = List.of(
+            "billing_configuration", "economic_activity", "point_of_sale", "cuis", "cufd",
+            "document_sequence", "invoice", "invoice_item", "payment", "credit_debit_note",
+            "significant_event", "tax_submission");
 
     @Autowired
     private DataSource dataSource;
 
     @Test
-    @DisplayName("billing_db contiene exactamente las siete tablas del alcance fiscal reducido")
-    void createsOnlyTheReducedFiscalTables() {
+    @DisplayName("billing_db contiene exactamente las doce tablas del capitulo 11")
+    void createsExactlyTheDictionaryTables() {
         List<String> tables = jdbc().sql("""
                         SELECT table_name FROM information_schema.tables
                         WHERE table_schema = DATABASE() AND table_name <> 'flyway_schema_history'
@@ -43,7 +44,7 @@ class SchemaConformanceContainerTest extends AbstractMySqlContainerTest {
                         """)
                 .query(String.class).list();
 
-        assertThat(tables).containsExactlyInAnyOrderElementsOf(MVP_TABLES);
+        assertThat(tables).containsExactlyInAnyOrderElementsOf(DICTIONARY_TABLES);
     }
 
     @ParameterizedTest(name = "billing_db no contiene la tabla clinica {0}")
@@ -112,7 +113,23 @@ class SchemaConformanceContainerTest extends AbstractMySqlContainerTest {
             "document_sequence,     tax_document_type,       varchar",
             "point_of_sale,         tax_branch_code,         smallint",
             "billing_configuration, encrypted_delegated_token, varbinary",
-            "cufd,                  valid_until,             timestamp"
+            "cufd,                  valid_until,             timestamp",
+            "economic_activity,     caeb_code,               varchar",
+            "economic_activity,     type,                    enum",
+            "economic_activity,     active,                  tinyint",
+            "payment,               public_id,               binary",
+            "payment,               amount,                  decimal",
+            "payment,               currency,                char",
+            "payment,               method,                  enum",
+            "credit_debit_note,     credit_effect_amount,    decimal",
+            "credit_debit_note,     type,                    enum",
+            "credit_debit_note,     note_number,             bigint",
+            "significant_event,     event_code,              tinyint",
+            "significant_event,     offline_invoice_count,   int",
+            "tax_submission,        entity_type,             enum",
+            "tax_submission,        entity_public_id,        bigint",
+            "tax_submission,        payload_hash,            char",
+            "tax_submission,        response,                json"
     })
     @DisplayName("los tipos fisicos coinciden con el diccionario")
     void columnTypesMatchDictionary(String table, String column, String expectedType) {
@@ -133,7 +150,12 @@ class SchemaConformanceContainerTest extends AbstractMySqlContainerTest {
             "uq_invoice_point_of_sale_id_tax_document_type_invoice_number",
             "uq_invoice_item_invoice_id_item_number",
             "uq_billing_configuration_organization_public_id",
-            "uq_cufd_code"})
+            "uq_cufd_code",
+            "uq_economic_activity_billing_configuration_id_caeb_code",
+            "uq_payment_public_id",
+            "uq_payment_gateway_external_transaction_id",
+            "uq_credit_debit_note_cuf",
+            "uq_credit_debit_note_point_of_sale_id_type_note_number"})
     @DisplayName("las restricciones de unicidad del diccionario estan creadas")
     void uniqueConstraintsExist(String constraintName) {
         Integer found = jdbc().sql("""
