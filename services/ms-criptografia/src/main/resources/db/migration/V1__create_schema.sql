@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS digital_certificate (
     public_id             BINARY(16)      NOT NULL,
     organization_public_id BINARY(16)     NOT NULL,
     holder_user_public_id  BINARY(16)                  DEFAULT NULL,
-    usage                 ENUM(
+    `usage`               ENUM(
         'CONSENT_SIGNATURE','PRESCRIPTION_SIGNATURE',
         'TAX_INVOICE_SIGNATURE','ORGANIZATION_SEAL'
     )                                     NOT NULL,
