@@ -14,11 +14,14 @@ public class Specialty {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, unique = true, length = 40)
+    @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    @Column(nullable = false, length = 160)
+    @Column(nullable = false, length = 120)
     private String name;
+
+    @Column(length = 300)
+    private String description;
 
     @Column(nullable = false)
     private boolean active = true;
@@ -33,5 +36,6 @@ public class Specialty {
     public Integer getId()    { return id; }
     public String  getCode()  { return code; }
     public String  getName()  { return name; }
+    public String  getDescription() { return description; }
     public boolean isActive() { return active; }
 }

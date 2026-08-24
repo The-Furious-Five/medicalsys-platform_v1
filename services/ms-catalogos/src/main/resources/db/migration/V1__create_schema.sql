@@ -12,8 +12,9 @@
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS specialty (
     id        SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    code      VARCHAR(40)       NOT NULL,
-    name      VARCHAR(160)      NOT NULL,
+    code      VARCHAR(20)       NOT NULL,
+    name      VARCHAR(120)      NOT NULL,
+    description VARCHAR(300)                 DEFAULT NULL,
     active    BOOLEAN           NOT NULL DEFAULT TRUE,
 
     CONSTRAINT pk_specialty            PRIMARY KEY (id),

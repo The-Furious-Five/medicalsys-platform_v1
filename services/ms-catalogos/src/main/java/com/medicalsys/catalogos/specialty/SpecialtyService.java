@@ -24,6 +24,7 @@ public class SpecialtyService {
 
     public SpecialtyDto findByCode(String code) {
         return repository.findByCode(code)
+                .filter(Specialty::isActive)
                 .map(SpecialtyDto::from)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,

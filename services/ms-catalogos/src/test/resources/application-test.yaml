@@ -14,13 +14,12 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      # Las migraciones son especificas de MySQL (indices por prefijo y ENGINE).
+      # El test unitario usa H2 solo para comprobar el contexto y mapeos JPA.
+      ddl-auto: create-drop
 
   flyway:
-    enabled: true
-    url: jdbc:h2:mem:catalogs_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
-    user: sa
-    password:
+    enabled: false
 
 management:
   endpoints:

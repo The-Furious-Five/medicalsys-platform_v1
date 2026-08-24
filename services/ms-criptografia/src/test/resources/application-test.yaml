@@ -14,13 +14,12 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      # Las migraciones son especificas de MySQL. H2 se usa aqui solo para
+      # pruebas de contexto, mapeos y comportamiento de la aplicacion.
+      ddl-auto: create-drop
 
   flyway:
-    enabled: true
-    url: jdbc:h2:mem:cryptography_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
-    user: sa
-    password:
+    enabled: false
 
 management:
   endpoints:

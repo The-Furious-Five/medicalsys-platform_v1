@@ -32,7 +32,7 @@ public class EncryptionKey {
     @Column(nullable = false, length = 40)
     private Purpose purpose;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = AlgorithmConverter.class)
     @Column(nullable = false, length = 30)
     private Algorithm algorithm = Algorithm.valueOf("AES_256_GCM");
 
@@ -71,6 +71,10 @@ public class EncryptionKey {
         /** Convierte el enum a la cadena del diccionario (con guiones). */
         public String toDbValue() {
             return this.name().replace('_', '-');
+        }
+
+        public static Algorithm fromDbValue(String value) {
+            return Algorithm.valueOf(value.replace('-', '_'));
         }
     }
 
