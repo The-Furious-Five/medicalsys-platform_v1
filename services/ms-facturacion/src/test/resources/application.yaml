@@ -1,0 +1,73 @@
+# Configuracion de pruebas. Reemplaza a la de produccion porque el classpath de test tiene
+# prioridad: las pruebas no dependen de variables de entorno ni de un motor externo.
+# La datasource la inyecta cada prueba de integracion desde su contenedor.
+spring:
+  application:
+    name: ms-facturacion
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  patients:
+    mode: LOCAL
+    base-url: http://ms-pacientes:8085
+    connect-timeout: 2s
+    read-timeout: 3s
+  tenancy:
+    mode: LOCAL
+    base-url: http://ms-tenencia:8082
+    connect-timeout: 2s
+    read-timeout: 3s
+    local:
+      offerings:
+        - id: 00000000-0000-4000-8000-000000000501
+          code: CONSULTATION
+          name: Consulta medica general (demostracion)
+          base-price-bob: 150.00
+          tax-product-code: "99100"
+          tax-unit-code: 58
+        - id: 00000000-0000-4000-8000-000000000502
+          code: X_RAY
+          name: Estudio de rayos X (demostracion)
+          base-price-bob: 250.00
+          tax-product-code: "99200"
+          tax-unit-code: 58
+  tax-authority:
+    mode: SIMULATED
+    demo-caption: NO VALIDA TRIBUTARIAMENTE - DOCUMENTO DE DEMOSTRACION SIN VALOR FISCAL
+    demo-prefix: DEMO
+  billing:
+    economic-activity-code: "861020"
+    fallback-tax-product-code: "99100"
+    demo-setup:
+      enabled: true
+      nit: "0000000000"
+      legal-name: CLINICA DEMO MEDICALSYS
+      point-of-sale-name: CAJA DEMO
+      tax-branch-code: 0
+      point-of-sale-code: 1
+      address: DIRECCION DE DEMOSTRACION - ENTORNO LOCAL
+      cuis-validity: 365d
+      cufd-validity: 24h
+
+logging:
+  level:
+    root: WARN
+    com.medicalsys.facturacion: INFO
+    org.flywaydb: INFO
