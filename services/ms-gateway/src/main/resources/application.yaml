@@ -48,7 +48,11 @@ spring:
             - id: medical-records-service
               uri: ${MEDICAL_RECORDS_SERVICE_URL:http://localhost:8088}
               predicates:
-                - Path=/api/v1/medical-records/**
+                # /api/v1/medical-records/** solo cubre el ping; los controladores reales de
+                # ms-historial quedaron montados en estas rutas (ver web/controller/*.java) y
+                # nunca se actualizo este predicado. Sin esto, el gateway devuelve 404 para todo
+                # encuentro/diagnostico/orden de estudio/expediente pedido a traves suyo.
+                - Path=/api/v1/medical-records/**,/api/v1/encuentros/**,/api/v1/expedientes/**,/api/v1/ordenes-estudio/**,/api/v1/diagnosticos/**,/api/v1/alergias/**,/api/v1/antecedentes/**,/api/v1/recetas/**
 
             - id: documents-service
               uri: ${DOCUMENTS_SERVICE_URL:http://localhost:8089}
@@ -58,7 +62,9 @@ spring:
             - id: billing-service
               uri: ${BILLING_SERVICE_URL:http://localhost:8090}
               predicates:
-                - Path=/api/v1/billing/**      
+                # /api/v1/billing/** solo cubre el ping; InvoiceController real vive en
+                # /api/v1/facturas (ver web/controller/InvoiceController.java).
+                - Path=/api/v1/billing/**,/api/v1/facturas/**
 
 management:
   endpoints:
