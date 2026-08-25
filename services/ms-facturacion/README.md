@@ -17,8 +17,13 @@ Microservicio de facturación de MedicalSys. Es el **único propietario de escri
 
 ## 1. Responsabilidad
 
-Es propietario de **configuración fiscal, punto de venta, CUIS, CUFD, correlativo, factura y detalle
-de factura** (7 de las 12 tablas del capítulo 11 del diccionario; ver §9.1).
+Es la única autoridad de escritura de `billing_db`, que tiene **las 12 tablas del capítulo 11 del
+diccionario**. El código de este sprint cubre el flujo de **configuración fiscal, punto de venta, CUIS,
+CUFD, correlativo, factura y detalle de factura**; las otras cinco tablas existen en el esquema pero
+todavía no tienen entidad ni endpoint (ver §9.1).
+
+El detalle campo por campo, con la verificación contra el diccionario, está en
+[`docs/diccionario-datos.md`](docs/diccionario-datos.md).
 
 **No** guarda:
 
@@ -147,7 +152,7 @@ cliente: quien emite elige **qué** se cobra y **cuánta** cantidad, nunca **a q
 ./mvnw test
 ```
 
-74 pruebas: **unitarias y de contrato web** (se ejecutan siempre) y **de integración**
+95 pruebas: **unitarias y de contrato web** (se ejecutan siempre) y **de integración**
 (`*ContainerTest`, `FacturacionApplicationTests`) con Testcontainers y MySQL 8.4 real. Si Docker no
 está activo se **omiten** en vez de fallar; antes de la Review deben correrse con Docker encendido,
 porque son la evidencia de que la migración funciona desde una base vacía, de que el total cuadra y
@@ -180,15 +185,20 @@ HAVING COUNT(*) > 1;
 
 ## 9. Decisiones registradas
 
-### 9.1 Alcance fiscal reducido
+### 9.1 El esquema está completo; el código, no
 
-La migración `V1` crea 7 de las 12 tablas del capítulo 11: `billing_configuration`, `point_of_sale`,
-`cuis`, `cufd`, `document_sequence`, `invoice` e `invoice_item`. Son las que necesita el guion de la
-demostración —configurar, correlacionar, emitir y consultar—. `cuis` y `cufd` se incluyen porque
-`invoice.cufd_id` es `NOT NULL` en el diccionario.
+La migración `V1` crea las 7 tablas que necesita el guion de la demostración —configurar,
+correlacionar, emitir y consultar—: `billing_configuration`, `point_of_sale`, `cuis`, `cufd`,
+`document_sequence`, `invoice` e `invoice_item`. `cuis` y `cufd` se incluyen porque `invoice.cufd_id`
+es `NOT NULL` en el diccionario.
 
-Se difieren a una `V2`: `economic_activity`, `payment`, `credit_debit_note`, `significant_event` y
-`tax_submission`. Una migración ya aplicada no se edita.
+La migración `V2` completa el capítulo 11 con las cinco restantes: `economic_activity`, `payment`,
+`credit_debit_note`, `significant_event` y `tax_submission`. Se agregó en una migración nueva porque
+una migración ya aplicada no se edita.
+
+Estas cinco son **solo DDL**: no tienen entidad JPA, repositorio ni endpoint, porque todavía no hay
+flujo que las use (ver §10). La decisión fue que el esquema sea conforme al diccionario desde ya, en
+lugar de arrastrar una base incompleta hasta el sprint que implemente pagos y anulación.
 
 ### 9.2 `invoice.patient_public_id`
 
@@ -237,6 +247,10 @@ CUF reales, firma digital con certificado, envío y validación); anulación de 
 crédito/débito; registro de pagos; eventos significativos y contingencia offline; generación de XML y
 PDF hacia ms-documental; clave de idempotencia en el `POST`; eventos y outbox/inbox; auditoría;
 notificaciones automáticas.
+
+Lo que falta de estos flujos es **código**, no esquema: `economic_activity`, `payment`,
+`credit_debit_note`, `significant_event` y `tax_submission` ya están creadas por `V2` con la forma
+exacta del diccionario, a la espera de su entidad y su endpoint.
 
 ## 11. Datos para integración central
 
