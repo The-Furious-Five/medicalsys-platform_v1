@@ -2,7 +2,7 @@
 
 **Fecha de revisión:** 27 de agosto de 2026  
 **Rama revisada:** `develop` (estado local)  
-**Alcance:** los diez microservicios del MVP, `ms-gateway`, migraciones Flyway, configuración Docker Compose y pruebas automatizadas.
+**Alcance:** los diez microservicios del MVP, `ms-gateway`, migraciones Flyway, configuración Docker Compose, pruebas automatizadas y cumplimiento de `MedicalSys_Guia_Induccion_Sprint_2.pdf`.
 
 > Este documento es una revisión del código actual, no una certificación de producción. La copia local estaba un commit detrás de `origin/develop` y tenía cambios sin confirmar, principalmente en `ms-pacientes`, `compose.yaml` y `.env.example`. Por ello, los hallazgos deben volver a comprobarse después de integrar y limpiar la rama.
 
@@ -20,6 +20,8 @@ Sin embargo, **la demo no prueba todavía una integración real de los diez serv
 4. Aplicar autenticación y aislamiento por tenant en Agenda, Profesionales y Pacientes.
 5. Hacer que el gateway rechace rutas privadas sin JWT y respete el cierre de sesión de Identidad.
 6. Reparar la configuración de pruebas con Mockito/JDK 21 y ejecutar los tests de contenedor en CI.
+7. Unificar el formato de error y la propagación de `X-Correlation-Id` definidos en la guía.
+8. Resolver las rutas contradictorias de la propia guía (`/api/v1/citas` frente a `/api/v1/scheduling/appointments`) y congelar una sola versión.
 
 ## 2. Prioridades usadas
 
@@ -90,6 +92,130 @@ Compose publica el puerto de cada microservicio. Los servicios confían en `X-Or
 - Completar el `README.md` raíz, que actualmente está vacío.
 - Documentar comandos de arranque, perfil utilizado, usuario demo, recorrido E2E y apagado limpio.
 - Añadir un script de smoke test que consulte salud y un endpoint funcional de cada servicio.
+
+### GUIDE-01 — Auditoría explícita contra la Guía de Inducción — **P0/P1**
+
+Se comparó el código con [MedicalSys_Guia_Induccion_Sprint_2.pdf](<../MedicalSys_Guia_Induccion_Sprint_2 (1).pdf>), en particular las secciones 3.4, 3.5, 4.1-4.6, 5.1-5.4, 6.2-6.4, 9, 11, 13 y el Anexo B.
+
+La guía **no contiene un catálogo completo de todos los requests y responses de negocio**. Define convenciones comunes, algunos DTO mínimos y ejemplos de rutas. Los contratos completos debían quedar en `docs/contracts` y en el Excel. Por tanto, esta auditoría distingue entre:
+
+- incumplimientos claros de una regla de la guía;
+- ejemplos ambiguos o contradictorios que primero requieren una decisión documental;
+- contratos entre servicios descubiertos directamente en el código.
+
+Durante la revisión, `docs/contracts` no contenía ningún archivo. En consecuencia, hoy no existe en el repositorio una especificación normativa completa de los JSON exitosos. Los DTO Java permiten conocer lo implementado, pero no sustituyen un contrato acordado con sus consumidores.
+
+#### Matriz de puertos, bases y usuarios
+
+| Componente | Guía | Código/Compose | Estado |
+|---|---|---|---|
+| Gateway | 8080 | 8080 | Cumple en puerto |
+| ms-identidad | 8081, `identity_db`, `identity_user` | Coincide | Cumple |
+| ms-tenencia | 8082, `tenancy_db`, `tenancy_user` | Coincide | Cumple |
+| ms-catalogos | 8083, `catalogs_db`, `catalogs_user` | Coincide | Cumple |
+| ms-criptografia | 8084, `cryptography_db`, `cryptography_user` | Coincide | Cumple |
+| ms-pacientes | 8085, `patients_db`, `patients_user` | Coincide | Cumple |
+| ms-profesionales | 8086, `professionals_db`, `professionals_user` | Coincide | Cumple |
+| ms-agenda | 8087, `scheduling_db`, `scheduling_user` | Coincide y usa PostgreSQL | Cumple |
+| ms-historial | 8088, `medical_records_db`, `medical_records_user` | Coincide | Cumple |
+| ms-documental | 8089, `documents_db`, `documents_user` | Coincide | Cumple |
+| ms-facturacion | 8090, `billing_db`, `billing_user` | Coincide | Cumple |
+
+Todos los proyectos usan Java 21 y Spring Boot 4.1.1, cumpliendo la versión común. También poseen Maven Wrapper, Dockerfile multi-stage, usuario no root y `.dockerignore`; los diez servicios con persistencia poseen migraciones Flyway, mientras que el gateway no necesita migración.
+
+#### Incumplimientos de Compose respecto a las páginas 13 y 24
+
+1. La guía exige tres redes: `medicalsys-borde`, `medicalsys-interna` y `medicalsys-datos`, con las dos últimas `internal: true`. `compose.yaml` no declara ninguna red explícita; todos los componentes quedan en la red por defecto.
+2. La guía exige que solo el gateway publique `8080`. Compose publica los diez servicios, MySQL, PostgreSQL, Redis, API y consola de MinIO.
+3. La guía llama al componente `api-gateway` y define `http://api-gateway:8080`; Compose lo llama `ms-gateway`. El puerto es correcto, pero el nombre DNS no cumple literalmente. Conviene conservar `ms-gateway` y actualizar la guía, o renombrarlo de forma coordinada.
+4. La guía pide `depends_on: condition: service_healthy` y healthchecks de aplicación. Solo los motores tienen healthcheck; ningún microservicio ni el gateway lo declara en Compose.
+5. No se configuraron límites/rotación de logs, recomendados para el Compose de equipo.
+
+#### Rutas ambiguas o incompatibles con la guía
+
+La propia guía mezcla convenciones:
+
+- En el diagrama de la página 15 y el ejemplo de error de la página 16 usa `POST /api/v1/citas`.
+- En la página 18 usa `/api/v1/patients` y `/internal/v1/patients/{id}`.
+- En otros fragmentos textuales aparece `/api/v1/pacientes`.
+
+El código implementa `POST /api/v1/scheduling/appointments` y `/api/v1/patients`. Por ello:
+
+- `/api/v1/citas` devuelve 404 en el gateway actual;
+- la ruta inglesa de Pacientes coincide con la tabla de la página 18;
+- no debe añadirse una tercera ruta por comodidad sin decidir primero el contrato oficial.
+
+**Corrección:** crear una tabla normativa en `docs/contracts/routes-v1.md` con método, ruta, productor, consumidor y rol. Actualizar la guía o implementar aliases temporales con fecha de retiro. Los scripts, Postman y pruebas deben usar solo la ruta congelada.
+
+#### Formato de error común
+
+La guía exige exactamente los campos base:
+
+```json
+{
+  "timestamp": "2026-08-24T18:03:51Z",
+  "status": 409,
+  "code": "APPOINTMENT_OVERLAP",
+  "message": "El profesional ya tiene una cita en esa franja",
+  "correlationId": "uuid",
+  "path": "/api/v1/citas"
+}
+```
+
+| Servicio | Estado del contrato de error |
+|---|---|
+| ms-tenencia, ms-historial, ms-facturacion, ms-documental | Cumplen los seis campos; agregan `details` opcional |
+| ms-catalogos, ms-criptografia | Cumplen los seis campos |
+| ms-pacientes | Tiene el formato correcto, pero posee dos filtros de correlación, dos `ApiError` y dos `GlobalExceptionHandler` registrados |
+| ms-agenda, ms-identidad | Devuelven RFC 7807 `ProblemDetail` (`title`, `detail`, etc.); falta `code`, `message` y `path` con el contrato acordado |
+| ms-profesionales | Solo devuelve `code` y `message`; faltan timestamp, status, correlationId y path |
+| ms-gateway | El 401 del filtro JWT se escribe manualmente solo con `title` y `detail` |
+
+**Corrección:** adoptar un único schema base y testearlo en los once proyectos. `details` puede ser una extensión opcional; no debe reemplazar los seis campos. El gateway debe preservar el status y correlation ID del downstream.
+
+#### Correlation ID y saltos internos
+
+- Profesionales no tiene filtro/interceptor de `X-Correlation-Id`.
+- Agenda recibe el header, pero `ExternalDirectoryClient` no lo reenvía a Pacientes/Profesionales.
+- Agenda declara `SCHEDULING_VALIDATION_TIMEOUT`, pero el cliente no lo aplica a la fábrica HTTP.
+- Historial y Facturación sí configuran timeouts y reenvían correlation ID en sus `RestClient`.
+- Pacientes tiene dos filtros distintos para el mismo header; pueden generar IDs diferentes para una misma solicitud.
+- El gateway reutiliza cualquier correlation ID no vacío sin validar longitud/formato y su 401 no mantiene el contrato común.
+
+**Criterio de aceptación:** un UUID enviado o generado en el gateway aparece sin cambios en response, error y logs de todos los saltos de una misma operación.
+
+#### JWT, roles y prefijos públicos
+
+- Los claims técnicos `sub`, `organizationId`, `roles`, `iat`, `exp` e `iss` sí son emitidos por Identidad con la forma conceptual de la guía.
+- La guía nombra roles demo `ADMIN`, `RECEPCIONISTA` y `PROFESIONAL`; el código congela `ADMINISTRATOR`, `RECEPTIONIST` y `PHYSICIAN`. Esta traducción es válida técnicamente, pero es un contrato distinto: Postman, frontend y documentación deben usar los códigos ingleses o el equipo debe cambiarlos coordinadamente.
+- La guía exige Bearer token, rol y tenant en `/api/v1`, salvo login/health acordados. Catálogos carece de seguridad y Gateway permite todas las rutas sin token; Agenda y Profesionales tampoco la aplican. Deben protegerse o documentarse como excepciones concretas.
+- El gateway enruta `/api/v1/cryptography/**`, pero Criptografía solo expone `/internal/v1/crypto/**`. Esa ruta pública no llega a ningún controlador y contradice la intención de que el cifrado sea interno.
+
+#### Readiness y salud
+
+La guía exige `/actuator/health`, probes y que readiness incluya la base. Solo Tenencia, Historial y Facturación configuran explícitamente probes/readiness con DB. Agenda, Catálogos, Criptografía, Documental, Identidad, Pacientes, Profesionales y Gateway exponen salud, pero no cumplen toda la configuración de readiness acordada.
+
+**Corrección:** normalizar `management.endpoint.health.probes.enabled`, grupos liveness/readiness y healthchecks de Compose. Exponer solo salud básica; varios servicios usan actualmente `show-details: always`.
+
+#### Variables que no coinciden con el Anexo B
+
+| Guía | Implementación | Acción |
+|---|---|---|
+| `JWT_KEY` | `JWT_SECRET` | Congelar un nombre y actualizar guía/Compose |
+| `REDIS_URL` | `REDIS_HOST`/`REDIS_PORT` y overrides Spring | Documentar la forma elegida |
+| `MINIO_URL` | `MINIO_ENDPOINT` | Congelar un nombre |
+| `SIN_MODE=DEMO` | `TAX_AUTHORITY_MODE=SIMULATED` | Actualizar la guía o soportar alias de configuración |
+| `CATALOGS_BASE_URL` en Profesionales | No existe cliente/configuración | Implementar junto con PRO-03 |
+
+`PATIENTS_BASE_URL`, `PROFESSIONALS_BASE_URL`, `CRYPTO_BASE_URL`, `CATALOGS_BASE_URL` de Historial y `TENANCY_BASE_URL` existen en los `application.yaml`, pero Compose no los declara ni activa los modos remotos. Los defaults DNS son correctos, aunque la integración permanece apagada.
+
+#### DTO mínimos mencionados por la guía
+
+- Pacientes → Agenda: `patientId`, nombre y estado. `SchedulingPatientSummary` cumple, pero Agenda llama otra ruta.
+- Pacientes → Facturación: ID, nombre y documento. Pacientes devuelve esos datos, pero nombres/ruta no coinciden con `FiscalCustomer`.
+- Documental → Historial: `documentId` y hash. `DocumentResponse` e `InternalDocumentSummary` cumplen.
+- Profesionales → Agenda: ID, organización, especialidad y activo. El endpoint interno devuelve el `ProfessionalResponse` público completo, con listas y datos adicionales; no ofrece una proyección mínima tenant-scoped.
+- Factura demo: `InvoiceResponse` sí incluye `demo`, `caption`, correlativo y totales `BigDecimal`, cumpliendo la guía.
 
 ## 5. Correcciones por microservicio
 
@@ -169,7 +295,7 @@ El seed incluye `X_RAY`, pero no los medicamentos locales de Historial ni `LAB_H
 
 ### CAT-04 — Cobertura y seguridad — **P1**
 
-Solo se ejecutó una prueba. Añadir pruebas por catálogo, búsquedas/paginación, códigos inactivos y contratos internos. Evitar publicar el puerto directamente al host.
+Solo se ejecutó una prueba. Añadir pruebas por catálogo, búsquedas/paginación, códigos inactivos y contratos internos. Evitar publicar el puerto directamente al host. Definir autenticación para `/api/v1/catalogs/**` o registrar explícitamente la excepción a la regla de la guía; actualmente no existe seguridad.
 
 ## 5.4 ms-criptografia — Juanjo
 
@@ -191,9 +317,15 @@ El fallo se registra dentro de la misma transacción que luego lanza la excepci�
 
 Los records de entrada no usan Jakarta Validation. Un propósito, UUID, hexadecimal o Base64 inválido termina en el handler genérico como 500.
 
-**Corrección:** validar DTOs, mapear entrada inválida a 400 y autenticar al servicio solicitante. No exponer el oráculo de cifrado/descifrado al host.
+**Corrección:** validar DTOs, mapear entrada inválida a 400 y autenticar al servicio solicitante. No exponer el oráculo de cifrado/descifrado al host. Eliminar la ruta pública inútil `/api/v1/cryptography/**` del gateway, salvo que se diseñe deliberadamente una API pública distinta.
 
-### CRY-05 — Tests — **P1**
+### CRY-05 — El contrato remoto con Historial no coincide — **P0**
+
+Criptografía expone `/internal/v1/crypto/encrypt` y `/decrypt`. Exige `organizationId`, `purpose`, `requestingService` y `correlationId`, y al cifrar responde únicamente `ciphertext`. Historial llama `/internal/v1/cifrado` y `/descifrado`, usa otro body y espera además `keyPublicId`.
+
+**Corrección:** acordar un solo contrato versionado. La respuesta de cifrado debe incluir el identificador/version de clave que Historial persiste. Añadir test de contrato productor-consumidor y una prueba de cifrar/reiniciar/descifrar.
+
+### CRY-06 — Tests — **P1**
 
 Reparar Mockito y agregar pruebas que demuestren aislamiento entre organizaciones, AAD, rotación y persistencia de auditoría en éxito/fallo.
 
@@ -225,6 +357,12 @@ El servicio solo crea y consulta; no actualiza contacto/estado ni pagina búsque
 
 El enum/esquema contemplan varios tipos, pero el servicio rechaza todos excepto `CI`. Es aceptable como restricción MVP si el contrato y la interfaz lo indican; de lo contrario, implementar los tipos declarados.
 
+### PAT-06 — Infraestructura web duplicada — **P1**
+
+Existen dos `CorrelationIdFilter`, dos `ApiError` y dos `GlobalExceptionHandler` en paquetes diferentes, todos registrados como componentes/advice. Esto puede producir dos correlation IDs o handlers distintos según el error.
+
+**Corrección:** conservar una sola implementación común y probar que header de respuesta, cuerpo de error y MDC contienen el mismo valor.
+
 ## 5.6 ms-profesionales — Jhon
 
 ### PRO-01 — No existe autenticación ni aislamiento por tenant — **P0**
@@ -246,6 +384,12 @@ Antes de crear, validar que el usuario exista en Identidad, la organización/suc
 ### PRO-04 — Ciclo de vida y pruebas — **P1**
 
 Agregar actualización, activación/desactivación, mantenimiento de vínculos y especialidades si forman parte del alcance. Reparar Mockito y probar multi-tenancy, licencia duplicada y vínculo activo.
+
+### PRO-05 — DTO, errores y trazabilidad no cumplen la guía — **P1**
+
+El endpoint interno entrega el DTO público completo en lugar de la proyección mínima para Agenda. Además, el servicio no tiene filtro de correlation ID y su error solo contiene `code`/`message`.
+
+**Corrección:** crear `InternalProfessionalSummary` con profesional, organización, especialidad/estado mínimos; agregar filtro de correlación y el JSON de error común.
 
 ## 5.7 ms-agenda — Álvaro
 
@@ -278,6 +422,15 @@ Los IDs de quien crea/cambia estados vienen en solicitudes. Reemplazarlos por `X
 
 Siete pruebas son pocas para el tamaño del servicio. Añadir transiciones, solapamientos concurrentes, huso horario, aislamiento tenant, reprogramación, recursos y fallos de dependencias.
 
+### AGE-06 — Ruta pública, error y cliente HTTP divergen de la guía — **P0/P1**
+
+- La guía muestra `POST /api/v1/citas`; el código usa `/api/v1/scheduling/appointments`.
+- Agenda responde errores como `ProblemDetail`, no con los seis campos comunes.
+- `ExternalDirectoryClient` no reenvía `X-Correlation-Id` ni contexto de organización.
+- La propiedad de timeout existe, pero no se aplica al `RestClient`.
+
+**Corrección:** congelar la ruta oficial, unificar errores y configurar cliente con connect/read timeout e interceptores de headers confiables.
+
 ## 5.8 ms-historial — Franco
 
 ### HIS-01 — Cifrado local efímero en Compose — **P0**
@@ -289,6 +442,10 @@ Historial usa `CRYPTO_MODE=LOCAL` por defecto y permite `DEMO_MASTER_KEY` vacío
 ### HIS-02 — Modo remoto de Catálogos está roto — **P0**
 
 Corregir las rutas descritas en CAT-01/CAT-02 y activar `CATALOGS_VALIDATION_MODE=REMOTE`. Los códigos locales no deben ser una segunda fuente de verdad silenciosa.
+
+### HIS-02B — Modo remoto de Criptografía también está roto — **P0**
+
+Además del problema de clave local, las rutas y JSON descritos en CRY-05 no coinciden. Activar `CRYPTO_MODE=REMOTE` antes de corregirlos hará que la creación/lectura de narrativa falle.
 
 ### HIS-03 — Encuentros y documentos no validan sus referencias — **P1**
 
@@ -328,6 +485,10 @@ Si falla la base tras subir a MinIO se intenta borrar el objeto, pero un error d
 - Limitar tamaño y profundidad del JSON `metadata`, no solo cantidad de campos.
 - Verificar que logs y errores nunca incluyan nombres clínicos o contenido.
 - Crear README propio con política de archivos, tamaño, retención y limitaciones del MVP.
+
+### DOC-05 — Nombre de bucket y variable distintos a la guía — **P2**
+
+La guía menciona bucket `medicalsys-demo` y variable `MINIO_URL`; el repositorio usa `medicalsys-documents-local` y `MINIO_ENDPOINT`. El nombre implementado es más descriptivo, pero la documentación y los ejemplos deben coincidir para evitar configuraciones paralelas.
 
 ## 5.10 ms-facturacion — Franco
 
@@ -385,6 +546,12 @@ La autorización fina por rol debe permanecer también en cada servicio.
 
 El único test falla porque no define `JWT_SECRET`. Crear `application-test.yaml` y agregar pruebas de: ruta correcta, token válido/expirado, token revocado, eliminación de headers falsificados, claims faltantes y servicio destino no disponible.
 
+### GAT-06 — Nombre, redes y errores no cumplen la guía — **P0/P1**
+
+La guía denomina al servicio `api-gateway`, requiere tres redes y un único puerto publicado. Compose usa `ms-gateway`, red por defecto y publica todos los componentes. El 401 generado por `JwtPropagationFilter` tampoco usa el error común ni garantiza el correlation ID en la respuesta.
+
+**Corrección:** aplicar GUIDE-01 y agregar tests sobre la topología resultante con `docker compose config`.
+
 ## 6. Orden recomendado de trabajo
 
 ### Primera tanda — integración que realmente funcione
@@ -411,6 +578,7 @@ El incremento se considera integrado cuando:
 - [ ] Los once proyectos compilan y sus pruebas terminan sin errores ni omisiones inesperadas.
 - [ ] `docker compose config --quiet` pasa y el perfil integrado levanta los diez servicios, gateway y dependencias.
 - [ ] Solo el gateway está expuesto en el perfil integrado.
+- [ ] Compose declara `medicalsys-borde`, `medicalsys-interna` y `medicalsys-datos` según la guía.
 - [ ] El mismo `organizationId` se usa en Identidad, Tenencia y datos demo.
 - [ ] La demo registra un paciente y Agenda lo valida realmente mediante HTTP.
 - [ ] Agenda valida profesional, sucursal y prestación del mismo tenant.
@@ -421,6 +589,9 @@ El incremento se considera integrado cuando:
 - [ ] Un usuario de organización A no puede leer ni modificar datos de B.
 - [ ] Un token cerrado/revocado deja de funcionar en el gateway.
 - [ ] Repetir la emisión con la misma clave de idempotencia no duplica factura.
+- [ ] Todos los errores respetan `timestamp`, `status`, `code`, `message`, `correlationId` y `path`.
+- [ ] Un único correlation ID se conserva en todos los saltos internos.
+- [ ] Todos los servicios poseen liveness/readiness y Compose reporta su healthcheck.
 - [ ] El recorrido E2E parte de volúmenes limpios y se ejecuta sin editar datos manualmente.
 
 ## 8. Aspectos correctos que deben conservarse
