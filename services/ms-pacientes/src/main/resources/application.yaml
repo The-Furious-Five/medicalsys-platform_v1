@@ -9,6 +9,10 @@ spring:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+    hikari:
+      pool-name: pacientes-pool
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      connection-timeout: 5000
   
   jpa:
     open-in-view: false
@@ -17,6 +21,14 @@ spring:
 
   flyway:
     enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
 
 management:
   endpoints:

@@ -3,6 +3,8 @@ name: medicalsys
 services:
   mysql:
     image: mysql:8.4
+    command:
+      - --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       IDENTIDAD_DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD}
@@ -86,7 +88,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents-local}
     depends_on:
       minio:
         condition: service_healthy
@@ -245,7 +247,8 @@ services:
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents-local}
+      DOCUMENT_MAX_SIZE_BYTES: ${DOCUMENT_MAX_SIZE_BYTES:-104857600}
     ports:
       - "${DOCUMENTS_HOST_PORT:-8089}:8089"
     depends_on:

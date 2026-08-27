@@ -16,9 +16,9 @@ CREATE TABLE patient (
     document_number                VARCHAR(20)     NOT NULL,
     document_complement            VARCHAR(5)      NOT NULL DEFAULT '',
     issued_department              VARCHAR(20)     NULL,
-    given_names                    VARCHAR(120)    NOT NULL,
-    paternal_surname               VARCHAR(80)     NOT NULL,
-    maternal_surname               VARCHAR(80)     NULL,
+    given_names                    VARCHAR(90)     NOT NULL,
+    paternal_surname               VARCHAR(60)     NOT NULL,
+    maternal_surname               VARCHAR(60)     NULL,
     full_name                      VARCHAR(290)
         GENERATED ALWAYS AS (
             CONCAT_WS(' ', paternal_surname, maternal_surname, given_names)
@@ -30,7 +30,7 @@ CREATE TABLE patient (
     occupation                     VARCHAR(120)    NULL,
     phone_e164                     VARCHAR(20)     NULL,
     alternate_phone                VARCHAR(20)     NULL,
-    email                          VARCHAR(160)    NULL,
+    email                          VARCHAR(100)    NULL,
     encrypted_address              VARBINARY(1024) NULL,
     city                           VARCHAR(80)     NULL,
     department                     VARCHAR(20)     NULL,
