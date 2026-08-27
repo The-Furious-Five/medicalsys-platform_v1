@@ -264,7 +264,10 @@ echo "  encounterId: ${ENCOUNTER_ID}"
 # Step 10 — Request the X-ray study order
 # ---------------------------------------------------------------------------
 step 10 "Request X-RAY study order"
-ORDER_BODY='{"studyTypeCode":"X_RAY","priority":"ROUTINE","instructions":"Radiografia de torax (demo)","icd10Code":"Z00.0"}'
+# J00 esta tanto en la semilla de ms-catalogos como en la lista local de ms-historial
+# (CATALOGS_ICD10_CODES). Z00.0 solo existe en ms-catalogos, de modo que en el modo
+# LOCAL por defecto ms-historial lo rechaza con 422 ICD10_CODE_NOT_ALLOWED.
+ORDER_BODY='{"studyTypeCode":"X_RAY","priority":"ROUTINE","instructions":"Radiografia de torax (demo)","icd10Code":"J00"}'
 req POST "/api/v1/encuentros/${ENCOUNTER_ID}/ordenes-estudio" "$ORDER_BODY" "$DOCTOR_TOKEN"
 expect 10 "Create study order" 201 "$STATUS"
 ORDER_ID=$(jqf '.id')
@@ -296,8 +299,11 @@ expect 11 "Link X-RAY appointment to study order" 200 "$STATUS"
 # Step 12 — Upload the X-ray result document (multipart, ms-documental -> MinIO)
 # ---------------------------------------------------------------------------
 step 12 "Upload X-RAY result document"
-TMP_FILE=$(mktemp /tmp/medicalsys_demo_xray.XXXXXX.txt)
-echo "MedicalSys demo x-ray result placeholder — not a real image." > "$TMP_FILE"
+# ms-documental (DocumentFilePolicy) solo admite image/jpeg, image/png, image/tiff,
+# application/dicom o application/octet-stream para la clasificacion X_RAY: un .txt
+# se rechaza con 422 FILE_TYPE_NOT_ALLOWED. Se genera un PNG 1x1 valido.
+TMP_FILE=$(mktemp /tmp/medicalsys_demo_xray.XXXXXX.png)
+printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n\x2d\xb4\x00\x00\x00\x00IEND\xaeB\x60\x82' > "$TMP_FILE"
 METADATA=$(jq -n --arg patient "$PATIENT_ID" --arg order "$ORDER_ID" '{
   type: "X_RAY", patientId: $patient,
   link: { entityType: "STUDY_ORDER", entityId: $order, description: "Resultado de rayos X (demo)" }
@@ -305,7 +311,7 @@ METADATA=$(jq -n --arg patient "$PATIENT_ID" --arg order "$ORDER_ID" '{
 UPLOAD_STATUS=$(curl -sS -o /tmp/medicalsys_demo_upload.$$ -w '%{http_code}' \
   -X POST "${GATEWAY_BASE_URL}/api/v1/documents" \
   -H "Authorization: Bearer ${DOCTOR_TOKEN}" \
-  -F "file=@${TMP_FILE};type=text/plain" \
+  -F "file=@${TMP_FILE};type=image/png" \
   -F "metadata=$(echo "$METADATA" | jq -c .);type=application/json")
 UPLOAD_BODY=$(cat /tmp/medicalsys_demo_upload.$$ 2>/dev/null)
 rm -f /tmp/medicalsys_demo_upload.$$ "$TMP_FILE"

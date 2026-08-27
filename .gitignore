@@ -32,3 +32,6 @@ tmp/
 
 # Evidencias locales
 docs/demo/evidence/
+
+# Override local de Compose para la demo (no se comparte)
+compose.override.yaml
