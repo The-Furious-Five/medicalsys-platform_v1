@@ -31,8 +31,8 @@ public class Icd10Controller {
         return ResponseEntity.ok(service.findByCode(code));
     }
 
-    /** Ruta interna para ms-historial y otros consumidores. */
-    @GetMapping("/internal/v1/icd10/{code}")
+    /** Contrato congelado con ms-historial: GET /internal/v1/cie10/{code}. */
+    @GetMapping({"/internal/v1/cie10/{code}", "/internal/v1/icd10/{code}"})
     public ResponseEntity<Icd10Dto> findByCodeInternal(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

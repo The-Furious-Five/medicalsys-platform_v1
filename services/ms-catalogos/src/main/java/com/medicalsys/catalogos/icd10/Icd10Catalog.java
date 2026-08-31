@@ -35,6 +35,12 @@ public class Icd10Catalog {
 
     protected Icd10Catalog() {}
 
+    public Icd10Catalog(String code, String description, boolean active) {
+        this.code = code;
+        this.description = description;
+        this.active = active;
+    }
+
     public String       getCode()          { return code; }
     public String       getDescription()   { return description; }
     public String       getChapter()       { return chapter; }
