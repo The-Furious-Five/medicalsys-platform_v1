@@ -22,6 +22,7 @@ services:
       HISTORIAL_DB_PASSWORD: ${HISTORIAL_DB_PASSWORD}
       DOCUMENTAL_DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD}
       FACTURACION_DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
+      MARKETING_DB_PASSWORD: ${MARKETING_DB_PASSWORD}
     ports:
       - "${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
@@ -294,6 +295,32 @@ services:
         condition: service_healthy
     logging: *medicalsys-logging
 
+  ms-marketing:
+    build:
+      context: ./services/ms-marketing
+      dockerfile: Dockerfile
+    image: medicalsys/ms-marketing:local
+    environment:
+      SERVER_PORT: "8092"
+      DB_URL: jdbc:mysql://mysql:3306/marketing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: marketing_user
+      DB_PASSWORD: ${MARKETING_DB_PASSWORD}
+      # LOCAL deja el servicio autonomo; REMOTE lo conecta a sus dos unicos vecinos.
+      PATIENTS_MODE: ${MARKETING_PATIENTS_MODE:-LOCAL}
+      PATIENTS_BASE_URL: http://ms-pacientes:8085
+      TENANCY_MODE: ${MARKETING_TENANCY_MODE:-LOCAL}
+      TENANCY_BASE_URL: http://ms-tenencia:8082
+      MARKETING_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
+      MARKETING_DEMO_SEED: ${MARKETING_DEMO_SEED:-true}
+    ports:
+      - "${MARKETING_HOST_PORT:-8092}:8092"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # No depende de ms-historial, y no puede: no tiene sus credenciales ni ruta hacia su base.
+    # Es el servicio de menor criticidad del sistema; si cae, nadie deja de ser atendido.
+    logging: *medicalsys-logging
+
   ms-gateway:
     build:
       context: ./services/ms-gateway
@@ -311,6 +338,7 @@ services:
       MEDICAL_RECORDS_SERVICE_URL: http://ms-historial:8088
       DOCUMENTS_SERVICE_URL: http://ms-documental:8089
       BILLING_SERVICE_URL: http://ms-facturacion:8090
+      MARKETING_SERVICE_URL: http://ms-marketing:8092
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
