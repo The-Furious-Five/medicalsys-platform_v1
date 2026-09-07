@@ -59,6 +59,14 @@ spring:
               predicates:
                 - Path=/api/v1/documents/**
 
+            - id: audit-service
+              uri: ${AUDIT_SERVICE_URL:http://localhost:8091}
+              predicates:
+                # Solo el prefijo publico. /internal/v1/audit-events queda deliberadamente
+                # fuera del gateway: la bitacora se escribe entre servicios, nunca desde el
+                # navegador, o cualquiera podria fabricar la prueba de lo que no hizo.
+                - Path=/api/v1/audit/**
+
             - id: billing-service
               uri: ${BILLING_SERVICE_URL:http://localhost:8090}
               predicates:

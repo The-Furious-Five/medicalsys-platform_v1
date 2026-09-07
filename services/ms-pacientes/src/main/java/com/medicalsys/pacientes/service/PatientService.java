@@ -1,6 +1,8 @@
 package com.medicalsys.pacientes.service;
 
 import com.medicalsys.pacientes.common.DateTimes;
+import com.medicalsys.pacientes.common.audit.AuditEventDraft;
+import com.medicalsys.pacientes.common.audit.AuditTrail;
 import com.medicalsys.pacientes.common.error.ConflictException;
 import com.medicalsys.pacientes.common.error.ErrorCode;
 import com.medicalsys.pacientes.common.error.NotFoundException;
@@ -15,6 +17,7 @@ import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
 import com.medicalsys.pacientes.web.dto.UpdatePatientRequest;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +36,12 @@ public class PatientService {
 
     private final PatientRepository patients;
     private final PatientMapper mapper;
+    private final AuditTrail auditTrail;
 
-    public PatientService(PatientRepository patients, PatientMapper mapper) {
+    public PatientService(PatientRepository patients, PatientMapper mapper, AuditTrail auditTrail) {
         this.patients = patients;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /** La garantía final de unicidad vive también en MySQL para cubrir solicitudes concurrentes. */
@@ -58,6 +63,10 @@ public class PatientService {
 
         log.info("Paciente registrado patientId={} documento={}*** complemento={}", patient.getPublicId(),
                 documentNumber.substring(0, Math.min(3, documentNumber.length())), complement);
+        // El tipo de documento identifica la operacion sin revelar a quien pertenece; el numero se
+        // queda fuera del evento a proposito, igual que se queda fuera del log de arriba.
+        auditTrail.record(AuditEventDraft.patientWrite("PATIENT_REGISTERED", patient.getPublicId(), 201,
+                Map.of("documentType", request.documentType().name())));
         return mapper.toResponse(patient);
     }
 
@@ -107,6 +116,8 @@ public class PatientService {
         } catch (DataIntegrityViolationException exception) {
             throw translateIntegrityFailure(exception);
         }
+        auditTrail.record(AuditEventDraft.patientWrite("PATIENT_UPDATED", patient.getPublicId(), 200,
+                Map.of("status", patient.getStatus().name())));
         return mapper.toResponse(patient);
     }
 
