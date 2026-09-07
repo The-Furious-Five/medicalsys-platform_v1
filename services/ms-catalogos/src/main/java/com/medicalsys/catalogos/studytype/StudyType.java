@@ -49,6 +49,14 @@ public class StudyType {
 
     protected StudyType() {}
 
+    public StudyType(String code, String name, Category category, boolean generatesImage, boolean active) {
+        this.code = code;
+        this.name = name;
+        this.category = category;
+        this.generatesImage = generatesImage;
+        this.active = active;
+    }
+
     public Short    getId()              { return id; }
     public String   getCode()            { return code; }
     public String   getName()            { return name; }

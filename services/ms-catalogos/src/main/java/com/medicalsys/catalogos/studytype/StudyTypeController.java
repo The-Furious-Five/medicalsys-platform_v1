@@ -24,8 +24,8 @@ public class StudyTypeController {
         return ResponseEntity.ok(service.findAllActive());
     }
 
-    /** Ruta interna: ms-historial consulta el tipo antes de crear una orden. */
-    @GetMapping("/internal/v1/study-types/{code}")
+    /** Contrato congelado con ms-historial: GET /internal/v1/tipos-estudio/{code}. */
+    @GetMapping({"/internal/v1/tipos-estudio/{code}", "/internal/v1/study-types/{code}"})
     public ResponseEntity<StudyTypeDto> findByCode(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

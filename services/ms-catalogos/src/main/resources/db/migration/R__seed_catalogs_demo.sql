@@ -29,6 +29,14 @@ VALUES
     ('M54.5', 'Lumbago no especificado',
               'XIII - Enfermedades del sistema osteomuscular',
               'M50-M54 Dorsopatías',
+              'BOTH', TRUE),
+    ('R51',   'Cefalea',
+              'XVIII - Síntomas y signos',
+              'R50-R69 Síntomas generales',
+              'BOTH', TRUE),
+    ('S52.50', 'Fractura de extremo inferior del radio, no especificada',
+              'XIX - Traumatismos',
+              'S50-S59 Traumatismos del codo y del antebrazo',
               'BOTH', TRUE);
 
 -- -------------------------------------------------------
@@ -37,7 +45,20 @@ VALUES
 INSERT IGNORE INTO study_type
     (code, name, category, requires_fasting, generates_image, active)
 VALUES
-    ('X_RAY', 'Radiografía (rayos X)', 'IMAGING', FALSE, TRUE, TRUE);
+    ('X_RAY', 'Radiografía (rayos X)', 'IMAGING', FALSE, TRUE, TRUE),
+    ('LAB_HEMOGRAM', 'Hemograma completo', 'LABORATORY', FALSE, FALSE, TRUE);
+
+-- -------------------------------------------------------
+-- medication: códigos usados por recetas de ms-historial
+-- -------------------------------------------------------
+INSERT IGNORE INTO medication
+    (code, generic_name, trade_name, concentration, pharmaceutical_form,
+     administration_route, is_controlled, requires_prescription, active)
+VALUES
+    ('PARACETAMOL_500', 'Paracetamol', 'Demo Acetaminofén', '500 mg',
+     'TABLET', 'ORAL', FALSE, TRUE, TRUE),
+    ('IBUPROFENO_400', 'Ibuprofeno', 'Demo Ibuprofeno', '400 mg',
+     'TABLET', 'ORAL', FALSE, TRUE, TRUE);
 
 -- -------------------------------------------------------
 -- tax_catalog: CONSULTA y RAYOS_X simulados (DEMO)
