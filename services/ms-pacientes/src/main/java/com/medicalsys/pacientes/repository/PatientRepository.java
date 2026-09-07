@@ -27,6 +27,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     boolean existsByUserAccountPublicId(UUID userAccountPublicId);
 
+    boolean existsByUserAccountPublicIdAndPublicIdNot(UUID userAccountPublicId, UUID publicId);
+
     /** Busqueda simple por nombre completo o documento, para la pantalla de recepcion. */
     @Query("""
             SELECT p FROM Patient p

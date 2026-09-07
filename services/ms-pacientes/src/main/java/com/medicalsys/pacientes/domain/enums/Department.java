@@ -15,5 +15,6 @@ public enum Department {
     CHUQUISACA,
     TARIJA,
     BENI,
-    PANDO;
+    PANDO,
+    FOREIGN;
 }

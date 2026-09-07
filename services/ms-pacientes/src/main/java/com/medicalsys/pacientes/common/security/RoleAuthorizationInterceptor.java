@@ -29,6 +29,10 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
             return true;
         }
         RequestContext context = RequestContextHolder.require();
+        if (context.userId() == null) {
+            throw new com.medicalsys.pacientes.common.error.UnauthenticatedException(
+                    "La identidad propagada por el gateway no incluye un X-User-Id valido");
+        }
         if (Arrays.stream(required.value()).noneMatch(context::hasRole)) {
             throw new ForbiddenException(
                     "El rol de la identidad autenticada no permite ejecutar esta operacion de pacientes");

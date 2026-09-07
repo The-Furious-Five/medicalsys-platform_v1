@@ -1,26 +1,29 @@
 package com.medicalsys.pacientes.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.medicalsys.pacientes.api.dto.CreatePatientRequest;
-import com.medicalsys.pacientes.api.dto.PatientResponse;
-import com.medicalsys.pacientes.domain.Department;
-import com.medicalsys.pacientes.domain.DocumentType;
-import com.medicalsys.pacientes.domain.Patient;
-import com.medicalsys.pacientes.domain.PatientSex;
-import com.medicalsys.pacientes.exception.DuplicatePatientDocumentException;
-import com.medicalsys.pacientes.exception.InvalidPatientDataException;
-import com.medicalsys.pacientes.exception.PatientNotFoundException;
-import com.medicalsys.pacientes.exception.UnsupportedDocumentTypeException;
+import com.medicalsys.pacientes.common.error.ConflictException;
+import com.medicalsys.pacientes.common.error.ErrorCode;
+import com.medicalsys.pacientes.domain.enums.BloodType;
+import com.medicalsys.pacientes.domain.enums.Department;
+import com.medicalsys.pacientes.domain.enums.DocumentType;
+import com.medicalsys.pacientes.domain.enums.MaritalStatus;
+import com.medicalsys.pacientes.domain.enums.Sex;
+import com.medicalsys.pacientes.domain.model.Patient;
+import com.medicalsys.pacientes.mapper.PatientMapper;
 import com.medicalsys.pacientes.repository.PatientRepository;
+import com.medicalsys.pacientes.web.dto.PatientResponse;
+import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
 import java.time.LocalDate;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,73 +45,82 @@ class PatientServiceTest {
     }
 
     @Test
-    void createsPatientAndNormalizesDocumentAndEmail() {
+    void rejectsARepeatedCiWithTheSameComplement() {
         when(repository.existsByDocumentTypeAndDocumentNumberAndDocumentComplement(
-                DocumentType.CI, "DEMO-0001", "1A")).thenReturn(false);
+                DocumentType.CI, "123", "")).thenReturn(true);
+
+        ConflictException exception = assertThrows(ConflictException.class,
+                () -> service.register(request("123", null)));
+
+        assertEquals(ErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS, exception.code());
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void allowsCi123WithoutComplementAndCi123WithComplementA() {
         when(repository.saveAndFlush(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PatientResponse response = service.create(request(
-                DocumentType.CI, " demo-0001 ", " 1a ", LocalDate.of(1995, 4, 10)));
+        PatientResponse withoutComplement = service.register(request(" 123 ", null));
+        PatientResponse withComplementA = service.register(request("123", " a "));
+
+        assertEquals("123", withoutComplement.documentNumber());
+        assertEquals("", withoutComplement.documentComplement());
+        assertEquals("123", withComplementA.documentNumber());
+        assertEquals("A", withComplementA.documentComplement());
+        assertNotEquals(withoutComplement.patientId(), withComplementA.patientId());
+
+        ArgumentCaptor<Patient> saved = ArgumentCaptor.forClass(Patient.class);
+        verify(repository, times(2)).saveAndFlush(saved.capture());
+        List<Patient> patients = saved.getAllValues();
+        assertEquals("", patients.get(0).getDocumentComplement());
+        assertEquals("A", patients.get(1).getDocumentComplement());
+    }
+
+    @Test
+    void storesAndReturnsEverySupportedPatientField() {
+        when(repository.saveAndFlush(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PatientResponse response = service.register(request("abc-987", "1b"));
 
         assertNotNull(response.patientId());
-        assertEquals("DEMO-0001", response.documentNumber());
-        assertEquals("1A", response.documentComplement());
+        assertEquals("ABC-987", response.documentNumber());
+        assertEquals("1B", response.documentComplement());
+        assertEquals(Department.LA_PAZ, response.issuedDepartment());
+        assertEquals(MaritalStatus.SINGLE, response.maritalStatus());
+        assertEquals(BloodType.O_POSITIVE, response.bloodType());
+        assertEquals("Arquitecta", response.occupation());
         assertEquals("paciente.demo@example.invalid", response.email());
-        assertEquals("ACTIVE", response.status());
-
-        ArgumentCaptor<Patient> patient = ArgumentCaptor.forClass(Patient.class);
-        verify(repository).saveAndFlush(patient.capture());
-        assertEquals(PatientSex.F, patient.getValue().getSex());
-        assertEquals("Maria Elena", patient.getValue().getGivenNames());
+        assertEquals("AQIDBA==", response.encryptedAddressBase64());
+        assertEquals(Department.COCHABAMBA, response.department());
+        assertEquals("Madre", response.emergencyContactRelationship());
     }
 
-    @Test
-    void rejectsDuplicateBeforeInsert() {
-        when(repository.existsByDocumentTypeAndDocumentNumberAndDocumentComplement(
-                DocumentType.CI, "DEMO-0001", "")).thenReturn(true);
-
-        assertThrows(DuplicatePatientDocumentException.class,
-                () -> service.create(request(DocumentType.CI, "DEMO-0001", null,
-                        LocalDate.of(1995, 4, 10))));
-    }
-
-    @Test
-    void rejectsDocumentTypeOutsideMvp() {
-        assertThrows(UnsupportedDocumentTypeException.class,
-                () -> service.create(request(DocumentType.PASSPORT, "DEMO-0001", null,
-                        LocalDate.of(1995, 4, 10))));
-    }
-
-    @Test
-    void rejectsBirthDateBeforeDatabaseMinimum() {
-        assertThrows(InvalidPatientDataException.class,
-                () -> service.create(request(DocumentType.CI, "DEMO-0001", null,
-                        LocalDate.of(1899, 12, 31))));
-    }
-
-    @Test
-    void returnsNotFoundForUnknownPublicId() {
-        UUID id = UUID.randomUUID();
-        when(repository.findByPublicId(id)).thenReturn(Optional.empty());
-
-        assertThrows(PatientNotFoundException.class, () -> service.getByPublicId(id));
-    }
-
-    private CreatePatientRequest request(DocumentType type, String number, String complement,
-            LocalDate birthDate) {
-        return new CreatePatientRequest(
-                type,
+    private RegisterPatientRequest request(String number, String complement) {
+        return new RegisterPatientRequest(
+                null,
+                DocumentType.CI,
                 number,
                 complement,
                 Department.LA_PAZ,
                 "Maria Elena",
                 "Ficticia",
                 "Prueba",
-                birthDate,
-                PatientSex.F,
+                LocalDate.of(1995, 4, 10),
+                Sex.F,
+                MaritalStatus.SINGLE,
+                BloodType.O_POSITIVE,
+                "Arquitecta",
                 "+59170000001",
+                "+59170000002",
                 " Paciente.Demo@Example.Invalid ",
-                "La Paz",
-                Department.LA_PAZ);
+                "AQIDBA==",
+                "Cochabamba",
+                Department.COCHABAMBA,
+                "Persona Ficticia",
+                "+59170000003",
+                "Madre",
+                null,
+                null,
+                null);
     }
 }

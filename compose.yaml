@@ -180,6 +180,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/patients_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: patients_user
       DB_PASSWORD: ${PACIENTES_DB_PASSWORD}
+      FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
     ports:
       - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:

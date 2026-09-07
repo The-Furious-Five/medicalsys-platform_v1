@@ -1,6 +1,7 @@
 package com.medicalsys.pacientes.common.tenant;
 
 import com.medicalsys.pacientes.common.error.UnauthenticatedException;
+import java.util.UUID;
 
 /** Contexto de identidad asociado al hilo que atiende la solicitud. */
 public final class RequestContextHolder {
@@ -29,5 +30,14 @@ public final class RequestContextHolder {
             throw new UnauthenticatedException("La solicitud no incluye una identidad valida propagada por el gateway");
         }
         return context;
+    }
+
+    /** Identidad humana obligatoria para escrituras que deben conservar autoría. */
+    public static UUID requireUserId() {
+        UUID userId = require().userId();
+        if (userId == null) {
+            throw new UnauthenticatedException("La solicitud no incluye X-User-Id valido");
+        }
+        return userId;
     }
 }
