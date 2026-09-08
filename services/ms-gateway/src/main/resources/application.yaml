@@ -11,7 +11,7 @@ spring:
         webmvc:
           routes:
             - id: identity-service
-              uri: ${IDENTITY_SERVICE_URL:htto://localhost:8081}
+              uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/v1/identity/**
 
@@ -65,6 +65,11 @@ spring:
                 # /api/v1/billing/** solo cubre el ping; InvoiceController real vive en
                 # /api/v1/facturas (ver web/controller/InvoiceController.java).
                 - Path=/api/v1/billing/**,/api/v1/facturas/**
+
+            - id: notifications-service
+              uri: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8091}
+              predicates:
+                - Path=/api/v1/notifications/**
 
 management:
   endpoints:
