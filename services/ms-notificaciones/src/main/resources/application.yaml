@@ -1,0 +1,56 @@
+server:
+  port: ${SERVER_PORT:8091}
+
+spring:
+  application:
+    name: ms-notificaciones
+
+  r2dbc:
+    url: ${R2DBC_URL:r2dbc:mysql://localhost:13306/notifications_db}
+    username: ${DB_USER:notifications_user}
+    password: ${DB_PASSWORD:notificaciones-local}
+    pool:
+      enabled: true
+      initial-size: 1
+      max-size: ${DB_POOL_SIZE:5}
+
+  flyway:
+    enabled: true
+    url: ${DB_URL:jdbc:mysql://localhost:13306/notifications_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    user: ${DB_USER:notifications_user}
+    password: ${DB_PASSWORD:notificaciones-local}
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    consumer:
+      group-id: ms-notificaciones
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+medicalsys:
+  notifications:
+    provider: ${NOTIFICATION_PROVIDER:mock}
+    max-attempts: ${NOTIFICATION_MAX_ATTEMPTS:3}
+    worker-enabled: ${NOTIFICATION_WORKER_ENABLED:true}
+    worker-delay-ms: ${NOTIFICATION_WORKER_DELAY_MS:5000}
+    worker-batch-size: ${NOTIFICATION_WORKER_BATCH_SIZE:25}
+    kafka-enabled: ${NOTIFICATION_KAFKA_ENABLED:false}
+    whatsapp:
+      graph-base-url: ${WHATSAPP_GRAPH_BASE_URL:https://graph.facebook.com}
+      api-version: ${WHATSAPP_API_VERSION:v23.0}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+      verify-token: ${WHATSAPP_VERIFY_TOKEN:local-verify-token}
+      app-secret: ${WHATSAPP_APP_SECRET:}
