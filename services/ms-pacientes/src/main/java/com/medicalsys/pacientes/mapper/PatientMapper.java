@@ -5,6 +5,7 @@ import com.medicalsys.pacientes.domain.model.NotificationPreference;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.domain.model.PatientMerge;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
 import com.medicalsys.pacientes.web.dto.NotificationPreferenceResponse;
 import com.medicalsys.pacientes.web.dto.PatientMergeResponse;
 import com.medicalsys.pacientes.web.dto.PatientResponse;
@@ -54,6 +55,11 @@ public class PatientMapper {
 
     public SchedulingPatientSummary toSchedulingSummary(Patient patient) {
         return new SchedulingPatientSummary(patient.getPublicId(), patient.getFullName(), patient.getStatus());
+    }
+
+    public NotificationContactSummary toNotificationContact(Patient patient) {
+        return new NotificationContactSummary(
+                patient.getPublicId(), patient.getGivenNames(), patient.getFullName(), patient.getPhoneE164());
     }
 
     public BillingPatientSummary toBillingSummary(Patient patient) {

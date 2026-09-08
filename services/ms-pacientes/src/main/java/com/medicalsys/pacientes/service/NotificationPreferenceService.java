@@ -5,6 +5,7 @@ import com.medicalsys.pacientes.domain.enums.NotificationChannel;
 import com.medicalsys.pacientes.domain.model.NotificationPreference;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
+import com.medicalsys.pacientes.messaging.NotificationPreferenceEventPublisher;
 import com.medicalsys.pacientes.repository.NotificationPreferenceRepository;
 import com.medicalsys.pacientes.web.dto.NotificationPreferenceRequest;
 import com.medicalsys.pacientes.web.dto.NotificationPreferenceResponse;
@@ -21,12 +22,14 @@ public class NotificationPreferenceService {
     private final NotificationPreferenceRepository preferences;
     private final PatientService patients;
     private final PatientMapper mapper;
+    private final NotificationPreferenceEventPublisher events;
 
     public NotificationPreferenceService(NotificationPreferenceRepository preferences, PatientService patients,
-            PatientMapper mapper) {
+            PatientMapper mapper, NotificationPreferenceEventPublisher events) {
         this.preferences = preferences;
         this.patients = patients;
         this.mapper = mapper;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +48,9 @@ public class NotificationPreferenceService {
                 .findByPatient_PublicIdAndChannelAndCategory(patientId, channel, category)
                 .orElseGet(() -> NotificationPreference.create(patient, channel, category));
         preference.changeConsent(request.optIn(), request.consentSource(), Instant.now());
-        return mapper.toPreferenceResponse(preferences.saveAndFlush(preference));
+        NotificationPreference saved = preferences.saveAndFlush(preference);
+        events.publish(saved);
+        return mapper.toPreferenceResponse(saved);
     }
 
 }

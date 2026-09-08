@@ -240,11 +240,14 @@ services:
       DB_USER: patients_user
       DB_PASSWORD: ${PACIENTES_DB_PASSWORD}
       FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:
       mysql:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     logging: *medicalsys-logging
 
   ms-profesionales:
@@ -274,11 +277,14 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/scheduling_db
       DB_USER: scheduling_user
       DB_PASSWORD: ${AGENDA_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "${SCHEDULING_HOST_PORT:-8087}:8087"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     logging: *medicalsys-logging
 
   ms-historial:

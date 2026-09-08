@@ -24,6 +24,12 @@ spring:
     locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
     validate-on-migrate: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
   jackson:
     default-property-inclusion: non_null
     datatype:

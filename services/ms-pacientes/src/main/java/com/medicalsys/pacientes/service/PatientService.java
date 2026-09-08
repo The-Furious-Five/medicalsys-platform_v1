@@ -10,6 +10,7 @@ import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
 import com.medicalsys.pacientes.repository.PatientRepository;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
 import com.medicalsys.pacientes.web.dto.PatientResponse;
 import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
@@ -113,6 +114,11 @@ public class PatientService {
     @Transactional(readOnly = true)
     public SchedulingPatientSummary getSchedulingSummary(UUID patientId) {
         return mapper.toSchedulingSummary(requireEntity(patientId));
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationContactSummary getNotificationContact(UUID patientId) {
+        return mapper.toNotificationContact(requireEntity(patientId));
     }
 
     @Transactional(readOnly = true)

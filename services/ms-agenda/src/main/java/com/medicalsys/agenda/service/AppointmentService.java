@@ -36,11 +36,12 @@ public class AppointmentService {
     private final PhysicalResourceService resourceService;
     private final ExternalDirectoryClient directory;
     private final SchedulingMapper mapper;
+    private final AppointmentNotificationPublisher notifications;
 
     public AppointmentService(AppointmentRepository appointments, AppointmentStatusHistoryRepository histories,
                               ScheduleBlockService blockService, ReservationService reservationService,
                               PhysicalResourceService resourceService, ExternalDirectoryClient directory,
-                              SchedulingMapper mapper) {
+                              SchedulingMapper mapper, AppointmentNotificationPublisher notifications) {
         this.appointments = appointments;
         this.histories = histories;
         this.blockService = blockService;
@@ -48,6 +49,7 @@ public class AppointmentService {
         this.resourceService = resourceService;
         this.directory = directory;
         this.mapper = mapper;
+        this.notifications = notifications;
     }
 
     @Transactional
@@ -81,10 +83,12 @@ public class AppointmentService {
                 request.createdByUserPublicId(), StatusChangeOrigin.USER);
 
         // La cita y la reserva del consultorio se confirman juntas: si el recurso choca, no queda cita huerfana.
+        PhysicalResource resource = null;
         if (request.physicalResourcePublicId() != null) {
-            PhysicalResource resource = resourceService.require(request.physicalResourcePublicId());
+            resource = resourceService.require(request.physicalResourcePublicId());
             reservationService.reserveForAppointment(saved, resource, request.createdByUserPublicId());
         }
+        notifications.publishCreated(saved, resource);
         return mapper.toAppointmentResponse(saved);
     }
 
@@ -229,10 +233,12 @@ public class AppointmentService {
                 "Reprogramacion de la cita " + original.getPublicId(),
                 request.userAccountPublicId(), StatusChangeOrigin.USER);
 
+        PhysicalResource resource = null;
         if (request.physicalResourcePublicId() != null) {
-            PhysicalResource resource = resourceService.require(request.physicalResourcePublicId());
+            resource = resourceService.require(request.physicalResourcePublicId());
             reservationService.reserveForAppointment(saved, resource, request.userAccountPublicId());
         }
+        notifications.publishRescheduled(saved, resource);
         return mapper.toAppointmentResponse(saved);
     }
 

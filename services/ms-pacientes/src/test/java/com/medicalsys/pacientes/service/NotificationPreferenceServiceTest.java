@@ -11,6 +11,7 @@ import com.medicalsys.pacientes.domain.enums.NotificationChannel;
 import com.medicalsys.pacientes.domain.model.NotificationPreference;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
+import com.medicalsys.pacientes.messaging.NotificationPreferenceEventPublisher;
 import com.medicalsys.pacientes.repository.NotificationPreferenceRepository;
 import com.medicalsys.pacientes.web.dto.NotificationPreferenceRequest;
 import com.medicalsys.pacientes.web.dto.NotificationPreferenceResponse;
@@ -29,12 +30,14 @@ class NotificationPreferenceServiceTest {
     private NotificationPreferenceRepository repository;
     @Mock
     private PatientService patients;
+    @Mock
+    private NotificationPreferenceEventPublisher events;
 
     private NotificationPreferenceService service;
 
     @BeforeEach
     void setUp() {
-        service = new NotificationPreferenceService(repository, patients, new PatientMapper());
+        service = new NotificationPreferenceService(repository, patients, new PatientMapper(), events);
     }
 
     @Test

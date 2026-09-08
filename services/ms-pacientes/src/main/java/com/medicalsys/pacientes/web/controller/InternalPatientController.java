@@ -2,6 +2,7 @@ package com.medicalsys.pacientes.web.controller;
 
 import com.medicalsys.pacientes.service.PatientService;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,5 +29,11 @@ public class InternalPatientController {
     @GetMapping("/{patientId}/billing-summary")
     public BillingPatientSummary billingSummary(@PathVariable UUID patientId) {
         return patients.getBillingSummary(patientId);
+    }
+
+    /** Exclusivo para Agenda al armar la notificacion de WhatsApp de una cita creada o reagendada. */
+    @GetMapping("/{patientId}/notification-contact")
+    public NotificationContactSummary notificationContact(@PathVariable UUID patientId) {
+        return patients.getNotificationContact(patientId);
     }
 }

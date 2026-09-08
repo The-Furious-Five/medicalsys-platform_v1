@@ -12,6 +12,7 @@ public class SchedulingProperties {
 
     private final Validation validation = new Validation();
     private final Slots slots = new Slots();
+    private final Notifications notifications = new Notifications();
 
     public ZoneId getZone() {
         return zone;
@@ -27,6 +28,10 @@ public class SchedulingProperties {
 
     public Slots getSlots() {
         return slots;
+    }
+
+    public Notifications getNotifications() {
+        return notifications;
     }
 
     public static class Validation {
@@ -77,6 +82,18 @@ public class SchedulingProperties {
 
         public void setMaxDaysAhead(int maxDaysAhead) {
             this.maxDaysAhead = maxDaysAhead;
+        }
+    }
+
+    public static class Notifications {
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 }
