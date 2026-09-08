@@ -10,6 +10,8 @@ import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
 import com.medicalsys.pacientes.repository.PatientRepository;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
+import com.medicalsys.pacientes.web.dto.PatientDemographicsResponse;
 import com.medicalsys.pacientes.web.dto.PatientResponse;
 import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
@@ -118,6 +120,40 @@ public class PatientService {
     @Transactional(readOnly = true)
     public BillingPatientSummary getBillingSummary(UUID patientId) {
         return mapper.toBillingSummary(requireEntity(patientId));
+    }
+
+    /**
+     * Proyeccion fiscal para ms-facturacion.
+     *
+     * <p>El complemento vacio viaja como null: la columna del comprobante distingue "sin
+     * complemento" de "complemento en blanco", y la cadena vacia se imprimiria como un sufijo
+     * inexistente en el numero de documento.
+     */
+    @Transactional(readOnly = true)
+    public FiscalCustomerResponse getFiscalCustomer(UUID patientId) {
+        Patient patient = requireEntity(patientId);
+        String complement = patient.getDocumentComplement();
+        return new FiscalCustomerResponse(
+                patient.getPublicId(),
+                patient.getDocumentType().name(),
+                patient.getDocumentNumber(),
+                complement == null || complement.isBlank() ? null : complement,
+                patient.getFullName(),
+                patient.getEmail());
+    }
+
+    /** Proyeccion demografica para ms-marketing; sin documento y sin nada clinico. */
+    @Transactional(readOnly = true)
+    public PatientDemographicsResponse getDemographics(UUID patientId) {
+        Patient patient = requireEntity(patientId);
+        return new PatientDemographicsResponse(
+                patient.getPublicId(),
+                patient.getFullName(),
+                patient.getBirthDate(),
+                patient.getSex(),
+                patient.getCity(),
+                patient.getPhoneE164(),
+                patient.getStatus());
     }
 
     @Transactional(readOnly = true)

@@ -17,6 +17,9 @@ spring:
 
   flyway:
     enabled: true
+    # db/demo solo se carga cuando Compose lo pide (FLYWAY_LOCATIONS). Un despliegue
+    # real arranca sin la plantilla de demostracion, igual que ms-pacientes.
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
 
 management:
   endpoints:

@@ -18,7 +18,7 @@ import org.springframework.web.client.RestClientResponseException;
  *
  * <p>Contrato consumido (ruta interna):
  * <pre>
- * GET /internal/v1/pacientes/{patientId}/fiscal   -> 200 con el DTO fiscal, 404 si no existe
+ * GET /internal/v1/patients/{patientId}/fiscal   -> 200 con el DTO fiscal, 404 si no existe
  * </pre>
  *
  * <p>Un 404 es una respuesta de contrato y se traduce a 422; una caida de la dependencia se traduce
@@ -38,7 +38,7 @@ public class RemotePatientsClient implements PatientsClient {
     public FiscalCustomer fiscalCustomer(UUID organizationId, UUID patientId) {
         try {
             FiscalCustomer customer = restClient.get()
-                    .uri("/internal/v1/pacientes/{patientId}/fiscal", patientId)
+                    .uri("/internal/v1/patients/{patientId}/fiscal", patientId)
                     .header(TenantContextFilter.ORGANIZATION_HEADER, organizationId.toString())
                     .retrieve()
                     .body(FiscalCustomer.class);

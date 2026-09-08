@@ -25,6 +25,23 @@ public class ProfessionalController {
         return service.list(organizationId, specialtyCode);
     }
 
+    /** Ficha completa, en cualquier estado: es la pantalla desde la que se revierte una baja. */
+    @GetMapping("/api/v1/professionals/{id}")
+    public ProfessionalResponse get(@PathVariable UUID id) { return service.get(id); }
+
+    @PatchMapping("/api/v1/professionals/{id}")
+    public ProfessionalResponse update(@PathVariable UUID id,
+                                       @Valid @RequestBody UpdateProfessionalRequest request) {
+        return service.update(id, request);
+    }
+
+    /** Activa, suspende o termina el vínculo del profesional con un centro. */
+    @PatchMapping("/api/v1/professionals/{id}/organizations/{linkId}")
+    public ProfessionalResponse changeLinkStatus(@PathVariable UUID id, @PathVariable UUID linkId,
+                                                 @Valid @RequestBody UpdateLinkStatusRequest request) {
+        return service.changeLinkStatus(id, linkId, request.status());
+    }
+
     /** Contrato de Agenda: valida que el profesional existe y conserva un vínculo activo. */
     @GetMapping("/internal/v1/professionals/{id}")
     public ProfessionalResponse findActive(@PathVariable UUID id) { return service.findActive(id); }
