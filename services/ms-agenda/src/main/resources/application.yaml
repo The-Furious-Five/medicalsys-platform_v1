@@ -17,6 +17,8 @@ spring:
 
   flyway:
     enabled: true
+    # db/demo solo se carga cuando Compose lo pide, igual que en pacientes e historial.
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}

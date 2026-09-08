@@ -13,8 +13,21 @@ import org.springframework.web.client.RestClient;
  * Valida por contrato HTTP las referencias externas de una cita antes de crearla.
  *
  * <p>Agenda no tiene FK hacia patients_db ni professionals_db: guarda el UUID publico y confia en
- * estas llamadas. Queda desactivado por configuracion hasta que ms-pacientes y ms-profesionales
- * esten publicados en la red Compose.
+ * estas llamadas.
+ *
+ * <p>Rutas consumidas, tomadas del codigo de cada servicio y no de la documentacion:
+ * <pre>
+ * GET /internal/v1/patients/{id}/scheduling-summary  (ms-pacientes, InternalPatientController)
+ * GET /internal/v1/professionals/{id}                (ms-profesionales, ProfessionalController)
+ * </pre>
+ *
+ * <p>La ruta de pacientes era {@code /internal/v1/patients/{id}} a secas, que ms-pacientes nunca
+ * publico: con la validacion activada toda cita fallaba, y con ella apagada la agenda aceptaba
+ * pacientes inexistentes. Por eso el contrato estaba desactivado y no porque los servicios no
+ * estuvieran en la red.
+ *
+ * <p>Que ms-profesionales responda 404 a un profesional suspendido es intencional: su ruta interna
+ * exige vinculo activo, de modo que no se puede citar a quien esta de licencia.
  */
 @Component
 public class ExternalDirectoryClient {
@@ -32,7 +45,8 @@ public class ExternalDirectoryClient {
     }
 
     public void requirePatient(UUID patientPublicId) {
-        require(patients, "/internal/v1/patients/" + patientPublicId, "paciente", patientPublicId);
+        require(patients, "/internal/v1/patients/" + patientPublicId + "/scheduling-summary",
+                "paciente", patientPublicId);
     }
 
     public void requireProfessional(UUID healthProfessionalPublicId) {

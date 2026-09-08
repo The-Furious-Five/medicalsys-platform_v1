@@ -131,6 +131,8 @@ medicalsys:
       point-of-sale-code: 1
       address: DIRECCION DE DEMOSTRACION - ENTORNO LOCAL
       cuis-validity: 365d
+      # Emite unas facturas al arrancar con la tabla vacia, llamando al propio servicio.
+      seed-invoices: ${BILLING_DEMO_INVOICES:true}
       cufd-validity: 24h
 
 logging:

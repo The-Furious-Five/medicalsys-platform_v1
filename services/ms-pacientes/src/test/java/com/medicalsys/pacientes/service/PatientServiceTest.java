@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.medicalsys.pacientes.common.audit.AuditTrail;
 import com.medicalsys.pacientes.common.error.ConflictException;
 import com.medicalsys.pacientes.common.error.ErrorCode;
 import com.medicalsys.pacientes.domain.enums.BloodType;
@@ -36,12 +37,14 @@ class PatientServiceTest {
 
     @Mock
     private PatientRepository repository;
+    @Mock
+    private AuditTrail auditTrail;
 
     private PatientService service;
 
     @BeforeEach
     void setUp() {
-        service = new PatientService(repository, new PatientMapper());
+        service = new PatientService(repository, new PatientMapper(), auditTrail);
     }
 
     @Test

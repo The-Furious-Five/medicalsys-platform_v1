@@ -1,6 +1,8 @@
 package com.medicalsys.pacientes.service;
 
 import com.medicalsys.pacientes.common.DateTimes;
+import com.medicalsys.pacientes.common.audit.AuditEventDraft;
+import com.medicalsys.pacientes.common.audit.AuditTrail;
 import com.medicalsys.pacientes.common.error.ConflictException;
 import com.medicalsys.pacientes.common.error.ErrorCode;
 import com.medicalsys.pacientes.common.error.NotFoundException;
@@ -10,12 +12,15 @@ import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
 import com.medicalsys.pacientes.repository.PatientRepository;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
 import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
+import com.medicalsys.pacientes.web.dto.PatientDemographicsResponse;
 import com.medicalsys.pacientes.web.dto.PatientResponse;
 import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
 import com.medicalsys.pacientes.web.dto.UpdatePatientRequest;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +39,12 @@ public class PatientService {
 
     private final PatientRepository patients;
     private final PatientMapper mapper;
+    private final AuditTrail auditTrail;
 
-    public PatientService(PatientRepository patients, PatientMapper mapper) {
+    public PatientService(PatientRepository patients, PatientMapper mapper, AuditTrail auditTrail) {
         this.patients = patients;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /** La garantía final de unicidad vive también en MySQL para cubrir solicitudes concurrentes. */
@@ -59,6 +66,10 @@ public class PatientService {
 
         log.info("Paciente registrado patientId={} documento={}*** complemento={}", patient.getPublicId(),
                 documentNumber.substring(0, Math.min(3, documentNumber.length())), complement);
+        // El tipo de documento identifica la operacion sin revelar a quien pertenece; el numero se
+        // queda fuera del evento a proposito, igual que se queda fuera del log de arriba.
+        auditTrail.record(AuditEventDraft.patientWrite("PATIENT_REGISTERED", patient.getPublicId(), 201,
+                Map.of("documentType", request.documentType().name())));
         return mapper.toResponse(patient);
     }
 
@@ -108,6 +119,8 @@ public class PatientService {
         } catch (DataIntegrityViolationException exception) {
             throw translateIntegrityFailure(exception);
         }
+        auditTrail.record(AuditEventDraft.patientWrite("PATIENT_UPDATED", patient.getPublicId(), 200,
+                Map.of("status", patient.getStatus().name())));
         return mapper.toResponse(patient);
     }
 
@@ -124,6 +137,40 @@ public class PatientService {
     @Transactional(readOnly = true)
     public BillingPatientSummary getBillingSummary(UUID patientId) {
         return mapper.toBillingSummary(requireEntity(patientId));
+    }
+
+    /**
+     * Proyeccion fiscal para ms-facturacion.
+     *
+     * <p>El complemento vacio viaja como null: la columna del comprobante distingue "sin
+     * complemento" de "complemento en blanco", y la cadena vacia se imprimiria como un sufijo
+     * inexistente en el numero de documento.
+     */
+    @Transactional(readOnly = true)
+    public FiscalCustomerResponse getFiscalCustomer(UUID patientId) {
+        Patient patient = requireEntity(patientId);
+        String complement = patient.getDocumentComplement();
+        return new FiscalCustomerResponse(
+                patient.getPublicId(),
+                patient.getDocumentType().name(),
+                patient.getDocumentNumber(),
+                complement == null || complement.isBlank() ? null : complement,
+                patient.getFullName(),
+                patient.getEmail());
+    }
+
+    /** Proyeccion demografica para ms-marketing; sin documento y sin nada clinico. */
+    @Transactional(readOnly = true)
+    public PatientDemographicsResponse getDemographics(UUID patientId) {
+        Patient patient = requireEntity(patientId);
+        return new PatientDemographicsResponse(
+                patient.getPublicId(),
+                patient.getFullName(),
+                patient.getBirthDate(),
+                patient.getSex(),
+                patient.getCity(),
+                patient.getPhoneE164(),
+                patient.getStatus());
     }
 
     @Transactional(readOnly = true)

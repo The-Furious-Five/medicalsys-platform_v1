@@ -26,7 +26,10 @@ spring:
       connection-timeout: 5000
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    # db/demo existe desde el sprint 2 pero nunca se cargaba: esta propiedad estaba
+    # fija en db/migration, asi que el expediente de demostracion no llegaba a la base
+    # y las pantallas de historial salian vacias. Compose la sobreescribe en local.
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
     baseline-on-migrate: false
     validate-on-migrate: true
   jpa:
@@ -101,6 +104,10 @@ medicalsys:
       icd10-codes: ${CATALOGS_ICD10_CODES:J00,M54.5,R51,S52.50}
       study-type-codes: ${CATALOGS_STUDY_TYPE_CODES:X_RAY,LAB_HEMOGRAM}
       medication-codes: ${CATALOGS_MEDICATION_CODES:PARACETAMOL_500,IBUPROFENO_400}
+  demo:
+    # Siembra cinco expedientes con narrativa cifrada por el propio NarrativeCipher.
+    # Se desactiva fuera del entorno local.
+    seed-on-startup: ${MEDICAL_RECORDS_DEMO_SEED:true}
   numbering:
     record-number-prefix: EXP
     prescription-folio-prefix: REC

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /workspace
@@ -6,10 +7,18 @@ COPY .mvn .mvn
 COPY mvnw pom.xml ./
 
 RUN chmod +x mvnw
-RUN ./mvnw -q -DskipTests dependency:go-offline
+# Cache compartido de Maven entre microservicios y entre builds.
+# Sin el, cada servicio vuelve a descargar todo el BOM de Spring Boot desde
+# Maven Central y cualquier corte de red aborta el build completo.
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    ./mvnw -B -ntp -DskipTests \
+      -Dmaven.wagon.http.retryHandler.count=5 \
+      -Dmaven.wagon.httpconnectionManager.ttlSeconds=60 \
+      dependency:go-offline
 
 COPY src/ src/
-RUN ./mvnw -q -DskipTests clean package
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    ./mvnw -B -ntp -DskipTests clean package
 
 FROM eclipse-temurin:21-jre-jammy
 

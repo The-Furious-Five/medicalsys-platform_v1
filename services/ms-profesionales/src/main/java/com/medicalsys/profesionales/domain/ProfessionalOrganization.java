@@ -23,6 +23,9 @@ public class ProfessionalOrganization {
     public UUID getBranchPublicId() { return branchPublicId; }
     public OrganizationModality getModality() { return modality; }
     public OrganizationStatus getStatus() { return status; }
+    public BigDecimal getCommissionPercentage() { return commissionPercentage; }
+    public LocalDate getStartDate() { return startDate; }
+    public LocalDate getEndDate() { return endDate; }
     public void setProfessional(HealthProfessional value) { professional = value; }
     public void setPublicId(UUID value) { publicId = value; }
     public void setOrganizationPublicId(UUID value) { organizationPublicId = value; }

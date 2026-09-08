@@ -2,7 +2,9 @@ package com.medicalsys.pacientes.web.controller;
 
 import com.medicalsys.pacientes.service.PatientService;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
+import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
 import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
+import com.medicalsys.pacientes.web.dto.PatientDemographicsResponse;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,5 +37,17 @@ public class InternalPatientController {
     @GetMapping("/{patientId}/notification-contact")
     public NotificationContactSummary notificationContact(@PathVariable UUID patientId) {
         return patients.getNotificationContact(patientId);
+    }
+
+    /** Contrato de ms-marketing: solo demografia, nunca documento ni dato clinico. */
+    @GetMapping("/{patientId}/demographics")
+    public PatientDemographicsResponse demographics(@PathVariable UUID patientId) {
+        return patients.getDemographics(patientId);
+    }
+
+    /** Contrato de ms-facturacion: el cliente fiscal que se imprime en el comprobante. */
+    @GetMapping("/{patientId}/fiscal")
+    public FiscalCustomerResponse fiscalCustomer(@PathVariable UUID patientId) {
+        return patients.getFiscalCustomer(patientId);
     }
 }

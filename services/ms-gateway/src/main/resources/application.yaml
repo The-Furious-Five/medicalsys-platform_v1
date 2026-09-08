@@ -59,6 +59,24 @@ spring:
               predicates:
                 - Path=/api/v1/documents/**
 
+            - id: marketing-service
+              uri: ${MARKETING_SERVICE_URL:http://localhost:8092}
+              predicates:
+                # Igual que historial y facturacion: /api/v1/marketing/** solo cubre el ping
+                # y los criterios permitidos. Los controladores reales de ms-marketing viven
+                # en rutas en espanol (web/controller/*.java), que son las que consume el
+                # frontend. /api/v1/pacientes/** es de marketing (actividad y opt-out) y no
+                # colisiona con /api/v1/patients/** de ms-pacientes.
+                - Path=/api/v1/marketing/**,/api/v1/campanas/**,/api/v1/segmentos/**,/api/v1/promociones/**,/api/v1/anuncios/**,/api/v1/fidelidad/**,/api/v1/pacientes/**
+
+            - id: audit-service
+              uri: ${AUDIT_SERVICE_URL:http://localhost:8091}
+              predicates:
+                # Solo el prefijo publico. /internal/v1/audit-events queda deliberadamente
+                # fuera del gateway: la bitacora se escribe entre servicios, nunca desde el
+                # navegador, o cualquiera podria fabricar la prueba de lo que no hizo.
+                - Path=/api/v1/audit/**
+
             - id: billing-service
               uri: ${BILLING_SERVICE_URL:http://localhost:8090}
               predicates:

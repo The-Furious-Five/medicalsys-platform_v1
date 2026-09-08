@@ -32,6 +32,16 @@ public final class RequestContextHolder {
         return context;
     }
 
+    /**
+     * Contexto de la solicitud, o null si el gateway no propago identidad.
+     *
+     * <p>La usa el envio de auditoria, que necesita saber si hay actor pero no puede exigirlo: un
+     * hecho sin identidad resuelta se asienta igual, con el actor vacio, en lugar de perderse.
+     */
+    public static RequestContext currentOrNull() {
+        return CONTEXT.get();
+    }
+
     /** Identidad humana obligatoria para escrituras que deben conservar autoría. */
     public static UUID requireUserId() {
         UUID userId = require().userId();
