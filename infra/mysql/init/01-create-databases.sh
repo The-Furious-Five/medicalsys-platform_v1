@@ -62,5 +62,14 @@ mysql --protocol=socket -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
         IDENTIFIED BY '${MARKETING_DB_PASSWORD}';
     GRANT ALL PRIVILEGES ON marketing_db.* TO 'marketing_user'@'%';
 
+    CREATE DATABASE IF NOT EXISTS audit_db
+        CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+    CREATE USER IF NOT EXISTS 'audit_user'@'%'
+        IDENTIFIED BY '${AUDITORIA_DB_PASSWORD}';
+    -- La bitacora es append-only: el usuario de aplicacion no recibe DELETE ni DROP
+    -- sobre audit_event. Sin este recorte, "solo lectura" seria una promesa del
+    -- codigo y no una garantia del motor.
+    GRANT SELECT, INSERT, UPDATE, CREATE, ALTER, INDEX, REFERENCES ON audit_db.* TO 'audit_user'@'%';
+
     FLUSH PRIVILEGES;
 EOSQL

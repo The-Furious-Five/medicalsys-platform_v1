@@ -30,6 +30,15 @@ spring:
       datetime:
         write-dates-as-timestamps: false
 
+medicalsys:
+  audit:
+    # Raiz de ms-auditoria dentro de la red interna. Vacio desactiva el envio: asi un arranque
+    # suelto o una prueba no fallan por no encontrar una bitacora que nadie levanto.
+    base-url: ${AUDIT_SERVICE_URL:}
+    connect-timeout: 2s
+    read-timeout: 5s
+    queue-capacity: 500
+
 management:
   endpoints:
     web:

@@ -33,6 +33,7 @@ services:
       DOCUMENTAL_DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD}
       FACTURACION_DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
       MARKETING_DB_PASSWORD: ${MARKETING_DB_PASSWORD}
+      AUDITORIA_DB_PASSWORD: ${AUDITORIA_DB_PASSWORD}
     ports:
       - "${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
@@ -211,10 +212,16 @@ services:
       DB_USER: patients_user
       DB_PASSWORD: ${PACIENTES_DB_PASSWORD}
       FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
     ports:
       - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:
       mysql:
+        condition: service_healthy
+      # El envio a la bitacora es tolerante a fallos por diseno -no tumba el alta de un
+      # paciente-, pero sin esta espera los eventos de la siembra se perderian por
+      # llegar antes de que ms-auditoria acepte conexiones.
+      ms-auditoria:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
@@ -381,6 +388,25 @@ services:
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
+  ms-auditoria:
+    build:
+      context: ./services/ms-auditoria
+      dockerfile: Dockerfile
+    image: medicalsys/ms-auditoria:local
+    environment:
+      SERVER_PORT: "8091"
+      DB_URL: jdbc:mysql://mysql:3306/audit_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: audit_user
+      DB_PASSWORD: ${AUDITORIA_DB_PASSWORD}
+      AUDIT_DEMO_SEED: ${AUDITORIA_DEMO_SEED:-false}
+    ports:
+      - "${AUDIT_HOST_PORT:-8091}:8091"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
+
   ms-gateway:
     build:
       context: ./services/ms-gateway
@@ -399,6 +425,7 @@ services:
       DOCUMENTS_SERVICE_URL: http://ms-documental:8089
       BILLING_SERVICE_URL: http://ms-facturacion:8090
       MARKETING_SERVICE_URL: http://ms-marketing:8092
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
@@ -422,6 +449,8 @@ services:
       ms-facturacion:
         condition: service_healthy
       ms-marketing:
+        condition: service_healthy
+      ms-auditoria:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging

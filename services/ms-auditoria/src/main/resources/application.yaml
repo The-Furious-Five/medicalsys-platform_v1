@@ -1,0 +1,49 @@
+server:
+  port: ${SERVER_PORT:8091}
+
+spring:
+  application:
+    name: ms-auditoria
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: auditoria-pool
+      maximum-pool-size: ${DB_POOL_SIZE:8}
+      connection-timeout: 5000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
+    validate-on-migrate: true
+
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  audit:
+    demo-seed:
+      # Bitacora de ejemplo para la demostracion local. Se declara aqui y no se deja al
+      # nombre derivado de la variable de entorno: el guion de "demo-seed" hace ambigua
+      # esa traduccion, y una bandera que a veces se activa sola no sirve de bandera.
+      enabled: ${AUDIT_DEMO_SEED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
