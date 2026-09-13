@@ -1,29 +1,99 @@
+# =====================================================================================
+# ms-tenencia - configuracion base.
+# No contiene localhost ni secretos: Compose inyecta DB_URL, DB_USER y DB_PASSWORD.
+# Para ejecutar fuera de Docker usar el perfil "local" (application-local.yaml).
+#
+# Este servicio es el unico propietario de organizacion, sucursal, prestaciones y
+# precios. No guarda citas, facturas ni datos clinicos.
+# =====================================================================================
 server:
   port: ${SERVER_PORT:8082}
+  shutdown: graceful
+  error:
+    whitelabel:
+      enabled: false
 
 spring:
   application:
     name: ms-tenencia
-  
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-  
+    hikari:
+      pool-name: tenencia-pool
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 5000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
   jpa:
     open-in-view: false
     hibernate:
+      # Flyway crea y evoluciona el esquema; Hibernate solo comprueba su correspondencia.
       ddl-auto: validate
-
-  flyway:
-    enabled: true
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
+  jackson:
+    # Los campos nulos no viajan en la respuesta y las fechas salen en ISO-8601, no como
+    # numero de epoch (Jackson 3 mueve la opcion a datatype.datetime).
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
-
   endpoint:
     health:
+      probes:
+        enabled: true
       show-details: always
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    db:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  service: ms-tenencia
+  responsibility: organizacion, sucursal, prestaciones y precios
+  database: tenancy_db
+
+medicalsys:
+  tenancy:
+    # Zona y moneda por defecto de una organizacion nueva, segun el diccionario.
+    default-time-zone: ${TENANCY_DEFAULT_TIME_ZONE:America/La_Paz}
+    default-currency: ${TENANCY_DEFAULT_CURRENCY:BOB}
+    # Codigo del plan que recibe una organizacion recien creada si no se indica otro.
+    default-plan-code: ${TENANCY_DEFAULT_PLAN_CODE:DEMO}
+    # Dias de prueba de la suscripcion inicial en estado TRIAL.
+    trial-period: ${TENANCY_TRIAL_PERIOD:30d}
+    # Aplica max_users / max_branches del plan antes de crear una sucursal o un usuario.
+    # Se puede desactivar en una demostracion, pero entonces plan_usage deja de ser un limite.
+    enforce-plan-limits: ${TENANCY_ENFORCE_PLAN_LIMITS:true}
+
+logging:
+  level:
+    root: INFO
+    com.medicalsys.tenencia: ${LOG_LEVEL:INFO}
+    org.flywaydb: INFO

@@ -1,0 +1,38 @@
+# Configuracion de pruebas. Reemplaza a la de produccion porque el classpath de test tiene
+# prioridad: las pruebas no dependen de variables de entorno ni de un motor externo.
+# La datasource la inyecta cada prueba de integracion desde su contenedor.
+spring:
+  application:
+    name: ms-tenencia
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  tenancy:
+    default-time-zone: America/La_Paz
+    default-currency: BOB
+    default-plan-code: DEMO
+    trial-period: 30d
+    enforce-plan-limits: true
+
+logging:
+  level:
+    root: WARN
+    com.medicalsys.tenencia: INFO
+    org.flywaydb: INFO

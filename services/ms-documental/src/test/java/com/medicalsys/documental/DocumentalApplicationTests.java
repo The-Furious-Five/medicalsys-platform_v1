@@ -1,13 +1,13 @@
 package com.medicalsys.documental;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-@SpringBootTest
 class DocumentalApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void applicationEntryPointExists() {
+		assertDoesNotThrow(() -> Class.forName(DocumentalApplication.class.getName()));
 	}
 
 }

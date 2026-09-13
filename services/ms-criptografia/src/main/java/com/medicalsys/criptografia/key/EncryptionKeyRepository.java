@@ -15,7 +15,8 @@ public interface EncryptionKeyRepository extends JpaRepository<EncryptionKey, Lo
             EncryptionKey.Purpose purpose,
             EncryptionKey.Status status);
 
-    /** Clave global de plataforma (organization_public_id IS NULL). */
+    Optional<EncryptionKey> findFirstByPublicId(byte[] publicId);
+
     Optional<EncryptionKey> findFirstByOrganizationPublicIdIsNullAndPurposeAndStatus(
             EncryptionKey.Purpose purpose,
             EncryptionKey.Status status);

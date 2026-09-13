@@ -82,6 +82,19 @@ public class EncryptionKey {
 
     protected EncryptionKey() {}
 
+    public EncryptionKey(byte[] publicId, byte[] organizationPublicId, Purpose purpose, short version,
+            String kekReference, byte[] wrappedDek) {
+        this.publicId = publicId;
+        this.organizationPublicId = organizationPublicId;
+        this.purpose = purpose;
+        this.version = version;
+        this.kekReference = kekReference;
+        this.wrappedDek = wrappedDek;
+        this.status = Status.ACTIVE;
+        this.algorithm = Algorithm.AES_256_GCM;
+        this.createdAt = Instant.now();
+    }
+
     /* Getters */
     public Long      getId()                   { return id; }
     public byte[]    getPublicId()             { return publicId; }

@@ -1,0 +1,59 @@
+# Configuracion de pruebas. Reemplaza a la de produccion porque el classpath de test tiene
+# prioridad: las pruebas no dependen de variables de entorno ni de un motor externo.
+# La datasource la inyecta cada prueba de integracion desde su contenedor.
+spring:
+  application:
+    name: ms-marketing
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  patients:
+    mode: LOCAL
+    base-url: http://ms-pacientes:8085
+    connect-timeout: 2s
+    read-timeout: 3s
+  tenancy:
+    mode: LOCAL
+    base-url: http://ms-tenencia:8082
+    connect-timeout: 2s
+    read-timeout: 3s
+  entitlement:
+    mode: REPLICA
+    default-included: true
+  audience:
+    max-size: 10000
+  outbox:
+    # Las pruebas conservan los eventos: comprobar que lanzar una campana produjo un
+    # marketing.campana exige que el relay no los haya drenado antes de mirar.
+    mode: RETAIN
+    batch-size: 100
+    interval-ms: 3600000
+  demo:
+    # Las pruebas siembran sus propios datos: una poblacion inesperada haria que el tamano de
+    # una audiencia dependiera del seeder y no del criterio bajo prueba.
+    seed-on-startup: false
+    organization-id: 00000000-0000-4000-8000-0000000000a1
+    patients: 0
+
+logging:
+  level:
+    root: WARN
+    com.medicalsys.marketing: INFO
+    org.flywaydb: INFO

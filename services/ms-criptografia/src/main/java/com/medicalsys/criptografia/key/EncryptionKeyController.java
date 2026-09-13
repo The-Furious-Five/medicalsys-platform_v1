@@ -1,20 +1,24 @@
 package com.medicalsys.criptografia.key;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HexFormat;
+import com.medicalsys.criptografia.common.UuidBinary;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoints internos de criptografía.
- * Solo el gateway y otros microservicios deben acceder a /internal/v1/.
- *
- * POST /internal/v1/crypto/encrypt           → cifra texto plano
- * POST /internal/v1/crypto/decrypt           → descifra texto cifrado
- * GET  /internal/v1/crypto/keys/active       → metadatos de clave activa
+ * API interna legacy en ingles. El contrato congelado con Historial vive en
+ * {@link NarrativeCryptoController}.
  */
+@Validated
 @RestController
 @RequestMapping("/internal/v1/crypto")
 public class EncryptionKeyController {
@@ -25,94 +29,72 @@ public class EncryptionKeyController {
         this.service = service;
     }
 
-    /**
-     * Cifra texto plano.
-     * Body: { "organizationId": "hex-uuid|null", "purpose": "MEDICAL_RECORD",
-     *         "plaintext": "...", "requestingService": "ms-historial",
-     *         "correlationId": "uuid" }
-     * Respuesta: { "ciphertext": "base64..." }
-     */
     @PostMapping("/encrypt")
-    public ResponseEntity<Map<String, String>> encrypt(
-            @RequestBody EncryptRequest req) {
-
+    public ResponseEntity<Map<String, String>> encrypt(@Valid @RequestBody EncryptRequest req) {
         String ciphertext = service.encrypt(
-                parseOrgId(req.organizationId()),
-                EncryptionKey.Purpose.valueOf(req.purpose()),
+                UuidBinary.toBytes(UuidBinary.parseFlexible(req.organizationId())),
+                parsePurpose(req.purpose()),
                 req.plaintext(),
                 req.requestingService(),
-                UUID.fromString(req.correlationId())
+                parseUuid(req.correlationId())
         );
         return ResponseEntity.ok(Map.of("ciphertext", ciphertext));
     }
 
-    /**
-     * Descifra texto cifrado.
-     * Body: { "organizationId": "hex-uuid|null", "purpose": "MEDICAL_RECORD",
-     *         "ciphertext": "base64...", "requestingService": "ms-historial",
-     *         "correlationId": "uuid" }
-     * Respuesta: { "plaintext": "..." }
-     */
     @PostMapping("/decrypt")
-    public ResponseEntity<Map<String, String>> decrypt(
-            @RequestBody DecryptRequest req) {
-
+    public ResponseEntity<Map<String, String>> decrypt(@Valid @RequestBody DecryptRequest req) {
         String plaintext = service.decrypt(
-                parseOrgId(req.organizationId()),
-                EncryptionKey.Purpose.valueOf(req.purpose()),
+                UuidBinary.toBytes(UuidBinary.parseFlexible(req.organizationId())),
+                parsePurpose(req.purpose()),
                 req.ciphertext(),
                 req.requestingService(),
-                UUID.fromString(req.correlationId())
+                parseUuid(req.correlationId())
         );
         return ResponseEntity.ok(Map.of("plaintext", plaintext));
     }
 
-    /**
-     * Metadatos de la clave activa (SIN material de clave).
-     * GET /internal/v1/crypto/keys/active?purpose=MEDICAL_RECORD&organizationId=hex
-     */
     @GetMapping("/keys/active")
     public ResponseEntity<EncryptionKeyDto> findActiveKey(
             @RequestParam String purpose,
             @RequestParam(required = false) String organizationId) {
-
-        EncryptionKeyDto dto = service.findActiveKey(
-                parseOrgId(organizationId),
-                EncryptionKey.Purpose.valueOf(purpose)
-        );
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(service.findActiveKey(
+                UuidBinary.toBytes(UuidBinary.parseFlexible(organizationId)),
+                parsePurpose(purpose)));
     }
-
-    // ---------------------------------------------------------------
-    // Request records
-    // ---------------------------------------------------------------
 
     public record EncryptRequest(
             String organizationId,
-            String purpose,
-            String plaintext,
-            String requestingService,
-            String correlationId
-    ) {}
+            @NotBlank String purpose,
+            @NotBlank String plaintext,
+            @NotBlank String requestingService,
+            @NotBlank String correlationId
+    ) {
+    }
 
     public record DecryptRequest(
             String organizationId,
-            String purpose,
-            String ciphertext,
-            String requestingService,
-            String correlationId
-    ) {}
+            @NotBlank String purpose,
+            @NotBlank String ciphertext,
+            @NotBlank String requestingService,
+            @NotBlank String correlationId
+    ) {
+    }
 
-    // ---------------------------------------------------------------
-    // Utilidades privadas
-    // ---------------------------------------------------------------
-
-    private static byte[] parseOrgId(String hexOrNull) {
-        if (hexOrNull == null || hexOrNull.isBlank()
-                || "null".equalsIgnoreCase(hexOrNull)) {
-            return null;
+    private static EncryptionKey.Purpose parsePurpose(String purpose) {
+        try {
+            return EncryptionKey.Purpose.valueOf(purpose);
+        } catch (RuntimeException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "VALIDATION_ERROR");
         }
-        String clean = hexOrNull.replace("-", "");
-        return HexFormat.of().parseHex(clean);
+    }
+
+    private static UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (RuntimeException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "VALIDATION_ERROR");
+        }
     }
 }

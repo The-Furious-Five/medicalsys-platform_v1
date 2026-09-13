@@ -1,8 +1,26 @@
 name: medicalsys
 
+# Sonda comun de los servicios Java. depends_on por si solo espera a que el contenedor
+# arranque, no a que la aplicacion este lista: sin esto, ms-marketing consultaba a
+# ms-pacientes mientras Spring todavia levantaba y se caia en el arranque.
+x-service-healthcheck: &medicalsys-healthcheck
+  test: ["CMD-SHELL", "curl --fail --silent http://localhost:$${SERVER_PORT}/actuator/health || exit 1"]
+  interval: 10s
+  timeout: 5s
+  retries: 30
+  start_period: 40s
+
+x-logging: &medicalsys-logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mysql:
     image: mysql:8.4
+    command:
+      - --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       IDENTIDAD_DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD}
@@ -14,6 +32,8 @@ services:
       HISTORIAL_DB_PASSWORD: ${HISTORIAL_DB_PASSWORD}
       DOCUMENTAL_DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD}
       FACTURACION_DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
+      MARKETING_DB_PASSWORD: ${MARKETING_DB_PASSWORD}
+      AUDITORIA_DB_PASSWORD: ${AUDITORIA_DB_PASSWORD}
     ports:
       - "${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
@@ -27,6 +47,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 20s
+    logging: *medicalsys-logging
 
   postgres:
     image: postgres:17-alpine
@@ -46,6 +67,7 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    logging: *medicalsys-logging
 
   redis:
     image: redis:7.4-alpine
@@ -60,9 +82,10 @@ services:
       timeout: 3s
       retries: 20
       start_period: 5s
+    logging: *medicalsys-logging
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -80,13 +103,14 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    logging: *medicalsys-logging
 
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents-local}
     depends_on:
       minio:
         condition: service_healthy
@@ -97,6 +121,7 @@ services:
         mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
         mc mb --ignore-existing "local/$${MINIO_BUCKET}"
     restart: "no"
+    logging: *medicalsys-logging
 
   ms-identidad:
     build:
@@ -118,6 +143,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-tenencia:
     build:
@@ -134,6 +161,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-catalogos:
     build:
@@ -150,6 +179,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-criptografia:
     build:
@@ -167,6 +198,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-pacientes:
     build:
@@ -178,11 +211,20 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/patients_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: patients_user
       DB_PASSWORD: ${PACIENTES_DB_PASSWORD}
+      FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
     ports:
       - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:
       mysql:
         condition: service_healthy
+      # El envio a la bitacora es tolerante a fallos por diseno -no tumba el alta de un
+      # paciente-, pero sin esta espera los eventos de la siembra se perderian por
+      # llegar antes de que ms-auditoria acepte conexiones.
+      ms-auditoria:
+        condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-profesionales:
     build:
@@ -194,11 +236,14 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/professionals_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: professionals_user
       DB_PASSWORD: ${PROFESIONALES_DB_PASSWORD}
+      FLYWAY_LOCATIONS: ${PROFESIONALES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
     ports:
       - "${PROFESSIONALS_HOST_PORT:-8086}:8086"
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-agenda:
     build:
@@ -210,11 +255,23 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/scheduling_db
       DB_USER: scheduling_user
       DB_PASSWORD: ${AGENDA_DB_PASSWORD}
+      FLYWAY_LOCATIONS: ${AGENDA_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
+      # Con la validacion apagada la agenda aceptaba citas contra pacientes y profesionales
+      # que no existen. Ya corregida la ruta del contrato con ms-pacientes, se activa.
+      SCHEDULING_VALIDATION_ENABLED: ${SCHEDULING_VALIDATION_ENABLED:-true}
+      PATIENTS_BASE_URL: http://ms-pacientes:8085
+      PROFESSIONALS_BASE_URL: http://ms-profesionales:8086
     ports:
       - "${SCHEDULING_HOST_PORT:-8087}:8087"
     depends_on:
+      ms-pacientes:
+        condition: service_healthy
+      ms-profesionales:
+        condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-historial:
     build:
@@ -226,11 +283,24 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/medical_records_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: medical_records_user
       DB_PASSWORD: ${HISTORIAL_DB_PASSWORD}
+      FLYWAY_LOCATIONS: ${HISTORIAL_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
+      # El modo LOCAL solo aceptaba cuatro codigos CIE-10 fijos en application.yaml, asi que
+      # cualquier diagnostico elegido en la interfaz desde el catalogo real de ms-catalogos se
+      # rechazaba con 422. REMOTE valida contra ms-catalogos, que es la unica fuente del
+      # catalogo vigente.
+      CATALOGS_VALIDATION_MODE: ${HISTORIAL_CATALOGS_MODE:-REMOTE}
+      CATALOGS_BASE_URL: http://ms-catalogos:8083
+      DEMO_MASTER_KEY: ${DEMO_MASTER_KEY}
+      MEDICAL_RECORDS_DEMO_SEED: ${MEDICAL_RECORDS_DEMO_SEED:-true}
     ports:
       - "${MEDICAL_RECORDS_HOST_PORT:-8088}:8088"
     depends_on:
+      ms-catalogos:
+        condition: service_healthy
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-documental:
     build:
@@ -245,7 +315,8 @@ services:
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents}
+      MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents-local}
+      DOCUMENT_MAX_SIZE_BYTES: ${DOCUMENT_MAX_SIZE_BYTES:-104857600}
     ports:
       - "${DOCUMENTS_HOST_PORT:-8089}:8089"
     depends_on:
@@ -253,6 +324,8 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-facturacion:
     build:
@@ -264,11 +337,75 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/billing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: billing_user
       DB_PASSWORD: ${FACTURACION_DB_PASSWORD}
+      # Modos remotos: el cliente de la factura sale de ms-pacientes y el precio de la
+      # prestacion de ms-tenencia. En LOCAL, facturacion derivaba un cliente ficticio del UUID
+      # y solo conocia dos prestaciones, de modo que cobrar cualquier otra era imposible.
+      PATIENTS_MODE: ${BILLING_PATIENTS_MODE:-REMOTE}
+      PATIENTS_BASE_URL: http://ms-pacientes:8085
+      TENANCY_MODE: ${BILLING_TENANCY_MODE:-REMOTE}
+      TENANCY_BASE_URL: http://ms-tenencia:8082
+      BILLING_DEMO_NIT: ${BILLING_DEMO_NIT:-1023847026}
+      BILLING_DEMO_LEGAL_NAME: ${BILLING_DEMO_LEGAL_NAME:-POLICLINICO SAN GABRIEL S.R.L.}
     ports:
       - "${BILLING_HOST_PORT:-8090}:8090"
     depends_on:
+      ms-pacientes:
+        condition: service_healthy
+      ms-tenencia:
+        condition: service_healthy
       mysql:
         condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
+
+  ms-marketing:
+    build:
+      context: ./services/ms-marketing
+      dockerfile: Dockerfile
+    image: medicalsys/ms-marketing:local
+    environment:
+      SERVER_PORT: "8092"
+      DB_URL: jdbc:mysql://mysql:3306/marketing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: marketing_user
+      DB_PASSWORD: ${MARKETING_DB_PASSWORD}
+      # Modos remotos: marketing consulta la demografia real de ms-pacientes y las
+      # prestaciones reales de ms-tenencia en vez de derivarlas del UUID.
+      PATIENTS_MODE: ${MARKETING_PATIENTS_MODE:-REMOTE}
+      PATIENTS_BASE_URL: http://ms-pacientes:8085
+      TENANCY_MODE: ${MARKETING_TENANCY_MODE:-REMOTE}
+      TENANCY_BASE_URL: http://ms-tenencia:8082
+      MARKETING_DEMO_SEED: ${MARKETING_DEMO_SEED:-true}
+      MARKETING_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
+    ports:
+      - "${MARKETING_HOST_PORT:-8092}:8092"
+    depends_on:
+      ms-pacientes:
+        condition: service_healthy
+      ms-tenencia:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
+
+  ms-auditoria:
+    build:
+      context: ./services/ms-auditoria
+      dockerfile: Dockerfile
+    image: medicalsys/ms-auditoria:local
+    environment:
+      SERVER_PORT: "8091"
+      DB_URL: jdbc:mysql://mysql:3306/audit_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: audit_user
+      DB_PASSWORD: ${AUDITORIA_DB_PASSWORD}
+      AUDIT_DEMO_SEED: ${AUDITORIA_DEMO_SEED:-false}
+    ports:
+      - "${AUDIT_HOST_PORT:-8091}:8091"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
   ms-gateway:
     build:
@@ -287,9 +424,36 @@ services:
       MEDICAL_RECORDS_SERVICE_URL: http://ms-historial:8088
       DOCUMENTS_SERVICE_URL: http://ms-documental:8089
       BILLING_SERVICE_URL: http://ms-facturacion:8090
+      MARKETING_SERVICE_URL: http://ms-marketing:8092
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
+    # El gateway solo enruta, pero arrancar antes que sus destinos hace que las primeras
+    # peticiones del frontend devuelvan 503 sin motivo aparente.
+    depends_on:
+      ms-identidad:
+        condition: service_healthy
+      ms-tenencia:
+        condition: service_healthy
+      ms-catalogos:
+        condition: service_healthy
+      ms-pacientes:
+        condition: service_healthy
+      ms-profesionales:
+        condition: service_healthy
+      ms-agenda:
+        condition: service_healthy
+      ms-historial:
+        condition: service_healthy
+      ms-facturacion:
+        condition: service_healthy
+      ms-marketing:
+        condition: service_healthy
+      ms-auditoria:
+        condition: service_healthy
+    healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
 
 volumes:
   mysql_data:

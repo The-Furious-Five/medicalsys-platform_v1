@@ -1,0 +1,11 @@
+# Perfil para ejecutar el servicio fuera de Docker (./mvnw spring-boot:run -Dspring-boot.run.profiles=local).
+# No se usa dentro del contenedor: Compose inyecta las variables reales.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/medical_records_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:medical_records_user}
+    password: ${DB_PASSWORD}
+
+logging:
+  level:
+    com.medicalsys.historial: DEBUG

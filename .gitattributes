@@ -1,0 +1,5 @@
+# Los scripts de infra se ejecutan dentro de contenedores Linux: CRLF los rompe
+# (el kernel intenta ejecutar "/bin/bash" y falla con exit 126).
+*.sh text eol=lf
+*.sql text eol=lf
+mvnw text eol=lf
