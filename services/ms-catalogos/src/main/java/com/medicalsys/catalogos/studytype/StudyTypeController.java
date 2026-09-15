@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos.studytype;
 
+import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -7,8 +8,8 @@ import java.util.List;
 
 /**
  * Endpoints de tipos de estudio.
- * GET /api/v1/catalogs/study-types          → lista activos
- * GET /internal/v1/study-types/{code}       → uso interno (ms-historial)
+ * GET /api/v1/catalogs/study-types          → lista activos (RF-11.1: exige personal autenticado)
+ * GET /internal/v1/study-types/{code}       → uso interno (ms-historial), sin identidad de usuario
  */
 @RestController
 public class StudyTypeController {
@@ -21,6 +22,7 @@ public class StudyTypeController {
 
     @GetMapping("/api/v1/catalogs/study-types")
     public ResponseEntity<List<StudyTypeDto>> listActive() {
+        RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
     }
 

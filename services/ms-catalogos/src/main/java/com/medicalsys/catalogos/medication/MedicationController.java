@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos.medication;
 
+import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>La ruta interna en espanol es el contrato congelado con ms-historial.
  * La ruta inglesa queda como alias para no romper clientes existentes.
+ * Las rutas públicas exigen personal autenticado (RF-11.1); las internas no.
  */
 @RestController
 public class MedicationController {
@@ -23,11 +25,13 @@ public class MedicationController {
 
     @GetMapping("/api/v1/catalogs/medications")
     public ResponseEntity<List<MedicationDto>> listActive() {
+        RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
     }
 
     @GetMapping("/api/v1/catalogs/medications/{code}")
     public ResponseEntity<MedicationDto> findByCode(@PathVariable String code) {
+        RequestContextHolder.require();
         return ResponseEntity.ok(service.findByCode(code));
     }
 
