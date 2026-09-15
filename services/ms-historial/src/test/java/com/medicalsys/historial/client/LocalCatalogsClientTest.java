@@ -72,6 +72,8 @@ class LocalCatalogsClientTest {
                         Duration.ofSeconds(2), Duration.ofSeconds(3),
                         new HistorialProperties.Catalogs.Local(Set.of("J00", "M54.5", "R51"),
                                 Set.of("X_RAY", "LAB_HEMOGRAM"), Set.of("PARACETAMOL_500"))),
+                new HistorialProperties.Patients("http://ms-pacientes:8085", Duration.ofSeconds(2),
+                        Duration.ofSeconds(3)),
                 new HistorialProperties.Numbering("EXP", "REC", 5));
     }
 }

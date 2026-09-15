@@ -41,6 +41,13 @@ public class RestClientConfig {
         return build(builder, catalogs.baseUrl(), catalogs.connectTimeout(), catalogs.readTimeout());
     }
 
+    /** Cliente hacia ms-pacientes, para el permiso de lectura entre tenants. */
+    @Bean
+    RestClient patientsRestClient(RestClient.Builder builder, HistorialProperties properties) {
+        HistorialProperties.Patients patients = properties.patients();
+        return build(builder, patients.baseUrl(), patients.connectTimeout(), patients.readTimeout());
+    }
+
     private RestClient build(RestClient.Builder builder, String baseUrl, Duration connectTimeout,
             Duration readTimeout) {
         return builder.clone()

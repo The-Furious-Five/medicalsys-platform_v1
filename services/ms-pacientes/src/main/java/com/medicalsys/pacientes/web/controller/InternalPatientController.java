@@ -1,6 +1,7 @@
 package com.medicalsys.pacientes.web.controller;
 
 import com.medicalsys.pacientes.service.PatientService;
+import com.medicalsys.pacientes.web.dto.AccessGrantCheckResponse;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
 import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
 import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
@@ -52,6 +53,15 @@ public class InternalPatientController {
     @GetMapping("/{patientId}/fiscal")
     public FiscalCustomerResponse fiscalCustomer(@PathVariable UUID patientId) {
         return patients.getFiscalCustomer(patientId);
+    }
+
+    /**
+     * Consumido por ms-historial antes de dejar leer, entre tenants, el expediente de un paciente
+     * que no registro esa organizacion.
+     */
+    @GetMapping("/{patientId}/access-grants/{organizationId}")
+    public AccessGrantCheckResponse accessGrant(@PathVariable UUID patientId, @PathVariable UUID organizationId) {
+        return new AccessGrantCheckResponse(patients.hasAccessGrant(patientId, organizationId));
     }
 
     /**

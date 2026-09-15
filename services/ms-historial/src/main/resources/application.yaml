@@ -107,6 +107,12 @@ medicalsys:
       icd10-codes: ${CATALOGS_ICD10_CODES:J00,M54.5,R51,S52.50}
       study-type-codes: ${CATALOGS_STUDY_TYPE_CODES:X_RAY,LAB_HEMOGRAM}
       medication-codes: ${CATALOGS_MEDICATION_CODES:PARACETAMOL_500,IBUPROFENO_400}
+  patients:
+    # Consultado antes de dejar leer, entre tenants, el expediente de un paciente que no registro
+    # esta organizacion (ver PatientAccessClient / patient_access_grant en ms-pacientes).
+    base-url: ${PATIENTS_SERVICE_URL:http://ms-pacientes:8085}
+    connect-timeout: 2s
+    read-timeout: 3s
   demo:
     # Siembra cinco expedientes con narrativa cifrada por el propio NarrativeCipher.
     # Se desactiva fuera del entorno local.

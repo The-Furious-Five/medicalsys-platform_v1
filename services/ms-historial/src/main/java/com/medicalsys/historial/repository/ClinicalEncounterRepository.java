@@ -16,6 +16,9 @@ public interface ClinicalEncounterRepository extends JpaRepository<ClinicalEncou
 
     Optional<ClinicalEncounter> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
 
+    /** Sin filtro de organizacion: solo el fallback de lectura cruzada entre tenants. */
+    Optional<ClinicalEncounter> findByPublicId(UUID publicId);
+
     Optional<ClinicalEncounter> findByOrganizationPublicIdAndAppointmentPublicId(UUID organizationPublicId,
             UUID appointmentPublicId);
 

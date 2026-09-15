@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
  *
  * @param crypto    integracion con ms-criptografia
  * @param catalogs  integracion con ms-catalogos
+ * @param patients  integracion con ms-pacientes, para el permiso de lectura entre tenants
  * @param numbering correlativos legibles por tenant
  */
 @Validated
@@ -25,6 +26,7 @@ import org.springframework.validation.annotation.Validated;
 public record HistorialProperties(
         @Valid @NotNull Crypto crypto,
         @Valid @NotNull Catalogs catalogs,
+        @Valid @NotNull Patients patients,
         @Valid @NotNull Numbering numbering) {
 
     /** Estrategia de cifrado de la narrativa clinica. */
@@ -91,6 +93,17 @@ public record HistorialProperties(
                 @DefaultValue({"X_RAY", "LAB_HEMOGRAM"}) @NotEmpty Set<String> studyTypeCodes,
                 @DefaultValue({"PARACETAMOL_500", "IBUPROFENO_400"}) @NotEmpty Set<String> medicationCodes) {
         }
+    }
+
+    /**
+     * @param baseUrl        direccion interna de ms-pacientes
+     * @param connectTimeout timeout de conexion
+     * @param readTimeout    timeout de lectura
+     */
+    public record Patients(
+            @NotBlank String baseUrl,
+            @DefaultValue("2s") @NotNull Duration connectTimeout,
+            @DefaultValue("3s") @NotNull Duration readTimeout) {
     }
 
     /**

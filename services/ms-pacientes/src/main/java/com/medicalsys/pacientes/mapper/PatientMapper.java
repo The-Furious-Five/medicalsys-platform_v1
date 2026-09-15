@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PatientMapper {
 
+    /** Respuesta completa; solo para el tenant dueño o con permiso autorizado por el paciente. */
     public PatientResponse toResponse(Patient patient) {
         return new PatientResponse(
                 patient.getPublicId(),
@@ -50,7 +51,48 @@ public class PatientMapper {
                 patient.getStatus(),
                 patient.getDeathDate(),
                 DateTimes.toOffset(patient.getCreatedAt()),
-                DateTimes.toOffset(patient.getUpdatedAt()));
+                DateTimes.toOffset(patient.getUpdatedAt()),
+                true);
+    }
+
+    /**
+     * Confirma que el paciente existe (para que recepcion pueda ofrecer "solicitar acceso") sin
+     * exponer nada del resto de su ficha a un tenant que todavia no tiene permiso.
+     */
+    public PatientResponse toRestrictedResponse(Patient patient) {
+        return new PatientResponse(
+                patient.getPublicId(),      // patientId
+                null,                       // userAccountId
+                null,                       // documentType
+                null,                       // documentNumber
+                null,                       // documentComplement
+                null,                       // issuedDepartment
+                patient.getGivenNames(),    // givenNames
+                patient.getPaternalSurname(), // paternalSurname
+                patient.getMaternalSurname(), // maternalSurname
+                patient.getFullName(),      // fullName
+                null,                       // birthDate
+                null,                       // sex
+                null,                       // maritalStatus
+                null,                       // bloodType
+                null,                       // occupation
+                null,                       // phoneE164
+                null,                       // alternatePhone
+                null,                       // email
+                null,                       // encryptedAddressBase64
+                null,                       // city
+                null,                       // department
+                null,                       // emergencyContactName
+                null,                       // emergencyContactPhone
+                null,                       // emergencyContactRelationship
+                null,                       // guardianPatientId
+                null,                       // encryptionKeyId
+                null,                       // dataConsentAt
+                patient.getStatus(),        // status
+                null,                       // deathDate
+                null,                       // createdAt
+                null,                       // updatedAt
+                false);                     // fullAccessGranted
     }
 
     public SchedulingPatientSummary toSchedulingSummary(Patient patient) {

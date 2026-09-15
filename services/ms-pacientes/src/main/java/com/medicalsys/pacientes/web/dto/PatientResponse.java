@@ -42,5 +42,6 @@ public record PatientResponse(
         PatientStatus status,
         LocalDate deathDate,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        boolean fullAccessGranted) {
 }

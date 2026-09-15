@@ -77,6 +77,8 @@ class LocalNarrativeCipherTest {
                         Duration.ofSeconds(2), Duration.ofSeconds(3),
                         new HistorialProperties.Catalogs.Local(Set.of("J00"), Set.of("X_RAY"),
                                 Set.of("PARACETAMOL_500"))),
+                new HistorialProperties.Patients("http://ms-pacientes:8085", Duration.ofSeconds(2),
+                        Duration.ofSeconds(3)),
                 new HistorialProperties.Numbering("EXP", "REC", 5));
     }
 }

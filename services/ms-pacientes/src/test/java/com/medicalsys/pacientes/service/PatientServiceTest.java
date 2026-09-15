@@ -42,12 +42,14 @@ class PatientServiceTest {
     private AuditTrail auditTrail;
     @Mock
     private PatientEventPublisher events;
+    @Mock
+    private PatientAccessService access;
 
     private PatientService service;
 
     @BeforeEach
     void setUp() {
-        service = new PatientService(repository, new PatientMapper(), auditTrail, events);
+        service = new PatientService(repository, new PatientMapper(), auditTrail, events, access);
     }
 
     @Test

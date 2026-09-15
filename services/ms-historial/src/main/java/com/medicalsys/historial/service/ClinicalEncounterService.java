@@ -2,6 +2,7 @@ package com.medicalsys.historial.service;
 
 import com.medicalsys.historial.client.NarrativeCipher;
 import com.medicalsys.historial.client.NarrativeCipher.CipherSession;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.common.DateTimes;
 import com.medicalsys.historial.common.error.BusinessRuleException;
 import com.medicalsys.historial.common.error.ConflictException;
@@ -62,11 +63,12 @@ public class ClinicalEncounterService {
     private final NarrativeCipher cipher;
     private final ContentHasher contentHasher;
     private final ClinicalEncounterMapper mapper;
+    private final PatientAccessClient patientAccess;
 
     public ClinicalEncounterService(ClinicalEncounterRepository repository,
             EncounterAddendumRepository addendumRepository, DiagnosisRepository diagnosisRepository,
             MedicalRecordService medicalRecords, NarrativeCipher cipher, ContentHasher contentHasher,
-            ClinicalEncounterMapper mapper) {
+            ClinicalEncounterMapper mapper, PatientAccessClient patientAccess) {
         this.repository = repository;
         this.addendumRepository = addendumRepository;
         this.diagnosisRepository = diagnosisRepository;
@@ -74,6 +76,7 @@ public class ClinicalEncounterService {
         this.cipher = cipher;
         this.contentHasher = contentHasher;
         this.mapper = mapper;
+        this.patientAccess = patientAccess;
     }
 
     /**
@@ -179,16 +182,20 @@ public class ClinicalEncounterService {
                 .toList();
     }
 
-    /** Devuelve el encuentro por su UUID publico dentro del tenant. */
+    /**
+     * Devuelve el encuentro por su UUID publico: dentro del tenant, o de otro si el paciente
+     * autorizo a esta organizacion a leer su expediente (ver {@link PatientAccessClient}). Nunca se
+     * usa para mutar: las escrituras siguen pasando por {@link #requireByPublicId}.
+     */
     @Transactional(readOnly = true)
     public ClinicalEncounterResponse get(RequestContext context, UUID publicId) {
-        return toResponse(context, requireByPublicId(context, publicId));
+        return toResponse(context, requireReadableByPublicId(context, publicId));
     }
 
-    /** Proyeccion minima para otros microservicios. */
+    /** Proyeccion minima para otros microservicios; misma regla de lectura cruzada que arriba. */
     @Transactional(readOnly = true)
     public EncounterSummaryResponse getSummary(RequestContext context, UUID publicId) {
-        return mapper.toSummary(requireByPublicId(context, publicId));
+        return mapper.toSummary(requireReadableByPublicId(context, publicId));
     }
 
     /** Proyeccion minima del encuentro asociado a una cita; la consume ms-agenda. */
@@ -241,9 +248,19 @@ public class ClinicalEncounterService {
         return encounter;
     }
 
-    /** Recupera la entidad dentro del tenant; la usan los demas servicios del agregado. */
+    /** Recupera la entidad dentro del tenant; la usan los demas servicios del agregado y toda mutacion. */
     ClinicalEncounter requireByPublicId(RequestContext context, UUID publicId) {
         return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.CLINICAL_ENCOUNTER_NOT_FOUND,
+                        "El encuentro solicitado no existe o no pertenece a esta organizacion"));
+    }
+
+    /** Igual que {@link #requireByPublicId}, con el mismo fallback de permiso que en ms-pacientes. */
+    private ClinicalEncounter requireReadableByPublicId(RequestContext context, UUID publicId) {
+        return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .or(() -> repository.findByPublicId(publicId)
+                        .filter(encounter -> patientAccess.hasAccess(
+                                encounter.getMedicalRecord().getPatientPublicId(), context.organizationId())))
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CLINICAL_ENCOUNTER_NOT_FOUND,
                         "El encuentro solicitado no existe o no pertenece a esta organizacion"));
     }

@@ -13,6 +13,9 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
 
     Optional<Prescription> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
 
+    /** Sin filtro de organizacion: solo el fallback de lectura cruzada entre tenants. */
+    Optional<Prescription> findByPublicId(UUID publicId);
+
     List<Prescription> findByClinicalEncounterIdOrderByIssuedAtDesc(Long clinicalEncounterId);
 
     /** Mayor folio emitido por la organizacion; el relleno con ceros hace valido el maximo lexicografico. */

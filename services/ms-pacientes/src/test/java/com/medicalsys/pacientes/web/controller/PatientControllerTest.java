@@ -151,7 +151,7 @@ class PatientControllerTest {
                 "Arquitecta", "+59170000001", "+59170000002",
                 "paciente.demo@example.invalid", "AQIDBA==", "Cochabamba", Department.COCHABAMBA,
                 "Persona Ficticia", "+59170000003", "Madre", null, null, null,
-                PatientStatus.ACTIVE, null, now, now);
+                PatientStatus.ACTIVE, null, now, now, true);
     }
 
     private String validRequest(String complement) {

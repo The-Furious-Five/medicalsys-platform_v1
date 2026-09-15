@@ -44,13 +44,15 @@ public class PatientService {
     private final PatientMapper mapper;
     private final AuditTrail auditTrail;
     private final PatientEventPublisher events;
+    private final PatientAccessService access;
 
     public PatientService(PatientRepository patients, PatientMapper mapper, AuditTrail auditTrail,
-            PatientEventPublisher events) {
+            PatientEventPublisher events, PatientAccessService access) {
         this.patients = patients;
         this.mapper = mapper;
         this.auditTrail = auditTrail;
         this.events = events;
+        this.access = access;
     }
 
     /** La garantía final de unicidad vive también en MySQL para cubrir solicitudes concurrentes. */
@@ -63,6 +65,7 @@ public class PatientService {
 
         Patient patient = Patient.register(request.documentType(), documentNumber, complement);
         applyCreateData(patient, request);
+        patient.assignRegisteringOrganization(currentOrganizationId());
 
         try {
             patients.saveAndFlush(patient);
@@ -82,7 +85,7 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public PatientResponse get(UUID patientId) {
-        return mapper.toResponse(requireEntity(patientId));
+        return respond(requireEntity(patientId));
     }
 
     @Transactional(readOnly = true)
@@ -92,13 +95,23 @@ public class PatientService {
         Patient patient = patients.findByDocumentTypeAndDocumentNumberAndDocumentComplement(
                         documentType, normalizedNumber, normalizedComplement)
                 .orElseThrow(() -> notFound("No existe un paciente con el documento indicado"));
-        return mapper.toResponse(patient);
+        return respond(patient);
     }
 
     @Transactional(readOnly = true)
     public Page<PatientResponse> search(String term, Pageable pageable) {
         String normalized = term == null ? null : term.trim();
-        return patients.search(normalized, pageable).map(mapper::toResponse);
+        return patients.search(normalized, pageable).map(this::respond);
+    }
+
+    /**
+     * Ficha completa si quien pide es el tenant que registro al paciente o tiene un permiso
+     * autorizado por el; en caso contrario, solo lo minimo para confirmar que existe (para que
+     * recepcion pueda ofrecer "solicitar acceso" en vez de ver todo sin mas).
+     */
+    private PatientResponse respond(Patient patient) {
+        boolean granted = access.hasAuthorizedAccess(patient, currentOrganizationId());
+        return granted ? mapper.toResponse(patient) : mapper.toRestrictedResponse(patient);
     }
 
     @Transactional
@@ -204,6 +217,12 @@ public class PatientService {
                 patient.getCity(),
                 patient.getPhoneE164(),
                 patient.getStatus());
+    }
+
+    /** Consultado por ms-historial antes de dejar leer un expediente entre tenants. */
+    @Transactional(readOnly = true)
+    public boolean hasAccessGrant(UUID patientId, UUID organizationId) {
+        return access.hasAuthorizedAccess(requireEntity(patientId), organizationId);
     }
 
     @Transactional(readOnly = true)

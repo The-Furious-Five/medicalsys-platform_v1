@@ -42,6 +42,10 @@ medicalsys:
       icd10-codes: J00,M54.5,R51,S52.50
       study-type-codes: X_RAY,LAB_HEMOGRAM
       medication-codes: PARACETAMOL_500,IBUPROFENO_400
+  patients:
+    base-url: http://ms-pacientes:8085
+    connect-timeout: 2s
+    read-timeout: 3s
   numbering:
     record-number-prefix: EXP
     prescription-folio-prefix: REC

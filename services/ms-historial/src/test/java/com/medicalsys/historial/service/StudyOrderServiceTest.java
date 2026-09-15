@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.medicalsys.historial.client.CatalogsClient;
 import com.medicalsys.historial.client.NarrativeCipher;
 import com.medicalsys.historial.client.NarrativeCipher.CipherSession;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.common.error.BusinessRuleException;
 import com.medicalsys.historial.common.error.ConflictException;
 import com.medicalsys.historial.common.error.ErrorCode;
@@ -66,6 +67,9 @@ class StudyOrderServiceTest {
     @Mock
     private CipherSession cipherSession;
 
+    @Mock
+    private PatientAccessClient patientAccess;
+
     private StudyOrderService service;
     private MedicalRecord record;
     private ClinicalEncounter encounter;
@@ -73,7 +77,7 @@ class StudyOrderServiceTest {
     @BeforeEach
     void setUp() {
         service = new StudyOrderService(repository, resultRepository, encounters, catalogs, cipher,
-                TestMappers.studyOrder(cipher));
+                TestMappers.studyOrder(cipher), patientAccess);
         record = TestFixtures.medicalRecord();
         encounter = TestFixtures.draftEncounter(record);
     }

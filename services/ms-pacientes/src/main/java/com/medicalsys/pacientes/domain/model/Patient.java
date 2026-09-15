@@ -52,6 +52,15 @@ public class Patient {
     @Column(name = "user_account_public_id", columnDefinition = "BINARY(16)")
     private UUID userAccountPublicId;
 
+    /**
+     * Organizacion que registro al paciente por primera vez; esa organizacion siempre ve su ficha
+     * completa. Cualquier otra necesita un {@link PatientAccessGrant} autorizado por el paciente.
+     * Nulo en filas creadas antes de este campo: se tratan como sin dueno, sin restriccion (para no
+     * romper datos de demo ya sembrados).
+     */
+    @Column(name = "registered_by_organization_public_id", updatable = false, columnDefinition = "BINARY(16)")
+    private UUID registeredByOrganizationPublicId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "document_type", nullable = false, updatable = false, length = 30)
     private DocumentType documentType;
@@ -203,6 +212,13 @@ public class Patient {
         this.userAccountPublicId = userAccountPublicId;
     }
 
+    /** Se fija una sola vez, al registrar; llamar de nuevo despues no tiene efecto. */
+    public void assignRegisteringOrganization(UUID organizationPublicId) {
+        if (this.registeredByOrganizationPublicId == null) {
+            this.registeredByOrganizationPublicId = organizationPublicId;
+        }
+    }
+
     public void assignGuardian(Patient guardianPatient) {
         if (guardianPatient != null && Objects.equals(publicId, guardianPatient.publicId)) {
             throw new IllegalArgumentException("Un paciente no puede ser su propio tutor");
@@ -273,6 +289,7 @@ public class Patient {
     public Long getId() { return id; }
     public UUID getPublicId() { return publicId; }
     public UUID getUserAccountPublicId() { return userAccountPublicId; }
+    public UUID getRegisteredByOrganizationPublicId() { return registeredByOrganizationPublicId; }
     public DocumentType getDocumentType() { return documentType; }
     public String getDocumentNumber() { return documentNumber; }
     public String getDocumentComplement() { return documentComplement; }

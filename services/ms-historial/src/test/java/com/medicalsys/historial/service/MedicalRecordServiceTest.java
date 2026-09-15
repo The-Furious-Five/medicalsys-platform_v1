@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.medicalsys.historial.client.NarrativeCipher;
 import com.medicalsys.historial.client.NarrativeCipher.CipherSession;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.config.HistorialProperties;
 import com.medicalsys.historial.config.HistorialProperties.CatalogValidationMode;
 import com.medicalsys.historial.config.HistorialProperties.CryptoMode;
@@ -45,12 +46,15 @@ class MedicalRecordServiceTest {
     @Mock
     private CipherSession cipherSession;
 
+    @Mock
+    private PatientAccessClient patientAccess;
+
     private MedicalRecordService service;
 
     @BeforeEach
     void setUp() {
         service = new MedicalRecordService(repository, new SequenceNumberGenerator(), cipher, properties(),
-                TestMappers.medicalRecord(cipher));
+                TestMappers.medicalRecord(cipher), patientAccess);
     }
 
     @Test
@@ -97,6 +101,8 @@ class MedicalRecordServiceTest {
                         Duration.ofSeconds(2), Duration.ofSeconds(3),
                         new HistorialProperties.Catalogs.Local(Set.of("J00"), Set.of("X_RAY"),
                                 Set.of("PARACETAMOL_500"))),
+                new HistorialProperties.Patients("http://ms-pacientes:8085", Duration.ofSeconds(2),
+                        Duration.ofSeconds(3)),
                 new HistorialProperties.Numbering("EXP", "REC", 5));
     }
 }

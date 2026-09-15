@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.medicalsys.historial.client.NarrativeCipher;
 import com.medicalsys.historial.client.NarrativeCipher.CipherSession;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.common.error.BusinessRuleException;
 import com.medicalsys.historial.common.error.ConflictException;
 import com.medicalsys.historial.common.error.ErrorCode;
@@ -63,6 +64,9 @@ class ClinicalEncounterServiceTest {
     @Mock
     private CipherSession cipherSession;
 
+    @Mock
+    private PatientAccessClient patientAccess;
+
     private ClinicalEncounterService service;
     private MedicalRecord record;
     private ClinicalEncounter encounter;
@@ -70,7 +74,7 @@ class ClinicalEncounterServiceTest {
     @BeforeEach
     void setUp() {
         service = new ClinicalEncounterService(repository, addendumRepository, diagnosisRepository,
-                medicalRecords, cipher, new ContentHasher(), TestMappers.clinicalEncounter(cipher));
+                medicalRecords, cipher, new ContentHasher(), TestMappers.clinicalEncounter(cipher), patientAccess);
         lenient().when(diagnosisRepository.findByClinicalEncounterIdOrderByPrimaryDescIdAsc(any()))
                 .thenReturn(List.of());
         record = TestFixtures.medicalRecord();

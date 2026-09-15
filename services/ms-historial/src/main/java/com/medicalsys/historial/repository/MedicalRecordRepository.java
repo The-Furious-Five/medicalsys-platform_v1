@@ -19,6 +19,13 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecord, Lo
 
     Optional<MedicalRecord> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
 
+    /**
+     * Sin filtro de organizacion: solo la usa el fallback de lectura cruzada entre tenants, despues
+     * de comprobar el permiso via {@code PatientAccessClient}. Nunca se expone directo a un
+     * controlador.
+     */
+    Optional<MedicalRecord> findByPublicId(UUID publicId);
+
     Optional<MedicalRecord> findByOrganizationPublicIdAndPatientPublicId(UUID organizationPublicId,
             UUID patientPublicId);
 

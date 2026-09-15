@@ -3,6 +3,7 @@ package com.medicalsys.historial.service;
 import com.medicalsys.historial.client.CatalogsClient;
 import com.medicalsys.historial.client.NarrativeCipher;
 import com.medicalsys.historial.client.NarrativeCipher.CipherSession;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.common.error.BusinessRuleException;
 import com.medicalsys.historial.common.error.ConflictException;
 import com.medicalsys.historial.common.error.ErrorCode;
@@ -39,10 +40,11 @@ public class PrescriptionService {
     private final SequenceNumberGenerator sequenceNumbers;
     private final HistorialProperties properties;
     private final PrescriptionMapper mapper;
+    private final PatientAccessClient patientAccess;
 
     public PrescriptionService(PrescriptionRepository repository, ClinicalEncounterService encounters,
             CatalogsClient catalogs, NarrativeCipher cipher, SequenceNumberGenerator sequenceNumbers,
-            HistorialProperties properties, PrescriptionMapper mapper) {
+            HistorialProperties properties, PrescriptionMapper mapper, PatientAccessClient patientAccess) {
         this.repository = repository;
         this.encounters = encounters;
         this.catalogs = catalogs;
@@ -50,6 +52,7 @@ public class PrescriptionService {
         this.sequenceNumbers = sequenceNumbers;
         this.properties = properties;
         this.mapper = mapper;
+        this.patientAccess = patientAccess;
     }
 
     /**
@@ -95,9 +98,10 @@ public class PrescriptionService {
                 "No fue posible asignar un folio de receta unico; reintente la operacion");
     }
 
+    /** Dentro del tenant, o de otro si el paciente autorizo el acceso (ver {@link PatientAccessClient}). */
     @Transactional(readOnly = true)
     public PrescriptionResponse get(RequestContext context, UUID publicId) {
-        return mapper.toResponse(context, requireByPublicId(context, publicId));
+        return mapper.toResponse(context, requireReadableByPublicId(context, publicId));
     }
 
     @Transactional(readOnly = true)
@@ -132,6 +136,16 @@ public class PrescriptionService {
 
     private Prescription requireByPublicId(RequestContext context, UUID publicId) {
         return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.PRESCRIPTION_NOT_FOUND,
+                        "La receta solicitada no existe o no pertenece a esta organizacion"));
+    }
+
+    private Prescription requireReadableByPublicId(RequestContext context, UUID publicId) {
+        return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .or(() -> repository.findByPublicId(publicId)
+                        .filter(prescription -> patientAccess.hasAccess(
+                                prescription.getClinicalEncounter().getMedicalRecord().getPatientPublicId(),
+                                context.organizationId())))
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PRESCRIPTION_NOT_FOUND,
                         "La receta solicitada no existe o no pertenece a esta organizacion"));
     }

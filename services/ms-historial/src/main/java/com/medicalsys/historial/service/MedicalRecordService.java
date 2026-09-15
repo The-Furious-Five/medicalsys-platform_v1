@@ -1,6 +1,7 @@
 package com.medicalsys.historial.service;
 
 import com.medicalsys.historial.client.NarrativeCipher;
+import com.medicalsys.historial.client.PatientAccessClient;
 import com.medicalsys.historial.common.error.BusinessRuleException;
 import com.medicalsys.historial.common.error.ConflictException;
 import com.medicalsys.historial.common.error.ErrorCode;
@@ -40,14 +41,17 @@ public class MedicalRecordService {
     private final NarrativeCipher cipher;
     private final HistorialProperties properties;
     private final MedicalRecordMapper mapper;
+    private final PatientAccessClient patientAccess;
 
     public MedicalRecordService(MedicalRecordRepository repository, SequenceNumberGenerator sequenceNumbers,
-            NarrativeCipher cipher, HistorialProperties properties, MedicalRecordMapper mapper) {
+            NarrativeCipher cipher, HistorialProperties properties, MedicalRecordMapper mapper,
+            PatientAccessClient patientAccess) {
         this.repository = repository;
         this.sequenceNumbers = sequenceNumbers;
         this.cipher = cipher;
         this.properties = properties;
         this.mapper = mapper;
+        this.patientAccess = patientAccess;
     }
 
     /**
@@ -112,16 +116,21 @@ public class MedicalRecordService {
                 "No fue posible asignar un numero de expediente unico; reintente la operacion");
     }
 
-    /** Devuelve el expediente por su UUID publico dentro del tenant. */
+    /**
+     * Devuelve el expediente por su UUID publico: primero dentro del tenant, y si no es suyo,
+     * solo si el paciente autorizo a esta organizacion a leerlo (ver {@link PatientAccessClient}).
+     * A diferencia de {@link #requireByPublicId}, que usan las mutaciones, esta lectura cruzada
+     * nunca se ofrece para escribir.
+     */
     @Transactional(readOnly = true)
     public MedicalRecordResponse getByPublicId(RequestContext context, UUID publicId) {
-        return mapper.toResponse(requireByPublicId(context, publicId));
+        return mapper.toResponse(requireReadableByPublicId(context, publicId));
     }
 
-    /** Proyeccion minima para otros microservicios. */
+    /** Proyeccion minima para otros microservicios; misma regla de lectura cruzada que arriba. */
     @Transactional(readOnly = true)
     public MedicalRecordSummaryResponse getSummaryByPublicId(RequestContext context, UUID publicId) {
-        return mapper.toSummary(requireByPublicId(context, publicId));
+        return mapper.toSummary(requireReadableByPublicId(context, publicId));
     }
 
     /** Devuelve el expediente de un paciente dentro del tenant. */
@@ -158,10 +167,27 @@ public class MedicalRecordService {
         return mapper.toResponse(record);
     }
 
-    /** Recupera la entidad dentro del tenant; la usan los demas servicios del agregado. */
+    /**
+     * Recupera la entidad dentro del tenant; la usan los demas servicios del agregado y toda
+     * mutacion (nunca se escribe un expediente de otro tenant, tenga o no permiso de lectura).
+     */
     @Transactional(readOnly = true)
     MedicalRecord requireByPublicId(RequestContext context, UUID publicId) {
         return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.MEDICAL_RECORD_NOT_FOUND,
+                        "El expediente solicitado no existe o no pertenece a esta organizacion"));
+    }
+
+    /**
+     * Igual que {@link #requireByPublicId}, pero si el expediente es de otra organizacion no
+     * devuelve 404 de inmediato: le pregunta a ms-pacientes si esta organizacion tiene un permiso
+     * autorizado por el paciente para leerlo. Sin permiso, el resultado es el mismo 404 de siempre
+     * — no revela que el expediente existe.
+     */
+    private MedicalRecord requireReadableByPublicId(RequestContext context, UUID publicId) {
+        return repository.findByOrganizationPublicIdAndPublicId(context.organizationId(), publicId)
+                .or(() -> repository.findByPublicId(publicId)
+                        .filter(record -> patientAccess.hasAccess(record.getPatientPublicId(), context.organizationId())))
                 .orElseThrow(() -> new NotFoundException(ErrorCode.MEDICAL_RECORD_NOT_FOUND,
                         "El expediente solicitado no existe o no pertenece a esta organizacion"));
     }

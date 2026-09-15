@@ -37,6 +37,9 @@ spring:
         write-dates-as-timestamps: false
 
 medicalsys:
+  notifications:
+    # Envia el codigo OTP de autorizacion de acceso cruzado entre tenants (ver PatientAccessService).
+    base-url: ${NOTIFICATIONS_SERVICE_URL:http://ms-notificaciones:8091}
   audit:
     # Raiz de ms-auditoria dentro de la red interna. Vacio desactiva el envio: asi un arranque
     # suelto o una prueba no fallan por no encontrar una bitacora que nadie levanto.

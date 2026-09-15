@@ -16,6 +16,9 @@ public interface StudyOrderRepository extends JpaRepository<StudyOrder, Long> {
 
     Optional<StudyOrder> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
 
+    /** Sin filtro de organizacion: solo el fallback de lectura cruzada entre tenants. */
+    Optional<StudyOrder> findByPublicId(UUID publicId);
+
     List<StudyOrder> findByClinicalEncounterIdOrderByRequestedAtDesc(Long clinicalEncounterId);
 
     /** Busqueda paginada por estado, tipo de estudio y paciente del expediente asociado. */
