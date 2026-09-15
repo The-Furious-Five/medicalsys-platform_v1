@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos.specialty;
 
+import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -7,7 +8,7 @@ import java.util.List;
 
 /**
  * Endpoints de especialidades.
- * Público:   GET /api/v1/catalogs/specialties
+ * Público:   GET /api/v1/catalogs/specialties (RF-11.1: exige personal autenticado)
  * Interno:   GET /internal/v1/specialties/{code}
  * Ping demo: GET /api/v1/catalogs/ping
  */
@@ -23,6 +24,7 @@ public class SpecialtyController {
     /** Lista todas las especialidades activas. */
     @GetMapping("/api/v1/catalogs/specialties")
     public ResponseEntity<List<SpecialtyDto>> listActive() {
+        RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
     }
 

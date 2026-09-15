@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
             "MEDICATION_NOT_FOUND", "El medicamento no existe en el vademecum vigente",
             "SPECIALTY_NOT_FOUND", "La especialidad no existe en el catalogo vigente",
             "VALIDATION_ERROR", "La solicitud no supera las validaciones",
-            "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido"
+            "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido",
+            "UNAUTHENTICATED", "La solicitud no incluye una identidad valida propagada por el gateway"
     );
 
     @ExceptionHandler(ResponseStatusException.class)
