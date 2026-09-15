@@ -80,6 +80,13 @@ info:
   database: tenancy_db
 
 medicalsys:
+  database:
+    keep-alive:
+      # Se activa unicamente en el despliegue que lo necesite. Un solo servicio
+      # consulta SELECT 1 para no multiplicar conexiones ni trafico.
+      enabled: ${DATABASE_KEEPALIVE_ENABLED:false}
+      interval: ${DATABASE_KEEPALIVE_INTERVAL:PT10M}
+      initial-delay: ${DATABASE_KEEPALIVE_INITIAL_DELAY:PT1M}
   tenancy:
     # Zona y moneda por defecto de una organizacion nueva, segun el diccionario.
     default-time-zone: ${TENANCY_DEFAULT_TIME_ZONE:America/La_Paz}
