@@ -42,6 +42,11 @@ medicalsys:
     secret-key: ${MINIO_SECRET_KEY:medicalsys-minio-local}
     bucket: ${MINIO_BUCKET:medicalsys-documents-local}
     max-size-bytes: ${DOCUMENT_MAX_SIZE_BYTES:104857600}
+  consent:
+    # El consentimiento firmado necesita el telefono del paciente (ms-pacientes) y el envio del
+    # codigo OTP por WhatsApp (ms-notificaciones, envio manual).
+    patients-base-url: ${PATIENTS_SERVICE_URL:http://ms-pacientes:8085}
+    notifications-base-url: ${NOTIFICATIONS_SERVICE_URL:http://ms-notificaciones:8091}
 
 management:
   endpoints:
