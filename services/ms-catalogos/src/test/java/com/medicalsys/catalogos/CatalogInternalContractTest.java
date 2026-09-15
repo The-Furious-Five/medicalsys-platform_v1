@@ -14,6 +14,8 @@ import com.medicalsys.catalogos.specialty.Specialty;
 import com.medicalsys.catalogos.specialty.SpecialtyRepository;
 import com.medicalsys.catalogos.studytype.StudyType;
 import com.medicalsys.catalogos.studytype.StudyTypeRepository;
+import com.medicalsys.catalogos.tax.TaxCatalog;
+import com.medicalsys.catalogos.tax.TaxCatalogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,12 +48,16 @@ class CatalogInternalContractTest {
     @Autowired
     private SpecialtyRepository specialtyRepository;
 
+    @Autowired
+    private TaxCatalogRepository taxCatalogRepository;
+
     @BeforeEach
     void seed() {
         icd10Repository.deleteAll();
         studyTypeRepository.deleteAll();
         medicationRepository.deleteAll();
         specialtyRepository.deleteAll();
+        taxCatalogRepository.deleteAll();
 
         icd10Repository.save(new Icd10Catalog("J00", "Rinofaringitis aguda", true));
         icd10Repository.save(new Icd10Catalog("ZZZ999", "Codigo inactivo", false));
@@ -65,6 +71,12 @@ class CatalogInternalContractTest {
         medicationRepository.save(new Medication("IBUPROFENO_400", "Ibuprofeno", true));
         medicationRepository.save(new Medication("RETIRADO_10", "Retirado", false));
         specialtyRepository.save(new Specialty("MEDICINA_GENERAL", "Medicina General"));
+        taxCatalogRepository.save(new TaxCatalog(
+                TaxCatalog.CatalogType.PRODUCT_SERVICE, "CONSULTA", "Consulta medica", true));
+        taxCatalogRepository.save(new TaxCatalog(
+                TaxCatalog.CatalogType.PRODUCT_SERVICE, "RETIRADO", "Producto retirado", false));
+        taxCatalogRepository.save(new TaxCatalog(
+                TaxCatalog.CatalogType.UNIT_OF_MEASURE, "58", "Unidad (servicio)", true));
     }
 
     @Test
@@ -129,6 +141,15 @@ class CatalogInternalContractTest {
         mockMvc.perform(get("/api/v1/catalogs/cie10").header("X-User-Id", AUTHENTICATED_USER).param("q", "J00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("J00"));
+        mockMvc.perform(get("/api/v1/catalogs/tax").header("X-User-Id", AUTHENTICATED_USER)
+                        .param("type", "PRODUCT_SERVICE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].code").value("CONSULTA"));
+        mockMvc.perform(get("/api/v1/catalogs/tax").header("X-User-Id", AUTHENTICATED_USER)
+                        .param("type", "UNIT_OF_MEASURE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("58"));
     }
 
     @Test
@@ -145,6 +166,8 @@ class CatalogInternalContractTest {
         mockMvc.perform(get("/api/v1/catalogs/study-types")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/catalogs/medications")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/catalogs/specialties")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/catalogs/tax").param("type", "PRODUCT_SERVICE"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

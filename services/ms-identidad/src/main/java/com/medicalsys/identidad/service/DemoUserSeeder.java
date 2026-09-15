@@ -92,15 +92,31 @@ public class DemoUserSeeder implements ApplicationRunner {
                     List.of(new RoleAssignmentRequest(account.role(), organization, null, null, null))), null);
             log.info("Cuenta de demostracion creada: {} con rol {}", account.email(), account.role());
         }
-        // El identificador se fija tambien sobre las cuentas ya existentes: una base sembrada
-        // por una version anterior las tiene con UUID aleatorio, y ms-profesionales quedaria
-        // enlazado a cuentas inexistentes. Es un UPDATE por arranque y solo en local.
+        // Identificador, organización y alcance de roles se reconcilian también en cuentas ya
+        // existentes. Esto corrige bases creadas por versiones anteriores que usaban un UUID de
+        // organización distinto al public_id sembrado por ms-tenencia.
         users.findByEmailIgnoreCase(account.email())
-                .filter(user -> !publicId.equals(user.getPublicId()))
                 .ifPresent(user -> {
-                    user.setPublicId(publicId);
-                    users.save(user);
-                    log.info("Identificador publico de {} fijado en {}", account.email(), publicId);
+                    boolean changed = false;
+                    if (!publicId.equals(user.getPublicId())) {
+                        user.setPublicId(publicId);
+                        changed = true;
+                    }
+                    if (!organization.equals(user.getOrganizationPublicId())) {
+                        user.setOrganizationPublicId(organization);
+                        changed = true;
+                    }
+                    for (var assignment : user.getRoleAssignments()) {
+                        if (!organization.equals(assignment.getOrganizationPublicId())) {
+                            assignment.setOrganizationPublicId(organization);
+                            changed = true;
+                        }
+                    }
+                    if (changed) {
+                        users.save(user);
+                        log.info("Cuenta demo {} reconciliada con organizationId={}", account.email(),
+                                organization);
+                    }
                 });
     }
 }
