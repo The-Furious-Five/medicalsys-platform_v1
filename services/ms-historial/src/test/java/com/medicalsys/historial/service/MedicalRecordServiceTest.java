@@ -92,7 +92,7 @@ class MedicalRecordServiceTest {
     private static HistorialProperties properties() {
         return new HistorialProperties(
                 new HistorialProperties.Crypto(CryptoMode.LOCAL, "http://ms-criptografia:8084", "clave",
-                        TestFixtures.KEY_ID, Duration.ofSeconds(2), Duration.ofSeconds(3)),
+                        TestFixtures.KEY_ID, "", Duration.ofSeconds(2), Duration.ofSeconds(3)),
                 new HistorialProperties.Catalogs(CatalogValidationMode.LOCAL, "http://ms-catalogos:8083",
                         Duration.ofSeconds(2), Duration.ofSeconds(3),
                         new HistorialProperties.Catalogs.Local(Set.of("J00"), Set.of("X_RAY"),

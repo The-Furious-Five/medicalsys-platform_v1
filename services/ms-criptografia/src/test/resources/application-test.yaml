@@ -31,3 +31,7 @@ management:
       show-details: always
 
 DEMO_MASTER_KEY: test-demo-key-not-real
+
+medicalsys:
+  service-auth:
+    shared-secret: test-shared-secret-not-real

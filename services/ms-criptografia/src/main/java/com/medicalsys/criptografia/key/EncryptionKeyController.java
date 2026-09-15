@@ -1,6 +1,8 @@
 package com.medicalsys.criptografia.key;
 
+import com.medicalsys.criptografia.common.ServiceAuthInterceptor;
 import com.medicalsys.criptografia.common.UuidBinary;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
@@ -30,24 +32,26 @@ public class EncryptionKeyController {
     }
 
     @PostMapping("/encrypt")
-    public ResponseEntity<Map<String, String>> encrypt(@Valid @RequestBody EncryptRequest req) {
+    public ResponseEntity<Map<String, String>> encrypt(@Valid @RequestBody EncryptRequest req,
+            HttpServletRequest servletRequest) {
         String ciphertext = service.encrypt(
                 UuidBinary.toBytes(UuidBinary.parseFlexible(req.organizationId())),
                 parsePurpose(req.purpose()),
                 req.plaintext(),
-                req.requestingService(),
+                verifiedService(servletRequest),
                 parseUuid(req.correlationId())
         );
         return ResponseEntity.ok(Map.of("ciphertext", ciphertext));
     }
 
     @PostMapping("/decrypt")
-    public ResponseEntity<Map<String, String>> decrypt(@Valid @RequestBody DecryptRequest req) {
+    public ResponseEntity<Map<String, String>> decrypt(@Valid @RequestBody DecryptRequest req,
+            HttpServletRequest servletRequest) {
         String plaintext = service.decrypt(
                 UuidBinary.toBytes(UuidBinary.parseFlexible(req.organizationId())),
                 parsePurpose(req.purpose()),
                 req.ciphertext(),
-                req.requestingService(),
+                verifiedService(servletRequest),
                 parseUuid(req.correlationId())
         );
         return ResponseEntity.ok(Map.of("plaintext", plaintext));
@@ -66,7 +70,6 @@ public class EncryptionKeyController {
             String organizationId,
             @NotBlank String purpose,
             @NotBlank String plaintext,
-            @NotBlank String requestingService,
             @NotBlank String correlationId
     ) {
     }
@@ -75,9 +78,12 @@ public class EncryptionKeyController {
             String organizationId,
             @NotBlank String purpose,
             @NotBlank String ciphertext,
-            @NotBlank String requestingService,
             @NotBlank String correlationId
     ) {
+    }
+
+    private static String verifiedService(HttpServletRequest servletRequest) {
+        return (String) servletRequest.getAttribute(ServiceAuthInterceptor.VERIFIED_SERVICE_ATTRIBUTE);
     }
 
     private static EncryptionKey.Purpose parsePurpose(String purpose) {

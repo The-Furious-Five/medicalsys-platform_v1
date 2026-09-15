@@ -58,6 +58,7 @@ public record HistorialProperties(
             @NotBlank String baseUrl,
             @DefaultValue("") String demoMasterKey,
             @NotNull UUID keyPublicId,
+            @DefaultValue("") String sharedSecret,
             @DefaultValue("2s") @NotNull Duration connectTimeout,
             @DefaultValue("3s") @NotNull Duration readTimeout) {
     }

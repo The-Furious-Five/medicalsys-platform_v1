@@ -24,7 +24,9 @@ public class GlobalExceptionHandler {
             "ACTIVE_KEY_NOT_FOUND", "No hay una clave activa para el tenant y proposito solicitados",
             "DECRYPT_FAILED", "No fue posible descifrar el ciphertext con la clave indicada",
             "VALIDATION_ERROR", "La solicitud no supera las validaciones",
-            "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido"
+            "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido",
+            "SERVICE_AUTH_REQUIRED", "Falta la cabecera X-Service-Name",
+            "SERVICE_AUTH_INVALID", "X-Service-Secret ausente o incorrecto"
     );
 
     @ExceptionHandler(ResponseStatusException.class)

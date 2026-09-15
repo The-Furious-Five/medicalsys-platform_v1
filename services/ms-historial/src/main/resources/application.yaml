@@ -87,6 +87,9 @@ medicalsys:
     base-url: ${CRYPTO_BASE_URL:http://ms-criptografia:8084}
     demo-master-key: ${DEMO_MASTER_KEY:}
     key-public-id: ${CRYPTO_KEY_PUBLIC_ID:00000000-0000-4000-8000-0000000000c4}
+    # Identidad de servicio exigida por ms-criptografia en /internal/v1/**. Solo se usa en modo
+    # REMOTE; en LOCAL no hay llamada de red y el valor puede quedar vacio.
+    shared-secret: ${CRYPTO_SERVICE_SHARED_SECRET:}
     connect-timeout: 2s
     read-timeout: 3s
   catalogs:

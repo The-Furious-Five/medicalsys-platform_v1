@@ -1,6 +1,8 @@
 package com.medicalsys.criptografia.key;
 
 import com.medicalsys.criptografia.common.CorrelationIdFilter;
+import com.medicalsys.criptografia.common.ServiceAuthInterceptor;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,21 +35,23 @@ public class NarrativeCryptoController {
     }
 
     @PostMapping("/internal/v1/cifrado")
-    public ResponseEntity<EncryptResponse> encrypt(@Valid @RequestBody EncryptRequest request) {
+    public ResponseEntity<EncryptResponse> encrypt(@Valid @RequestBody EncryptRequest request,
+            HttpServletRequest servletRequest) {
         CipherPayload payload = service.encryptForOrganization(
                 request.organizationId(),
                 request.plaintext(),
-                "ms-historial",
+                verifiedService(servletRequest),
                 correlationId());
         return ResponseEntity.ok(new EncryptResponse(payload.keyPublicId(), payload.ciphertext()));
     }
 
     @PostMapping("/internal/v1/descifrado")
-    public ResponseEntity<DecryptResponse> decrypt(@Valid @RequestBody DecryptRequest request) {
+    public ResponseEntity<DecryptResponse> decrypt(@Valid @RequestBody DecryptRequest request,
+            HttpServletRequest servletRequest) {
         String plaintext = service.decryptByKeyPublicId(
                 request.keyPublicId(),
                 request.ciphertext(),
-                "ms-historial",
+                verifiedService(servletRequest),
                 correlationId());
         return ResponseEntity.ok(new DecryptResponse(plaintext));
     }
@@ -62,6 +66,10 @@ public class NarrativeCryptoController {
     }
 
     public record DecryptResponse(String plaintext) {
+    }
+
+    private static String verifiedService(HttpServletRequest servletRequest) {
+        return (String) servletRequest.getAttribute(ServiceAuthInterceptor.VERIFIED_SERVICE_ATTRIBUTE);
     }
 
     private static UUID correlationId() {

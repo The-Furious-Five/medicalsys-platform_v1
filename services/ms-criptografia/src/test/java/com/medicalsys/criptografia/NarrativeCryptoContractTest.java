@@ -29,6 +29,7 @@ class NarrativeCryptoContractTest {
     private static final UUID KEY_A = UUID.fromString("00000000-0000-4000-8000-0000000000c4");
     private static final UUID KEY_B = UUID.fromString("00000000-0000-4000-8000-0000000000c5");
     private static final String CORRELATION = "11111111-2222-4333-8444-555555555555";
+    private static final String SHARED_SECRET = "test-shared-secret-not-real";
 
     @Autowired private MockMvc mockMvc;
     @Autowired private EncryptionKeyRepository keyRepository;
@@ -46,6 +47,8 @@ class NarrativeCryptoContractTest {
     void historialContractEncryptsAndDecryptsForTheSameTenant() throws Exception {
         String encryptedJson = mockMvc.perform(post("/internal/v1/cifrado")
                         .header("X-Correlation-Id", CORRELATION)
+                        .header("X-Service-Name", "ms-historial")
+                        .header("X-Service-Secret", SHARED_SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"organizationId\":\"" + TENANT_A + "\",\"plaintext\":\"Narrativa demo\"}"))
                 .andExpect(status().isOk())
@@ -58,6 +61,8 @@ class NarrativeCryptoContractTest {
         String ciphertext = jsonValue(encryptedJson, "ciphertext");
         mockMvc.perform(post("/internal/v1/descifrado")
                         .header("X-Correlation-Id", CORRELATION)
+                        .header("X-Service-Name", "ms-historial")
+                        .header("X-Service-Secret", SHARED_SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyPublicId\":\"" + keyPublicId
                                 + "\",\"ciphertext\":\"" + ciphertext + "\"}"))
@@ -69,6 +74,8 @@ class NarrativeCryptoContractTest {
     void rejectsCiphertextWithAKeyFromAnotherTenantAndUsesCommonError() throws Exception {
         String encryptedJson = mockMvc.perform(post("/internal/v1/cifrado")
                         .header("X-Correlation-Id", CORRELATION)
+                        .header("X-Service-Name", "ms-historial")
+                        .header("X-Service-Secret", SHARED_SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"organizationId\":\"" + TENANT_A + "\",\"plaintext\":\"Narrativa demo\"}"))
                 .andReturn().getResponse().getContentAsString();
@@ -76,6 +83,8 @@ class NarrativeCryptoContractTest {
 
         mockMvc.perform(post("/internal/v1/descifrado")
                         .header("X-Correlation-Id", CORRELATION)
+                        .header("X-Service-Name", "ms-historial")
+                        .header("X-Service-Secret", SHARED_SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"keyPublicId\":\"" + KEY_B + "\",\"ciphertext\":\"" + ciphertext + "\"}"))
                 .andExpect(status().isUnprocessableEntity())
@@ -86,6 +95,26 @@ class NarrativeCryptoContractTest {
                 .andExpect(jsonPath("$.message").exists())
                 .andExpect(jsonPath("$.correlationId").value(CORRELATION))
                 .andExpect(jsonPath("$.path").value("/internal/v1/descifrado"));
+    }
+
+    @Test
+    void rejectsCallersWithoutServiceIdentity() throws Exception {
+        mockMvc.perform(post("/internal/v1/cifrado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"organizationId\":\"" + TENANT_A + "\",\"plaintext\":\"Narrativa demo\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("SERVICE_AUTH_REQUIRED"));
+    }
+
+    @Test
+    void rejectsCallersWithTheWrongSecret() throws Exception {
+        mockMvc.perform(post("/internal/v1/cifrado")
+                        .header("X-Service-Name", "ms-historial")
+                        .header("X-Service-Secret", "no-es-el-secreto")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"organizationId\":\"" + TENANT_A + "\",\"plaintext\":\"Narrativa demo\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("SERVICE_AUTH_INVALID"));
     }
 
     private static EncryptionKey key(UUID keyId, UUID organizationId) {

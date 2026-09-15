@@ -71,7 +71,7 @@ class LocalNarrativeCipherTest {
     private static HistorialProperties properties() {
         return new HistorialProperties(
                 new HistorialProperties.Crypto(CryptoMode.LOCAL, "http://ms-criptografia:8084",
-                        "clave-local-de-prueba", TestFixtures.KEY_ID, Duration.ofSeconds(2),
+                        "clave-local-de-prueba", TestFixtures.KEY_ID, "", Duration.ofSeconds(2),
                         Duration.ofSeconds(3)),
                 new HistorialProperties.Catalogs(CatalogValidationMode.LOCAL, "http://ms-catalogos:8083",
                         Duration.ofSeconds(2), Duration.ofSeconds(3),

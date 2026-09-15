@@ -19,11 +19,19 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class RestClientConfig {
 
-    /** Cliente hacia ms-criptografia. */
+    /**
+     * Cliente hacia ms-criptografia. Lleva ademas la identidad de servicio que exige
+     * {@code /internal/v1/**} (X-Service-Name/X-Service-Secret): sin esto, ms-criptografia rechaza
+     * la llamada con 401 antes de llegar a cifrar o descifrar nada.
+     */
     @Bean
     RestClient cryptoRestClient(RestClient.Builder builder, HistorialProperties properties) {
         HistorialProperties.Crypto crypto = properties.crypto();
-        return build(builder, crypto.baseUrl(), crypto.connectTimeout(), crypto.readTimeout());
+        return build(builder, crypto.baseUrl(), crypto.connectTimeout(), crypto.readTimeout())
+                .mutate()
+                .defaultHeader("X-Service-Name", "ms-historial")
+                .defaultHeader("X-Service-Secret", crypto.sharedSecret())
+                .build();
     }
 
     /** Cliente hacia ms-catalogos. */
