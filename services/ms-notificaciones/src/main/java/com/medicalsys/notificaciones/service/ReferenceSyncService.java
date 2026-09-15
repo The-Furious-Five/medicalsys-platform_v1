@@ -100,6 +100,17 @@ public class ReferenceSyncService {
                 .one();
     }
 
+    public Mono<String> findWhatsappNumber(String patientId) {
+        return database.sql("""
+                SELECT whatsapp_number
+                FROM patient_reference
+                WHERE patient_id = :patientId AND active = TRUE
+                """)
+                .bind("patientId", patientId)
+                .map((row, metadata) -> row.get("whatsapp_number", String.class))
+                .first();
+    }
+
     private NotificationCategory preferenceCategory(NotificationCategory category) {
         return category == NotificationCategory.MARKETING
                 ? NotificationCategory.MARKETING : NotificationCategory.UTILITY;

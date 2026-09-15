@@ -3,6 +3,7 @@ package com.medicalsys.notificaciones.messaging;
 import com.medicalsys.notificaciones.api.dto.OrganizationReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PatientReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PreferenceReferenceRequest;
+import com.medicalsys.notificaciones.service.CampaignNotificationService;
 import com.medicalsys.notificaciones.service.DomainEventNotificationService;
 import com.medicalsys.notificaciones.service.ReferenceSyncService;
 import java.time.Duration;
@@ -17,16 +18,21 @@ import tools.jackson.databind.ObjectMapper;
 public class NotificationKafkaConsumers {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
+    // Una campana puede traer miles de destinatarios paginados; el listener de agenda/historial/
+    // facturacion procesa un evento por paciente y le alcanza con TIMEOUT.
+    private static final Duration CAMPAIGN_TIMEOUT = Duration.ofSeconds(120);
 
     private final ObjectMapper objectMapper;
     private final ReferenceSyncService references;
     private final DomainEventNotificationService events;
+    private final CampaignNotificationService campaigns;
 
     public NotificationKafkaConsumers(ObjectMapper objectMapper, ReferenceSyncService references,
-            DomainEventNotificationService events) {
+            DomainEventNotificationService events, CampaignNotificationService campaigns) {
         this.objectMapper = objectMapper;
         this.references = references;
         this.events = events;
+        this.campaigns = campaigns;
     }
 
     @KafkaListener(topics = "tenencia.organizacion")
@@ -47,6 +53,11 @@ public class NotificationKafkaConsumers {
     @KafkaListener(topics = {"agenda.cita", "historial.resultado", "facturacion.factura"})
     public void notificationEvent(String payload) {
         events.process(read(payload, NotificationDomainEvent.class)).then().block(TIMEOUT);
+    }
+
+    @KafkaListener(topics = "marketing.campana")
+    public void campaignEvent(String payload) {
+        campaigns.process(read(payload, CampaignLaunchedEvent.class)).then().block(CAMPAIGN_TIMEOUT);
     }
 
     private <T> T read(String payload, Class<T> type) {

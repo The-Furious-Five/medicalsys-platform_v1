@@ -48,6 +48,8 @@ medicalsys:
     worker-batch-size: ${NOTIFICATION_WORKER_BATCH_SIZE:25}
     kafka-enabled: ${NOTIFICATION_KAFKA_ENABLED:false}
     manual-send-enabled: ${WHATSAPP_MANUAL_SEND_ENABLED:false}
+    marketing:
+      base-url: ${MARKETING_SERVICE_URL:http://ms-marketing:8092}
     whatsapp:
       graph-base-url: ${WHATSAPP_GRAPH_BASE_URL:https://graph.facebook.com}
       api-version: ${WHATSAPP_API_VERSION:v23.0}

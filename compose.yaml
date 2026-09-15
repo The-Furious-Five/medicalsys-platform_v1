@@ -371,6 +371,8 @@ services:
       TENANCY_BASE_URL: http://ms-tenencia:8082
       MARKETING_DEMO_SEED: ${MARKETING_DEMO_SEED:-true}
       MARKETING_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MARKETING_OUTBOX_MODE: ${MARKETING_OUTBOX_MODE:-KAFKA}
     ports:
       - "${MARKETING_HOST_PORT:-8092}:8092"
     depends_on:
@@ -378,6 +380,8 @@ services:
         condition: service_healthy
       ms-tenencia:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -408,6 +412,7 @@ services:
       R2DBC_URL: r2dbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/notifications_db?sslMode=REQUIRED
       DB_POOL_SIZE: ${AIVEN_DB_POOL_SIZE:-2}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MARKETING_SERVICE_URL: http://ms-marketing:8092
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-mock}
       NOTIFICATION_MAX_ATTEMPTS: ${NOTIFICATION_MAX_ATTEMPTS:-3}
       NOTIFICATION_WORKER_ENABLED: ${NOTIFICATION_WORKER_ENABLED:-true}

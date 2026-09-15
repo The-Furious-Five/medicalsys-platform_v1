@@ -10,6 +10,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,18 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Drena el outbox de eventos salientes.
  *
- * <p>La plataforma todavia no tiene broker, asi que este relay es la costura donde ira. Hoy hace lo
- * unico honesto que puede hacer sin uno: registrar el evento y marcarlo publicado
- * ({@code MARKETING_OUTBOX_MODE=LOG}), o dejarlo acumulado para que otro proceso lo lea por la ruta
- * interna ({@code RETAIN}).
+ * <p>Segun {@code MARKETING_OUTBOX_MODE}: publica de verdad en Kafka ({@code KAFKA}), registra el
+ * evento en el log y lo marca publicado sin transporte real ({@code LOG}), o lo deja acumulado para
+ * que otro proceso lo lea por la ruta interna ({@code RETAIN}).
  *
  * <p>Lo que importa es que el resto del servicio ya esta escrito contra el outbox y no contra el
- * transporte: el dia que exista un broker, cambia este archivo y ningun caso de uso se entera. Esa
- * es toda la razon de que el patron exista.
+ * transporte: cambiar de modo no hace que ningun caso de uso se entere. Esa es toda la razon de que
+ * el patron exista.
  *
  * <p>Los eventos en ERROR se vuelven a tomar junto con los pendientes. Es un reintento simple y sin
- * backoff, suficiente para el MVP; con un broker real, el backoff y la cola de descarte se anaden
- * aqui.
+ * backoff, suficiente para el MVP; un backoff y una cola de descarte quedan para mas adelante.
  */
 @Component
 public class OutboxRelay {
@@ -40,15 +39,18 @@ public class OutboxRelay {
     private final OutboxEventRepository outbox;
     private final MarketingProperties properties;
     private final Clock clock;
+    private final KafkaTemplate<String, String> kafka;
 
-    public OutboxRelay(OutboxEventRepository outbox, MarketingProperties properties, Clock clock) {
+    public OutboxRelay(OutboxEventRepository outbox, MarketingProperties properties, Clock clock,
+            KafkaTemplate<String, String> kafka) {
         this.outbox = outbox;
         this.properties = properties;
         this.clock = clock;
+        this.kafka = kafka;
         if (properties.outbox().mode() == OutboxMode.LOG) {
-            log.warn("No hay broker configurado: el relay del outbox marcara los eventos como publicados "
-                    + "tras registrarlos en el log (MARKETING_OUTBOX_MODE=LOG). Use RETAIN para conservarlos "
-                    + "pendientes y drenarlos desde /internal/v1/eventos/salientes.");
+            log.warn("El relay del outbox marcara los eventos como publicados tras registrarlos en el log "
+                    + "(MARKETING_OUTBOX_MODE=LOG) sin publicarlos de verdad. Use KAFKA para publicarlos en el "
+                    + "broker o RETAIN para conservarlos pendientes y drenarlos desde /internal/v1/eventos/salientes.");
         }
     }
 
@@ -65,13 +67,30 @@ public class OutboxRelay {
             return;
         }
         for (OutboxEvent event : batch) {
-            // El payload no contiene ningun dato clinico ni ninguna credencial: se arma desde la
-            // campana y desde ref_patient, y ninguno de los dos los tiene. Por eso puede registrarse.
-            log.info("outbox -> {} evento={} agregado={} particion={} payload={}",
-                    event.getEventType(), event.getEventPublicId(), event.getAggregatePublicId(),
-                    event.getPartitionKey(), event.getPayload());
-            event.markPublished(clock.instant());
+            if (properties.outbox().mode() == OutboxMode.KAFKA) {
+                publish(event);
+            } else {
+                // El payload no contiene ningun dato clinico ni ninguna credencial: se arma desde la
+                // campana y desde ref_patient, y ninguno de los dos los tiene. Por eso puede registrarse.
+                log.info("outbox -> {} evento={} agregado={} particion={} payload={}",
+                        event.getEventType(), event.getEventPublicId(), event.getAggregatePublicId(),
+                        event.getPartitionKey(), event.getPayload());
+                event.markPublished(clock.instant());
+            }
         }
         log.debug("El relay drenó {} evento(s) del outbox", batch.size());
+    }
+
+    private void publish(OutboxEvent event) {
+        try {
+            // send() sincrono a proposito: la transaccion que marca el evento publicado debe reflejar
+            // si Kafka realmente lo acepto, no un envio en curso que todavia puede fallar.
+            kafka.send(event.getEventType(), event.getPartitionKey(), event.getPayload()).get();
+            event.markPublished(clock.instant());
+        } catch (Exception exception) {
+            log.error("No se pudo publicar en Kafka el evento {} ({})", event.getEventPublicId(),
+                    event.getEventType(), exception);
+            event.markFailed(exception.getMessage());
+        }
     }
 }

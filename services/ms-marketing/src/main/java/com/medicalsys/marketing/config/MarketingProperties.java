@@ -59,12 +59,14 @@ public record MarketingProperties(
         ALWAYS_INCLUDED
     }
 
-    /** Comportamiento del relay de eventos salientes mientras no exista un broker. */
+    /** Comportamiento del relay de eventos salientes. */
     public enum OutboxMode {
         /** El relay drena el outbox escribiendo cada evento en el log y marcandolo publicado. */
         LOG,
         /** El relay no toca el outbox: los eventos se acumulan para que otro proceso los lea. */
-        RETAIN
+        RETAIN,
+        /** El relay publica cada evento en Kafka (topico igual al {@code eventType}) y lo marca publicado. */
+        KAFKA
     }
 
     /**

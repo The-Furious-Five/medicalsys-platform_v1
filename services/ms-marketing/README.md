@@ -146,9 +146,10 @@ No requiere ninguna bandera especial del servidor MySQL: no crea triggers ni fun
 | `MARKETING_DEFAULT_INCLUDED` | no | `true` | Qué asumir para un tenant sin plan replicado |
 | `MARKETING_EXCLUDED_TENANTS` | no | vacío | Tenants a los que negar el módulo (para demostrar el 403) |
 | `MARKETING_AUDIENCE_MAX` | no | `10000` | Tope de destinatarios de una campaña |
-| `MARKETING_OUTBOX_MODE` | no | `LOG` | `LOG` drena y registra; `RETAIN` acumula para un relay externo |
+| `MARKETING_OUTBOX_MODE` | no | `LOG` | `KAFKA` publica de verdad en `marketing.campana`; `LOG` drena y solo registra; `RETAIN` acumula para un relay externo. Compose usa `KAFKA` |
 | `MARKETING_OUTBOX_BATCH` | no | `100` | Eventos por pasada del relay |
 | `MARKETING_OUTBOX_INTERVAL_MS` | no | `5000` | Cadencia del relay |
+| `KAFKA_BOOTSTRAP_SERVERS` | no | `localhost:19092` | Solo con `MARKETING_OUTBOX_MODE=KAFKA` |
 | `MARKETING_DEMO_SEED` | no | `true` | Siembra tenant, programa, cupón y 12 pacientes ficticios |
 | `MARKETING_DEMO_ORGANIZATION` | no | `…0000a1` | Tenant de demostración |
 | `MARKETING_DEMO_PATIENTS` | no | `12` | Cuántos pacientes ficticios sembrar |

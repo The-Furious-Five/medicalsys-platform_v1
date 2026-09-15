@@ -15,5 +15,6 @@ create_topic pacientes.preferencia 6 compact
 create_topic agenda.cita 6 delete
 create_topic historial.resultado 6 delete
 create_topic facturacion.factura 6 delete
+create_topic marketing.campana 6 delete
 create_topic notificaciones.mensaje 6 delete
 create_topic dlq.medicalsys 3 delete

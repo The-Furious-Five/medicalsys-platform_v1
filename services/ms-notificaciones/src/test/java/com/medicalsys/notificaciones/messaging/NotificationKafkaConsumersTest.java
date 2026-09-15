@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.medicalsys.notificaciones.service.CampaignNotificationService;
 import com.medicalsys.notificaciones.service.DomainEventNotificationService;
 import com.medicalsys.notificaciones.service.ReferenceSyncService;
 import java.time.LocalDateTime;
@@ -24,11 +25,12 @@ class NotificationKafkaConsumersTest {
 
     @Mock ReferenceSyncService references;
     @Mock DomainEventNotificationService events;
+    @Mock CampaignNotificationService campaigns;
     private NotificationKafkaConsumers consumers;
 
     @BeforeEach
     void setUp() {
-        consumers = new NotificationKafkaConsumers(JsonMapper.builder().build(), references, events);
+        consumers = new NotificationKafkaConsumers(JsonMapper.builder().build(), references, events, campaigns);
     }
 
     @Test
@@ -83,5 +85,22 @@ class NotificationKafkaConsumersTest {
     @Test
     void rejectsKafkaPayloadThatViolatesJsonContract() {
         assertThrows(IllegalArgumentException.class, () -> consumers.notificationEvent("not-json"));
+    }
+
+    @Test
+    void consumesCampaignEvent() {
+        when(campaigns.process(any())).thenReturn(Flux.empty());
+        consumers.campaignEvent("""
+                {"campaignId":"40000000-0000-0000-0000-000000000001",
+                 "organizationId":"10000000-0000-0000-0000-000000000001",
+                 "action":"LANZADA","name":"Chequeo preventivo","channel":"WHATSAPP",
+                 "totalRecipients":1,
+                 "recipientsUri":"/internal/v1/campanas/40000000-0000-0000-0000-000000000001/destinatarios"}
+                """);
+        ArgumentCaptor<CampaignLaunchedEvent> captor = ArgumentCaptor.forClass(CampaignLaunchedEvent.class);
+        verify(campaigns).process(captor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                UUID.fromString("40000000-0000-0000-0000-000000000001"), captor.getValue().campaignId());
+        org.junit.jupiter.api.Assertions.assertEquals("LANZADA", captor.getValue().action());
     }
 }

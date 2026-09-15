@@ -58,6 +58,11 @@ spring:
         write-dates-as-timestamps: false
   lifecycle:
     timeout-per-shutdown-phase: 20s
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 management:
   endpoints:
@@ -117,9 +122,10 @@ medicalsys:
     # materialice una audiencia sin fin dentro de una sola transaccion.
     max-size: ${MARKETING_AUDIENCE_MAX:10000}
   outbox:
-    # LOG    : el relay registra cada evento y lo marca publicado (no hay broker en el MVP).
+    # LOG    : el relay registra cada evento y lo marca publicado (sin broker real).
     # RETAIN : los eventos se acumulan para que un relay externo los drene por
     #          GET /internal/v1/eventos/salientes.
+    # KAFKA  : el relay publica de verdad en el topico marketing.campana.
     mode: ${MARKETING_OUTBOX_MODE:LOG}
     batch-size: ${MARKETING_OUTBOX_BATCH:100}
     interval-ms: ${MARKETING_OUTBOX_INTERVAL_MS:5000}
