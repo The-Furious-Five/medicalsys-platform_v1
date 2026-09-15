@@ -25,6 +25,7 @@ public class PrescriptionMapper {
         return new PrescriptionResponse(
                 prescription.getPublicId(),
                 prescription.getClinicalEncounter().getPublicId(),
+                prescription.getPrescribedByProfessionalPublicId(),
                 prescription.getFolio(),
                 DateTimes.toOffset(prescription.getIssuedAt()),
                 prescription.getValidityDays(),

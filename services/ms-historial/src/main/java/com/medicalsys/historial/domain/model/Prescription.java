@@ -48,6 +48,10 @@ public class Prescription {
     @JoinColumn(name = "clinical_encounter_id", nullable = false, updatable = false)
     private ClinicalEncounter clinicalEncounter;
 
+    @Column(name = "prescribed_by_professional_public_id", nullable = false, updatable = false,
+            columnDefinition = "BINARY(16)")
+    private UUID prescribedByProfessionalPublicId;
+
     @Column(name = "folio", nullable = false, updatable = false, length = 30)
     private String folio;
 
@@ -94,6 +98,7 @@ public class Prescription {
         Prescription prescription = new Prescription();
         prescription.publicId = UUID.randomUUID();
         prescription.clinicalEncounter = Objects.requireNonNull(encounter, "clinicalEncounter");
+        prescription.prescribedByProfessionalPublicId = encounter.getHealthProfessionalPublicId();
         prescription.organizationPublicId = encounter.getOrganizationPublicId();
         prescription.folio = Objects.requireNonNull(folio, "folio");
         prescription.issuedAt = Instant.now();
@@ -148,6 +153,10 @@ public class Prescription {
 
     public ClinicalEncounter getClinicalEncounter() {
         return clinicalEncounter;
+    }
+
+    public UUID getPrescribedByProfessionalPublicId() {
+        return prescribedByProfessionalPublicId;
     }
 
     public String getFolio() {

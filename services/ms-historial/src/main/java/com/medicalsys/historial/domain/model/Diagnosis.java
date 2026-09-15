@@ -16,6 +16,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 
@@ -36,6 +37,10 @@ public class Diagnosis {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "clinical_encounter_id", nullable = false, updatable = false)
     private ClinicalEncounter clinicalEncounter;
+
+    @Column(name = "diagnosed_by_professional_public_id", nullable = false, updatable = false,
+            columnDefinition = "BINARY(16)")
+    private UUID diagnosedByProfessionalPublicId;
 
     @Column(name = "icd10_code", nullable = false, updatable = false, length = 10)
     private String icd10Code;
@@ -73,6 +78,7 @@ public class Diagnosis {
             boolean primary, boolean chronic, Laterality laterality, byte[] encryptedObservation) {
         Diagnosis diagnosis = new Diagnosis();
         diagnosis.clinicalEncounter = Objects.requireNonNull(encounter, "clinicalEncounter");
+        diagnosis.diagnosedByProfessionalPublicId = encounter.getHealthProfessionalPublicId();
         diagnosis.icd10Code = Objects.requireNonNull(icd10Code, "icd10Code");
         diagnosis.type = type == null ? DiagnosisType.PROVISIONAL : type;
         diagnosis.primary = primary;
@@ -104,6 +110,10 @@ public class Diagnosis {
 
     public ClinicalEncounter getClinicalEncounter() {
         return clinicalEncounter;
+    }
+
+    public UUID getDiagnosedByProfessionalPublicId() {
+        return diagnosedByProfessionalPublicId;
     }
 
     public String getIcd10Code() {

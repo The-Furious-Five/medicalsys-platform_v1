@@ -104,6 +104,7 @@ public class ClinicalEncounterMapper {
     public DiagnosisResponse toResponse(RequestContext context, Diagnosis diagnosis) {
         return new DiagnosisResponse(
                 diagnosis.getId(),
+                diagnosis.getDiagnosedByProfessionalPublicId(),
                 diagnosis.getIcd10Code(),
                 diagnosis.getType(),
                 diagnosis.isPrimary(),
