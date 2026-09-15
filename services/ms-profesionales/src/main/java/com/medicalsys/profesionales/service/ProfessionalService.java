@@ -58,7 +58,7 @@ public class ProfessionalService {
         return professionals.findActiveByOrganizationAndSpecialty(organizationId,
                         blankToNull(specialtyCode == null ? null : specialtyCode.toUpperCase(Locale.ROOT)),
                         OrganizationStatus.ACTIVE, ProfessionalStatus.ACTIVE)
-                .stream().map(this::toResponse).toList();
+                .stream().map(p -> toResponse(p, organizationId)).toList();
     }
 
     @Transactional(readOnly = true)
@@ -78,11 +78,20 @@ public class ProfessionalService {
      * ms-agenda, que solo quiere saber si puede citar a alguien y por eso responde 404 a un
      * profesional suspendido. La ficha tiene que poder abrirse justo para ver -y revertir- esa
      * suspension, asi que devuelve al profesional en cualquier estado.
+     *
+     * <p>Solo es visible para una organizacion con la que el profesional tiene (o tuvo) vinculo:
+     * sin ese chequeo, cualquier clinica podia abrir la ficha de un profesional de otra por id.
      */
     @Transactional(readOnly = true)
-    public ProfessionalResponse get(UUID publicId) {
-        return toResponse(professionals.findByPublicId(publicId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesional no encontrado")));
+    public ProfessionalResponse get(UUID organizationId, UUID publicId) {
+        HealthProfessional professional = professionals.findByPublicId(publicId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesional no encontrado"));
+        boolean linkedToOrganization = professional.getOrganizations().stream()
+                .anyMatch(link -> link.getOrganizationPublicId().equals(organizationId));
+        if (!linkedToOrganization) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesional no encontrado");
+        }
+        return toResponse(professional, organizationId);
     }
 
     /** Edicion parcial: cada campo nulo se deja como estaba. */
@@ -119,16 +128,17 @@ public class ProfessionalService {
      * lo que despues consulta ms-agenda.
      */
     @Transactional
-    public ProfessionalResponse changeLinkStatus(UUID publicId, UUID linkPublicId, OrganizationStatus status) {
+    public ProfessionalResponse changeLinkStatus(UUID organizationId, UUID publicId, UUID linkPublicId, OrganizationStatus status) {
         HealthProfessional professional = professionals.findByPublicId(publicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesional no encontrado"));
         ProfessionalOrganization link = professional.getOrganizations().stream()
-                .filter(item -> item.getPublicId().equals(linkPublicId))
+                .filter(item -> item.getPublicId().equals(linkPublicId)
+                        && item.getOrganizationPublicId().equals(organizationId))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vinculo no encontrado"));
         link.setStatus(status);
         link.setEndDate(status == OrganizationStatus.ENDED ? LocalDate.now() : null);
-        return toResponse(professionals.saveAndFlush(professional));
+        return toResponse(professionals.saveAndFlush(professional), organizationId);
     }
 
     private String requireText(String value, String field) {
@@ -146,10 +156,26 @@ public class ProfessionalService {
     }
 
     private ProfessionalResponse toResponse(HealthProfessional p) {
+        return toResponse(p, null);
+    }
+
+    /**
+     * Arma la respuesta filtrando los vinculos a los de {@code organizationScope} cuando se
+     * indica: la comision, sucursal y estado de un vinculo son datos de negocio de esa clinica,
+     * no algo que otra organizacion deba poder leer solo porque comparten al mismo profesional.
+     * {@code null} devuelve todos los vinculos (alta recien creada y contrato interno con agenda,
+     * donde no hay una organizacion llamante que acotar).
+     */
+    private ProfessionalResponse toResponse(HealthProfessional p, UUID organizationScope) {
         String fullName = String.join(" ", List.of(p.getPaternalSurname(), p.getMaternalSurname() == null ? "" : p.getMaternalSurname(), p.getGivenNames())).trim().replaceAll(" +", " ");
+        List<ProfessionalOrganization> organizations = organizationScope == null
+                ? p.getOrganizations()
+                : p.getOrganizations().stream()
+                        .filter(o -> o.getOrganizationPublicId().equals(organizationScope))
+                        .toList();
         return new ProfessionalResponse(p.getPublicId(), fullName, p.getProfessionalLicenseNumber(), p.getProfessionalType(), p.getStatus(),
                 p.getSpecialties().stream().map(s -> new ProfessionalResponse.SpecialtyResponse(s.getSpecialtyCode(), s.isPrimary(), s.getGraduationYear())).toList(),
-                p.getOrganizations().stream().map(o -> new ProfessionalResponse.OrganizationResponse(o.getPublicId(), o.getOrganizationPublicId(), o.getBranchPublicId(), o.getModality(), o.getStatus(), o.getCommissionPercentage(), o.getStartDate(), o.getEndDate())).toList());
+                organizations.stream().map(o -> new ProfessionalResponse.OrganizationResponse(o.getPublicId(), o.getOrganizationPublicId(), o.getBranchPublicId(), o.getModality(), o.getStatus(), o.getCommissionPercentage(), o.getStartDate(), o.getEndDate())).toList());
     }
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
 }

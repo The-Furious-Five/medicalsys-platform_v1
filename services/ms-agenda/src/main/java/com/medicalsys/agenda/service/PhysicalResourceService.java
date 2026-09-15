@@ -76,13 +76,13 @@ public class PhysicalResourceService {
     }
 
     @Transactional(readOnly = true)
-    public ResourceResponse get(UUID publicId) {
-        return mapper.toResourceResponse(require(publicId));
+    public ResourceResponse get(UUID organizationPublicId, UUID publicId) {
+        return mapper.toResourceResponse(require(organizationPublicId, publicId));
     }
 
     @Transactional
-    public ResourceResponse update(UUID publicId, UpdateResourceRequest request) {
-        PhysicalResource resource = require(publicId);
+    public ResourceResponse update(UUID organizationPublicId, UUID publicId, UpdateResourceRequest request) {
+        PhysicalResource resource = require(organizationPublicId, publicId);
         if (StringUtils.hasText(request.name())) {
             resource.setName(request.name().trim());
         }
@@ -108,15 +108,26 @@ public class PhysicalResourceService {
     }
 
     @Transactional
-    public ResourceResponse changeStatus(UUID publicId, ChangeResourceStatusRequest request) {
-        PhysicalResource resource = require(publicId);
+    public ResourceResponse changeStatus(UUID organizationPublicId, UUID publicId, ChangeResourceStatusRequest request) {
+        PhysicalResource resource = require(organizationPublicId, publicId);
         resource.setStatus(request.status());
         return mapper.toResourceResponse(resource);
     }
 
+    /** Contrato interno entre servicios de agenda: sin organizacion llamante que acotar. */
     @Transactional(readOnly = true)
     public PhysicalResource require(UUID publicId) {
         return resources.findByPublicId(publicId)
+                .orElseThrow(() -> ApiException.notFound("No existe el recurso fisico " + publicId));
+    }
+
+    /**
+     * Version acotada por organizacion para los endpoints publicos: un consultorio de otra clinica
+     * no debe ser alcanzable ni siquiera conociendo su publicId.
+     */
+    @Transactional(readOnly = true)
+    public PhysicalResource require(UUID organizationPublicId, UUID publicId) {
+        return resources.findByOrganizationPublicIdAndPublicId(organizationPublicId, publicId)
                 .orElseThrow(() -> ApiException.notFound("No existe el recurso fisico " + publicId));
     }
 }

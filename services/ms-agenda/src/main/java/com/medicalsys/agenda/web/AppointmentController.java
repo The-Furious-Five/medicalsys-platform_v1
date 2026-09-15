@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.domain.AppointmentStatus;
 import com.medicalsys.agenda.service.AppointmentService;
 import com.medicalsys.agenda.web.dto.AppointmentHistoryResponse;
@@ -45,7 +46,6 @@ public class AppointmentController {
 
     @GetMapping
     public PageResponse<AppointmentResponse> search(
-            @RequestParam UUID organizationPublicId,
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam(required = false) UUID healthProfessionalPublicId,
             @RequestParam(required = false) UUID patientPublicId,
@@ -54,60 +54,68 @@ public class AppointmentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        UUID organizationPublicId = RequestContextHolder.require().organizationId();
         return appointments.search(organizationPublicId, branchPublicId, healthProfessionalPublicId, patientPublicId,
                 status, from, to, PageRequest.of(page, Math.min(size, 100), Sort.by("startsAt").ascending()));
     }
 
     @GetMapping("/{publicId}")
     public AppointmentResponse get(@PathVariable UUID publicId) {
-        return appointments.get(publicId);
+        return appointments.get(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @GetMapping("/{publicId}/history")
     public List<AppointmentHistoryResponse> history(@PathVariable UUID publicId) {
-        return appointments.history(publicId);
+        return appointments.history(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @PostMapping("/{publicId}/confirm")
     public AppointmentResponse confirm(@PathVariable UUID publicId,
                                        @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.CONFIRMED, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.CONFIRMED, request);
     }
 
     @PostMapping("/{publicId}/check-in")
     public AppointmentResponse checkIn(@PathVariable UUID publicId,
                                        @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.WAITING, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.WAITING, request);
     }
 
     @PostMapping("/{publicId}/start")
     public AppointmentResponse start(@PathVariable UUID publicId,
                                      @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.IN_PROGRESS, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.IN_PROGRESS, request);
     }
 
     @PostMapping("/{publicId}/complete")
     public AppointmentResponse complete(@PathVariable UUID publicId,
                                         @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.ATTENDED, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.ATTENDED, request);
     }
 
     @PostMapping("/{publicId}/no-show")
     public AppointmentResponse noShow(@PathVariable UUID publicId,
                                       @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.NO_SHOW, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.NO_SHOW, request);
     }
 
     @PostMapping("/{publicId}/cancel")
     public AppointmentResponse cancel(@PathVariable UUID publicId,
                                       @RequestBody(required = false) StatusChangeRequest request) {
-        return appointments.changeStatus(publicId, AppointmentStatus.CANCELLED, request);
+        return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
+                AppointmentStatus.CANCELLED, request);
     }
 
     @PostMapping("/{publicId}/reschedule")
     public ResponseEntity<AppointmentResponse> reschedule(@PathVariable UUID publicId,
                                                           @Valid @RequestBody RescheduleAppointmentRequest request) {
-        AppointmentResponse created = appointments.reschedule(publicId, request);
+        AppointmentResponse created = appointments.reschedule(RequestContextHolder.require().organizationId(),
+                publicId, request);
         return ResponseEntity
                 .created(URI.create("/api/v1/scheduling/appointments/" + created.publicId()))
                 .body(created);

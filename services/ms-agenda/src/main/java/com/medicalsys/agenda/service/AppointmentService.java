@@ -124,27 +124,39 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
-    public AppointmentResponse get(UUID publicId) {
-        return mapper.toAppointmentResponse(require(publicId));
+    public AppointmentResponse get(UUID organizationPublicId, UUID publicId) {
+        return mapper.toAppointmentResponse(require(organizationPublicId, publicId));
     }
 
+    /** Contrato interno (ms-historial, notificaciones): sin organizacion llamante que acotar. */
     @Transactional(readOnly = true)
     public Appointment require(UUID publicId) {
         return appointments.findByPublicId(publicId)
                 .orElseThrow(() -> ApiException.notFound("No existe la cita " + publicId));
     }
 
+    /**
+     * Version acotada por organizacion para los endpoints publicos: una cita de otra clinica no
+     * debe ser alcanzable ni siquiera conociendo su publicId.
+     */
     @Transactional(readOnly = true)
-    public List<AppointmentHistoryResponse> history(UUID publicId) {
-        Appointment appointment = require(publicId);
+    public Appointment require(UUID organizationPublicId, UUID publicId) {
+        return appointments.findByOrganizationPublicIdAndPublicId(organizationPublicId, publicId)
+                .orElseThrow(() -> ApiException.notFound("No existe la cita " + publicId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentHistoryResponse> history(UUID organizationPublicId, UUID publicId) {
+        Appointment appointment = require(organizationPublicId, publicId);
         return histories.findByAppointmentIdOrderByOccurredAtAsc(appointment.getId()).stream()
                 .map(mapper::toHistoryResponse)
                 .toList();
     }
 
     @Transactional
-    public AppointmentResponse changeStatus(UUID publicId, AppointmentStatus target, StatusChangeRequest request) {
-        Appointment appointment = require(publicId);
+    public AppointmentResponse changeStatus(UUID organizationPublicId, UUID publicId, AppointmentStatus target,
+                                            StatusChangeRequest request) {
+        Appointment appointment = require(organizationPublicId, publicId);
         AppointmentStatus previous = appointment.getStatus();
         if (previous == target) {
             throw ApiException.conflict("La cita ya se encuentra en estado " + target);
@@ -188,9 +200,10 @@ public class AppointmentService {
      * apunta a ella con source_appointment_id, tal como pide el diccionario de datos.
      */
     @Transactional
-    public AppointmentResponse reschedule(UUID publicId, RescheduleAppointmentRequest request) {
+    public AppointmentResponse reschedule(UUID organizationPublicId, UUID publicId,
+                                          RescheduleAppointmentRequest request) {
         requireValidRange(request.startsAt(), request.endsAt());
-        Appointment original = require(publicId);
+        Appointment original = require(organizationPublicId, publicId);
         if (!original.getStatus().canMoveTo(AppointmentStatus.RESCHEDULED)) {
             throw ApiException.conflict(
                     "Una cita en estado " + original.getStatus() + " ya no se puede reprogramar");

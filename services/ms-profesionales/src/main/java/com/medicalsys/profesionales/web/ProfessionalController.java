@@ -1,5 +1,6 @@
 package com.medicalsys.profesionales.web;
 
+import com.medicalsys.profesionales.common.tenant.RequestContextHolder;
 import com.medicalsys.profesionales.service.ProfessionalService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -20,14 +21,17 @@ public class ProfessionalController {
     }
 
     @GetMapping("/api/v1/professionals")
-    public List<ProfessionalResponse> list(@RequestParam UUID organizationId,
-                                           @RequestParam(required = false) String specialtyCode) {
+    public List<ProfessionalResponse> list(@RequestParam(required = false) String specialtyCode) {
+        UUID organizationId = RequestContextHolder.require().organizationId();
         return service.list(organizationId, specialtyCode);
     }
 
     /** Ficha completa, en cualquier estado: es la pantalla desde la que se revierte una baja. */
     @GetMapping("/api/v1/professionals/{id}")
-    public ProfessionalResponse get(@PathVariable UUID id) { return service.get(id); }
+    public ProfessionalResponse get(@PathVariable UUID id) {
+        UUID organizationId = RequestContextHolder.require().organizationId();
+        return service.get(organizationId, id);
+    }
 
     @PatchMapping("/api/v1/professionals/{id}")
     public ProfessionalResponse update(@PathVariable UUID id,
@@ -39,7 +43,8 @@ public class ProfessionalController {
     @PatchMapping("/api/v1/professionals/{id}/organizations/{linkId}")
     public ProfessionalResponse changeLinkStatus(@PathVariable UUID id, @PathVariable UUID linkId,
                                                  @Valid @RequestBody UpdateLinkStatusRequest request) {
-        return service.changeLinkStatus(id, linkId, request.status());
+        UUID organizationId = RequestContextHolder.require().organizationId();
+        return service.changeLinkStatus(organizationId, id, linkId, request.status());
     }
 
     /** Contrato de Agenda: valida que el profesional existe y conserva un vínculo activo. */
