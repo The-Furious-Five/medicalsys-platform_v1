@@ -6,10 +6,13 @@ import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
 import com.medicalsys.pacientes.web.dto.NotificationContactSummary;
 import com.medicalsys.pacientes.web.dto.PatientDemographicsResponse;
 import com.medicalsys.pacientes.web.dto.SchedulingPatientSummary;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Proyecciones mínimas para consumidores internos; estas rutas no se publican en el gateway. */
@@ -49,5 +52,16 @@ public class InternalPatientController {
     @GetMapping("/{patientId}/fiscal")
     public FiscalCustomerResponse fiscalCustomer(@PathVariable UUID patientId) {
         return patients.getFiscalCustomer(patientId);
+    }
+
+    /**
+     * Republica {@code pacientes.paciente} para todos los pacientes existentes, atribuidos a
+     * {@code organizationId}. Uso administrativo puntual: poner al dia a un consumidor nuevo (o que
+     * perdio su copia) sin esperar a que cada paciente se edite de nuevo.
+     */
+    @PostMapping("/replay")
+    public Map<String, Object> replay(@RequestParam UUID organizationId) {
+        int published = patients.replayPatientEvents(organizationId);
+        return Map.of("organizationId", organizationId, "published", published);
     }
 }

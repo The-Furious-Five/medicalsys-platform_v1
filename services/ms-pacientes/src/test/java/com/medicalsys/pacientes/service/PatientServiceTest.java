@@ -20,6 +20,7 @@ import com.medicalsys.pacientes.domain.enums.MaritalStatus;
 import com.medicalsys.pacientes.domain.enums.Sex;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
+import com.medicalsys.pacientes.messaging.PatientEventPublisher;
 import com.medicalsys.pacientes.repository.PatientRepository;
 import com.medicalsys.pacientes.web.dto.PatientResponse;
 import com.medicalsys.pacientes.web.dto.RegisterPatientRequest;
@@ -39,12 +40,14 @@ class PatientServiceTest {
     private PatientRepository repository;
     @Mock
     private AuditTrail auditTrail;
+    @Mock
+    private PatientEventPublisher events;
 
     private PatientService service;
 
     @BeforeEach
     void setUp() {
-        service = new PatientService(repository, new PatientMapper(), auditTrail);
+        service = new PatientService(repository, new PatientMapper(), auditTrail, events);
     }
 
     @Test

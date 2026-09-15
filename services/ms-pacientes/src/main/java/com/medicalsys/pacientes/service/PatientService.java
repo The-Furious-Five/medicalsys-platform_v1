@@ -7,9 +7,12 @@ import com.medicalsys.pacientes.common.error.ConflictException;
 import com.medicalsys.pacientes.common.error.ErrorCode;
 import com.medicalsys.pacientes.common.error.NotFoundException;
 import com.medicalsys.pacientes.common.error.ValidationException;
+import com.medicalsys.pacientes.common.tenant.RequestContext;
+import com.medicalsys.pacientes.common.tenant.RequestContextHolder;
 import com.medicalsys.pacientes.domain.enums.DocumentType;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.mapper.PatientMapper;
+import com.medicalsys.pacientes.messaging.PatientEventPublisher;
 import com.medicalsys.pacientes.repository.PatientRepository;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
 import com.medicalsys.pacientes.web.dto.FiscalCustomerResponse;
@@ -40,11 +43,14 @@ public class PatientService {
     private final PatientRepository patients;
     private final PatientMapper mapper;
     private final AuditTrail auditTrail;
+    private final PatientEventPublisher events;
 
-    public PatientService(PatientRepository patients, PatientMapper mapper, AuditTrail auditTrail) {
+    public PatientService(PatientRepository patients, PatientMapper mapper, AuditTrail auditTrail,
+            PatientEventPublisher events) {
         this.patients = patients;
         this.mapper = mapper;
         this.auditTrail = auditTrail;
+        this.events = events;
     }
 
     /** La garantía final de unicidad vive también en MySQL para cubrir solicitudes concurrentes. */
@@ -70,6 +76,7 @@ public class PatientService {
         // queda fuera del evento a proposito, igual que se queda fuera del log de arriba.
         auditTrail.record(AuditEventDraft.patientWrite("PATIENT_REGISTERED", patient.getPublicId(), 201,
                 Map.of("documentType", request.documentType().name())));
+        events.publish(patient, currentOrganizationId());
         return mapper.toResponse(patient);
     }
 
@@ -121,7 +128,33 @@ public class PatientService {
         }
         auditTrail.record(AuditEventDraft.patientWrite("PATIENT_UPDATED", patient.getPublicId(), 200,
                 Map.of("status", patient.getStatus().name())));
+        events.publish(patient, currentOrganizationId());
         return mapper.toResponse(patient);
+    }
+
+    private UUID currentOrganizationId() {
+        RequestContext context = RequestContextHolder.currentOrNull();
+        return context == null ? null : context.organizationId();
+    }
+
+    /**
+     * Republica en {@code pacientes.paciente} el estado actual de todos los pacientes, atribuido a
+     * {@code organizationId}. Existe para poner al dia a un consumidor nuevo (o a uno que perdio su
+     * copia) sin esperar a que cada paciente se edite de nuevo; no reemplaza la publicacion en
+     * caliente de {@link #register} y {@link #update}.
+     */
+    @Transactional(readOnly = true)
+    public int replayPatientEvents(UUID organizationId) {
+        int published = 0;
+        Pageable page = org.springframework.data.domain.PageRequest.of(0, 200);
+        Page<Patient> batch;
+        do {
+            batch = patients.findAll(page);
+            batch.forEach(patient -> events.publish(patient, organizationId));
+            published += batch.getNumberOfElements();
+            page = page.next();
+        } while (batch.hasNext());
+        return published;
     }
 
     @Transactional(readOnly = true)
