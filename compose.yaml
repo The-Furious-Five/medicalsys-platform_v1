@@ -60,7 +60,7 @@ services:
     logging: *medicalsys-logging
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -81,7 +81,7 @@ services:
     logging: *medicalsys-logging
 
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -409,6 +409,7 @@ services:
       NOTIFICATION_MAX_ATTEMPTS: ${NOTIFICATION_MAX_ATTEMPTS:-3}
       NOTIFICATION_WORKER_ENABLED: ${NOTIFICATION_WORKER_ENABLED:-true}
       NOTIFICATION_KAFKA_ENABLED: ${NOTIFICATION_KAFKA_ENABLED:-true}
+      WHATSAPP_MANUAL_SEND_ENABLED: ${WHATSAPP_MANUAL_SEND_ENABLED:-false}
       WHATSAPP_GRAPH_BASE_URL: ${WHATSAPP_GRAPH_BASE_URL:-https://graph.facebook.com}
       WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-v23.0}
       WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
@@ -443,6 +444,7 @@ services:
       MARKETING_SERVICE_URL: http://ms-marketing:8092
       AUDIT_SERVICE_URL: http://ms-auditoria:8091
       JWT_SECRET: ${JWT_SECRET}
+      ALLOWED_ORIGINS: ${GATEWAY_ALLOWED_ORIGINS:-*}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
     # El gateway solo enruta, pero arrancar antes que sus destinos hace que las primeras

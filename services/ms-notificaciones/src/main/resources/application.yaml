@@ -47,6 +47,7 @@ medicalsys:
     worker-delay-ms: ${NOTIFICATION_WORKER_DELAY_MS:5000}
     worker-batch-size: ${NOTIFICATION_WORKER_BATCH_SIZE:25}
     kafka-enabled: ${NOTIFICATION_KAFKA_ENABLED:false}
+    manual-send-enabled: ${WHATSAPP_MANUAL_SEND_ENABLED:false}
     whatsapp:
       graph-base-url: ${WHATSAPP_GRAPH_BASE_URL:https://graph.facebook.com}
       api-version: ${WHATSAPP_API_VERSION:v23.0}

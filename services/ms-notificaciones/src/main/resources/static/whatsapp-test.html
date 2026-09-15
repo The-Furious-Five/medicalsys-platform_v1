@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prueba de WhatsApp - MedicalSys</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; color: #17202a; }
+    form { display: grid; gap: 14px; }
+    label { display: grid; gap: 6px; font-weight: 600; }
+    input, textarea, select, button { font: inherit; padding: 10px; }
+    textarea { min-height: 120px; resize: vertical; }
+    button { cursor: pointer; background: #087f5b; color: white; border: 0; border-radius: 6px; }
+    #result { white-space: pre-wrap; padding: 12px; background: #f1f3f5; border-radius: 6px; }
+    .hint { color: #5c6770; font-size: .92rem; }
+  </style>
+</head>
+<body>
+  <h1>Enviar prueba por WhatsApp</h1>
+  <p class="hint">Consola local de desarrollo. El texto libre requiere una ventana de conversación abierta; la plantilla debe estar aprobada por Meta.</p>
+  <form id="form">
+    <label>Organización
+      <input id="organization" value="10000000-0000-0000-0000-000000000001" required>
+    </label>
+    <label>Número en formato internacional
+      <input id="destination" placeholder="+59170000000" required>
+    </label>
+    <label>Tipo de envío
+      <select id="mode"><option value="text">Texto libre</option><option value="template">Plantilla aprobada</option></select>
+    </label>
+    <label id="messageRow">Mensaje
+      <textarea id="message" placeholder="Escribe el mensaje"></textarea>
+    </label>
+    <div id="templateRows" hidden>
+      <label>Nombre de plantilla <input id="templateName" placeholder="hello_world"></label>
+      <label>Idioma <input id="languageCode" value="en_US"></label>
+      <label>Parámetros, uno por línea <textarea id="parameters"></textarea></label>
+    </div>
+    <button type="submit">Enviar una vez</button>
+  </form>
+  <p id="result">Aún no se realizó ningún envío.</p>
+  <script>
+    const mode = document.querySelector('#mode');
+    const result = document.querySelector('#result');
+    mode.addEventListener('change', () => {
+      document.querySelector('#messageRow').hidden = mode.value !== 'text';
+      document.querySelector('#templateRows').hidden = mode.value !== 'template';
+    });
+    document.querySelector('#form').addEventListener('submit', async event => {
+      event.preventDefault();
+      result.textContent = 'Enviando…';
+      const template = mode.value === 'template';
+      const body = {
+        destination: document.querySelector('#destination').value.trim(),
+        message: template ? null : document.querySelector('#message').value,
+        templateName: template ? document.querySelector('#templateName').value.trim() : null,
+        languageCode: template ? document.querySelector('#languageCode').value.trim() : null,
+        templateParameters: template ? document.querySelector('#parameters').value.split('\n').map(v => v.trim()).filter(Boolean) : []
+      };
+      try {
+        const response = await fetch('/api/v1/notifications/whatsapp/send', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-Organization-Id': document.querySelector('#organization').value.trim()},
+          body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `Error HTTP ${response.status}`);
+        result.textContent = data.status === 'SENT'
+          ? `Enviado correctamente. ID de Meta: ${data.providerMessageId}`
+          : `No se envió. Estado: ${data.status}\n${data.errorDetail || ''}`;
+      } catch (error) {
+        result.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

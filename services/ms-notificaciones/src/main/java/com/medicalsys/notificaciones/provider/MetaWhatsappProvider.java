@@ -22,7 +22,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @Component
 @ConditionalOnProperty(prefix = "medicalsys.notifications", name = "provider", havingValue = "meta")
-public class MetaWhatsappProvider implements NotificationProvider {
+public class MetaWhatsappProvider implements NotificationProvider, WhatsappMessageSender {
 
     private final WebClient webClient;
     private final MessageTemplateRepository templates;
@@ -67,13 +67,34 @@ public class MetaWhatsappProvider implements NotificationProvider {
                 return Mono.error(new IllegalStateException(
                         "Fuera de la ventana de 24 horas se requiere una plantilla aprobada por Meta"));
             }
-            Map<String, Object> body = Map.of(
-                    "messaging_product", "whatsapp",
-                    "to", digits(notification.destination()),
-                    "type", "text",
-                    "text", Map.of("preview_url", false, "body", notification.renderedBody()));
-            return post(body);
+            return sendText(notification.destination(), notification.renderedBody());
         });
+    }
+
+    @Override
+    public Mono<ProviderResult> sendText(String destination, String message) {
+        return post(Map.of(
+                "messaging_product", "whatsapp",
+                "to", digits(destination),
+                "type", "text",
+                "text", Map.of("preview_url", false, "body", message)));
+    }
+
+    @Override
+    public Mono<ProviderResult> sendTemplate(String destination, String templateName,
+            String languageCode, List<String> parameters) {
+        Map<String, Object> remoteTemplate = new LinkedHashMap<>();
+        remoteTemplate.put("name", templateName);
+        remoteTemplate.put("language", Map.of("code", languageCode));
+        if (parameters != null && !parameters.isEmpty()) {
+            remoteTemplate.put("components", List.of(Map.of("type", "body", "parameters",
+                    parameters.stream().map(value -> Map.<String, Object>of("type", "text", "text", value)).toList())));
+        }
+        return post(Map.of(
+                "messaging_product", "whatsapp",
+                "to", digits(destination),
+                "type", "template",
+                "template", remoteTemplate));
     }
 
     private Mono<Boolean> conversationIsOpen(Notification notification) {
