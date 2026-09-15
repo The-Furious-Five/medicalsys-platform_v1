@@ -170,6 +170,9 @@ services:
       <<: *aiven-mysql-environment
       SERVER_PORT: "8082"
       DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/tenancy_db?sslMode=REQUIRED&serverTimezone=UTC
+      DATABASE_KEEPALIVE_ENABLED: ${AIVEN_KEEPALIVE_ENABLED:-true}
+      DATABASE_KEEPALIVE_INTERVAL: ${AIVEN_KEEPALIVE_INTERVAL:-PT10M}
+      DATABASE_KEEPALIVE_INITIAL_DELAY: ${AIVEN_KEEPALIVE_INITIAL_DELAY:-PT1M}
     ports:
       - "${TENANCY_HOST_PORT:-8082}:8082"
     healthcheck: *medicalsys-healthcheck
