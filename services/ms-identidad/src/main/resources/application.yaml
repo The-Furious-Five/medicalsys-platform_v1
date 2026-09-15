@@ -52,3 +52,11 @@ medicalsys:
       # Debe coincidir con el public_id de la organización DEMO sembrada por ms-tenencia.
       organization-public-id: ${IDENTITY_DEMO_ORGANIZATION:00000000-0000-4000-8000-0000000000a1}
       password: ${IDENTITY_DEMO_PASSWORD:Demo1234!}
+    platform-admin:
+      enabled: ${PLATFORM_ADMIN_SEED_ENABLED:false}
+      public-id: ${PLATFORM_ADMIN_PUBLIC_ID:00000000-0000-4000-8000-000000000900}
+      # El rol es global, pero el JWT necesita un tenant de contexto para atravesar el gateway.
+      organization-public-id: ${PLATFORM_ADMIN_ORGANIZATION:${IDENTITY_DEMO_ORGANIZATION:00000000-0000-4000-8000-0000000000a1}}
+      email: ${PLATFORM_ADMIN_EMAIL:platform.admin@medicalsys.demo}
+      full-name: ${PLATFORM_ADMIN_FULL_NAME:Administrador de MedicalSys}
+      password: ${PLATFORM_ADMIN_PASSWORD:}
