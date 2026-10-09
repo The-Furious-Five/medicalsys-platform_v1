@@ -106,8 +106,9 @@ public class ReservationService {
     }
 
     @Transactional
-    public ReservationResponse changeStatus(Long id, ReservationStatus status) {
+    public ReservationResponse changeStatus(UUID organizationPublicId, Long id, ReservationStatus status) {
         ResourceReservation reservation = reservations.findById(id)
+                .filter(candidate -> candidate.getOrganizationPublicId().equals(organizationPublicId))
                 .orElseThrow(() -> ApiException.notFound("No existe la reserva " + id));
         reservation.setStatus(status);
         return mapper.toReservationResponse(reservation);

@@ -1,0 +1,5 @@
+# Perfil de demostracion: agrega las semillas ficticias repetibles a las migraciones.
+# Nunca se activa en un entorno que no sea local de capacitacion.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo

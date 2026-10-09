@@ -17,6 +17,14 @@ spring:
 
   flyway:
     enabled: true
+    # db/demo solo se carga cuando Compose lo pide, igual que en pacientes e historial.
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 management:
   endpoints:
@@ -42,3 +50,6 @@ medicalsys:
       timeout: ${SCHEDULING_VALIDATION_TIMEOUT:PT3S}
     slots:
       max-days-ahead: ${SCHEDULING_MAX_DAYS_AHEAD:120}
+    # Publica en agenda.cita al crear/reagendar para que ms-notificaciones envie el WhatsApp.
+    notifications:
+      enabled: ${SCHEDULING_NOTIFICATIONS_ENABLED:true}

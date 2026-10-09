@@ -1,3 +1,59 @@
+server:
+  port: ${SERVER_PORT:8089}
+
 spring:
   application:
-    name: documental
+    name: ms-documental
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: documental-pool
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      connection-timeout: 5000
+
+  servlet:
+    multipart:
+      max-file-size: ${DOCUMENT_MAX_FILE_SIZE:100MB}
+      max-request-size: ${DOCUMENT_MAX_REQUEST_SIZE:102MB}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:19000}
+    access-key: ${MINIO_ACCESS_KEY:medicalsys-demo}
+    secret-key: ${MINIO_SECRET_KEY:medicalsys-minio-local}
+    bucket: ${MINIO_BUCKET:medicalsys-documents-local}
+    max-size-bytes: ${DOCUMENT_MAX_SIZE_BYTES:104857600}
+  consent:
+    # El consentimiento firmado necesita el telefono del paciente (ms-pacientes) y el envio del
+    # codigo OTP por WhatsApp (ms-notificaciones, envio manual).
+    patients-base-url: ${PATIENTS_SERVICE_URL:http://ms-pacientes:8085}
+    notifications-base-url: ${NOTIFICATIONS_SERVICE_URL:http://ms-notificaciones:8091}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always

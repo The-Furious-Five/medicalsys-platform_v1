@@ -81,8 +81,9 @@ public class ScheduleBlockService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(UUID organizationPublicId, Long id) {
         ScheduleBlock block = blocks.findById(id)
+                .filter(candidate -> candidate.getOrganizationPublicId().equals(organizationPublicId))
                 .orElseThrow(() -> ApiException.notFound("No existe el bloqueo " + id));
         blocks.delete(block);
     }

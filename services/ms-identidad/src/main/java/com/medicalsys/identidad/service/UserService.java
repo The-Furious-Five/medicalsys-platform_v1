@@ -2,6 +2,7 @@ package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleCode;
+import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.domain.UserStatus;
@@ -158,9 +159,11 @@ public class UserService {
         Role role = roles.findByCode(request.role())
                 .orElseThrow(() -> ApiException.badRequest("Rol desconocido: " + request.role()));
 
-        UUID organizationPublicId = request.organizationPublicId() != null
-                ? request.organizationPublicId()
-                : user.getOrganizationPublicId();
+        UUID organizationPublicId = role.getScope() == RoleScope.PLATFORM
+                ? null
+                : request.organizationPublicId() != null
+                        ? request.organizationPublicId()
+                        : user.getOrganizationPublicId();
 
         boolean duplicated = user.getRoleAssignments().stream()
                 .anyMatch(existing -> existing.getRole().getCode() == request.role()

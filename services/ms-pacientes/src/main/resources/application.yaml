@@ -9,6 +9,10 @@ spring:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+    hikari:
+      pool-name: pacientes-pool
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      connection-timeout: 5000
   
   jpa:
     open-in-view: false
@@ -17,6 +21,32 @@ spring:
 
   flyway:
     enabled: true
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
+    validate-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  notifications:
+    # Envia el codigo OTP de autorizacion de acceso cruzado entre tenants (ver PatientAccessService).
+    base-url: ${NOTIFICATIONS_SERVICE_URL:http://ms-notificaciones:8091}
+  audit:
+    # Raiz de ms-auditoria dentro de la red interna. Vacio desactiva el envio: asi un arranque
+    # suelto o una prueba no fallan por no encontrar una bitacora que nadie levanto.
+    base-url: ${AUDIT_SERVICE_URL:}
+    connect-timeout: 2s
+    read-timeout: 5s
+    queue-capacity: 500
 
 management:
   endpoints:

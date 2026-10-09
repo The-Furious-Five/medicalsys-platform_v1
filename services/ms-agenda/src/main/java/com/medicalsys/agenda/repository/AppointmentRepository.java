@@ -17,6 +17,8 @@ public interface AppointmentRepository
 
     Optional<Appointment> findByPublicId(UUID publicId);
 
+    Optional<Appointment> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
+
     @Query("""
             select a from Appointment a
             where a.healthProfessionalPublicId = :healthProfessionalPublicId

@@ -84,6 +84,10 @@ public class UserRole {
         return organizationPublicId;
     }
 
+    public void setOrganizationPublicId(UUID organizationPublicId) {
+        this.organizationPublicId = organizationPublicId;
+    }
+
     public UUID getBranchPublicId() {
         return branchPublicId;
     }

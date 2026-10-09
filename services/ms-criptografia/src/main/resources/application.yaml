@@ -1,3 +1,37 @@
+server:
+  port: ${SERVER_PORT:8084}
+
 spring:
   application:
-    name: criptografia
+    name: ms-criptografia
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+medicalsys:
+  service-auth:
+    # Secreto que debe traer todo llamador en X-Service-Secret (junto con X-Service-Name, que solo
+    # etiqueta al llamador en la bitacora de uso). Sin este par, /internal/v1/** rechaza con 401 —
+    # antes cualquier proceso con acceso de red al puerto podia cifrar/descifrar narrativa clinica de
+    # cualquier organizacion con solo mandar un organizationId valido.
+    shared-secret: ${CRYPTO_SERVICE_SHARED_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always

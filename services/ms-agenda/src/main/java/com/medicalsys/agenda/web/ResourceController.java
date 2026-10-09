@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.domain.ResourceStatus;
 import com.medicalsys.agenda.domain.ResourceType;
 import com.medicalsys.agenda.service.PhysicalResourceService;
@@ -43,29 +44,29 @@ public class ResourceController {
 
     @GetMapping
     public PageResponse<ResourceResponse> search(
-            @RequestParam(required = false) UUID organizationPublicId,
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam(required = false) ResourceType type,
             @RequestParam(required = false) ResourceStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        UUID organizationPublicId = RequestContextHolder.require().organizationId();
         return resources.search(organizationPublicId, branchPublicId, type, status,
                 PageRequest.of(page, Math.min(size, 100), Sort.by("code").ascending()));
     }
 
     @GetMapping("/{publicId}")
     public ResourceResponse get(@PathVariable UUID publicId) {
-        return resources.get(publicId);
+        return resources.get(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @PatchMapping("/{publicId}")
     public ResourceResponse update(@PathVariable UUID publicId, @Valid @RequestBody UpdateResourceRequest request) {
-        return resources.update(publicId, request);
+        return resources.update(RequestContextHolder.require().organizationId(), publicId, request);
     }
 
     @PatchMapping("/{publicId}/status")
     public ResourceResponse changeStatus(@PathVariable UUID publicId,
                                          @Valid @RequestBody ChangeResourceStatusRequest request) {
-        return resources.changeStatus(publicId, request);
+        return resources.changeStatus(RequestContextHolder.require().organizationId(), publicId, request);
     }
 }

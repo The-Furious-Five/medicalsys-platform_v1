@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.domain.ReservationStatus;
 import com.medicalsys.agenda.service.ReservationService;
 import com.medicalsys.agenda.web.dto.CreateReservationRequest;
@@ -38,25 +39,25 @@ public class ReservationController {
 
     @GetMapping
     public List<ReservationResponse> search(
-            @RequestParam UUID organizationPublicId,
             @RequestParam(required = false) UUID physicalResourcePublicId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
+        UUID organizationPublicId = RequestContextHolder.require().organizationId();
         return reservations.search(organizationPublicId, physicalResourcePublicId, from, to);
     }
 
     @PostMapping("/{id}/release")
     public ReservationResponse release(@PathVariable Long id) {
-        return reservations.changeStatus(id, ReservationStatus.RELEASED);
+        return reservations.changeStatus(RequestContextHolder.require().organizationId(), id, ReservationStatus.RELEASED);
     }
 
     @PostMapping("/{id}/in-use")
     public ReservationResponse markInUse(@PathVariable Long id) {
-        return reservations.changeStatus(id, ReservationStatus.IN_USE);
+        return reservations.changeStatus(RequestContextHolder.require().organizationId(), id, ReservationStatus.IN_USE);
     }
 
     @DeleteMapping("/{id}")
     public ReservationResponse cancel(@PathVariable Long id) {
-        return reservations.changeStatus(id, ReservationStatus.CANCELLED);
+        return reservations.changeStatus(RequestContextHolder.require().organizationId(), id, ReservationStatus.CANCELLED);
     }
 }

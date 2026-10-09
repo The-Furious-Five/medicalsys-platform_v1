@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.service.ScheduleBlockService;
 import com.medicalsys.agenda.web.dto.BlockResponse;
 import com.medicalsys.agenda.web.dto.CreateBlockRequest;
@@ -37,17 +38,17 @@ public class BlockController {
 
     @GetMapping
     public List<BlockResponse> search(
-            @RequestParam UUID organizationPublicId,
             @RequestParam(required = false) UUID healthProfessionalPublicId,
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
+        UUID organizationPublicId = RequestContextHolder.require().organizationId();
         return blocks.search(organizationPublicId, healthProfessionalPublicId, branchPublicId, from, to);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
-        blocks.delete(id);
+        blocks.delete(RequestContextHolder.require().organizationId(), id);
     }
 }

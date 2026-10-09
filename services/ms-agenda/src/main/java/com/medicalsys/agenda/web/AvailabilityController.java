@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.service.AvailabilityService;
 import com.medicalsys.agenda.service.SlotService;
 import com.medicalsys.agenda.web.dto.AvailabilityResponse;
@@ -53,11 +54,11 @@ public class AvailabilityController {
 
     @GetMapping("/availability/slots")
     public DaySlotsResponse freeSlots(
-            @RequestParam UUID organizationPublicId,
             @RequestParam UUID professionalOrganizationPublicId,
             @RequestParam UUID healthProfessionalPublicId,
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        UUID organizationPublicId = RequestContextHolder.require().organizationId();
         return slots.freeSlots(organizationPublicId, professionalOrganizationPublicId, healthProfessionalPublicId,
                 branchPublicId, date);
     }

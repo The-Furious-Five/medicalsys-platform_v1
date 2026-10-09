@@ -1,0 +1,173 @@
+{"kind":"deck","id":"pr/56g33r","name":"Deck"}
+{"kind":"layout","layoutId":"f42b9f51-df4c-4efa-b56e-a86aa118bee0","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"454be8db-8761-4440-b2b7-63bc60d06ebb","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/73hb8q","slide":1,"title":"MEDICALSYS · SPRINT 2","textShapes":15}
+{"kind":"textbox","id":"sh/f21svadc","slide":1,"name":"001-Kicker","text":"MEDICALSYS · SPRINT 2","textPreview":"MEDICALSYS · SPRINT 2","textChars":21,"textLines":1,"bbox":[70,24,1140,24]}
+{"kind":"textbox","id":"sh/gnatofux","slide":1,"name":"002-Title","text":"ms-pacientes","textPreview":"ms-pacientes","textChars":12,"textLines":1,"bbox":[70,58,1140,86]}
+{"kind":"textbox","id":"sh/1ojaxkvi","slide":1,"name":"003-Subtitle","text":"Registro administrativo y consulta segura del paciente.","textPreview":"Registro administrativo y consulta segura del paciente.","textChars":55,"textLines":1,"bbox":[100,148,1080,42]}
+{"kind":"shape","id":"sh/2pcbqpc3","slide":1,"name":"004-Card 1","bbox":[72,218,350,375]}
+{"kind":"shape","id":"sh/3qlszudo","slide":1,"name":"005-Icon ring ID","bbox":[206,243,82,82]}
+{"kind":"textbox","id":"sh/orutszu9","slide":1,"name":"006-Icon ID","text":"ID","textPreview":"ID","textChars":2,"textLines":1,"bbox":[216,257,62,54]}
+{"kind":"textbox","id":"sh/ps3a14ve","slide":1,"name":"007-Card 1 title","text":"Registro validado","textPreview":"Registro validado","textChars":17,"textLines":1,"bbox":[92,334,310,38]}
+{"kind":"textbox","id":"sh/it8re5wj","slide":1,"name":"008-Card 1 body","text":"Crea pacientes ficticios con documento único y un UUID público estable.","textPreview":"Crea pacientes ficticios con documento único y un UUID público estable.","textChars":71,"textLines":1,"bbox":[97,375,300,201]}
+{"kind":"shape","id":"sh/juhsnqd4","slide":1,"name":"009-Card 2","bbox":[465,218,350,375]}
+{"kind":"shape","id":"sh/byt43ix8","slide":1,"name":"010-Icon ring ⌕","bbox":[599,243,82,82]}
+{"kind":"textbox","id":"sh/axk3udwn","slide":1,"name":"011-Icon ⌕","text":"⌕","textPreview":"⌕","textChars":1,"textLines":1,"bbox":[609,257,62,54]}
+{"kind":"textbox","id":"sh/x0bm58fe","slide":1,"name":"012-Card 2 title","text":"Consulta rápida","textPreview":"Consulta rápida","textChars":15,"textLines":1,"bbox":[485,334,310,38]}
+{"kind":"textbox","id":"sh/wz2lwnet","slide":1,"name":"013-Card 2 body","text":"Busca por UUID o documento sin exponer el identificador interno de la base.","textPreview":"Busca por UUID o documento sin exponer el identificador interno de la base.","textChars":75,"textLines":1,"bbox":[490,375,300,201]}
+{"kind":"shape","id":"sh/nut4zyxw","slide":1,"name":"014-Card 3","bbox":[858,218,350,375]}
+{"kind":"shape","id":"sh/m903qtwr","slide":1,"name":"015-Icon ring API","bbox":[992,243,82,82]}
+{"kind":"textbox","id":"sh/9wbm18f2","slide":1,"name":"016-Icon API","text":"API","textPreview":"API","textChars":3,"textLines":1,"bbox":[1002,257,62,54]}
+{"kind":"textbox","id":"sh/ov2ls3eh","slide":1,"name":"017-Card 3 title","text":"Integración mínima","textPreview":"Integración mínima","textChars":18,"textLines":1,"bbox":[878,334,310,38]}
+{"kind":"textbox","id":"sh/f694vyx0","slide":1,"name":"018-Card 3 body","text":"Agenda y Facturación reciben únicamente los datos necesarios para continuar el flujo.","textPreview":"Agenda y Facturación reciben únicamente los datos necesarios para continuar el flujo.","textChars":85,"textLines":1,"bbox":[883,375,300,201]}
+{"kind":"shape","id":"sh/e503mtwf","slide":1,"name":"019-Status band","bbox":[72,633,1136,62]}
+{"kind":"shape","id":"sh/i1gnyt07","slide":1,"name":"020-Status icon","bbox":[98,643,42,42]}
+{"kind":"textbox","id":"sh/32p47ehs","slide":1,"name":"021-Status check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[103,646,32,32]}
+{"kind":"textbox","id":"sh/43i50jid","slide":1,"name":"022-Status label","text":"Estado:","textPreview":"Estado:","textChars":7,"textLines":1,"bbox":[162,646,160,36]}
+{"kind":"textbox","id":"sh/54rm9ozy","slide":1,"name":"023-Status value","text":"MVP funcional · 10 pruebas · acceso por gateway listo","textPreview":"MVP funcional · 10 pruebas · acceso por gateway listo","textChars":53,"textLines":1,"bbox":[330,646,845,36]}
+{"kind":"notes","id":"nt/73hb8q","slide":1,"text":"Guion breve: presentar primero la responsabilidad del servicio; luego explicar el flujo visual y cerrar con la evidencia de funcionamiento.\n\n[Sources]\n- services/ms-pacientes/docs/contracts.md\n- services/ms-pacientes/src/main/java/com/medicalsys/pacientes/api/PatientController.java\n- services/ms-pacientes/src/main/java/com/medicalsys/pacientes/service/PatientService.java\n[/Sources]"}
+{"kind":"slide","id":"sl/qs4huy","slide":2,"title":"MEDICALSYS · SPRINT 2","textShapes":27}
+{"kind":"textbox","id":"sh/svqhg7y1","slide":2,"name":"024-Kicker","text":"MEDICALSYS · SPRINT 2","textPreview":"MEDICALSYS · SPRINT 2","textChars":21,"textLines":1,"bbox":[70,24,1140,24]}
+{"kind":"textbox","id":"sh/7uhgn2hg","slide":2,"name":"025-Title","text":"ms-pacientes en el flujo clínico","textPreview":"ms-pacientes en el flujo clínico","textChars":32,"textLines":1,"bbox":[70,58,1140,86]}
+{"kind":"textbox","id":"sh/6t8zexgv","slide":2,"name":"026-Subtitle","text":"Una identidad única conecta cita, atención y cobro.","textPreview":"Una identidad única conecta cita, atención y cobro.","textChars":51,"textLines":1,"bbox":[100,148,1080,42]}
+{"kind":"shape","id":"sh/hkjydcfi","slide":2,"name":"027-Flow node 1","bbox":[72,235,235,235]}
+{"kind":"shape","id":"sh/gjahk7yx","slide":2,"name":"028-Flow step 1","bbox":[90,251,36,36]}
+{"kind":"textbox","id":"sh/fi1gb2xc","slide":2,"name":"029-Flow step text 1","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[90,253,36,31]}
+{"kind":"shape","id":"sh/uh8zixg7","slide":2,"name":"030-Icon ring ID","bbox":[148.5,276,82,82]}
+{"kind":"textbox","id":"sh/xofyh8ze","slide":2,"name":"031-Icon ID","text":"ID","textPreview":"ID","textChars":2,"textLines":1,"bbox":[158.5,290,62,54]}
+{"kind":"textbox","id":"sh/wn6x8nyt","slide":2,"name":"032-Flow title 1","text":"Recepción","textPreview":"Recepción","textChars":9,"textLines":1,"bbox":[88,365,203,34]}
+{"kind":"textbox","id":"sh/yp8zedcb","slide":2,"name":"033-Flow body 1","text":"Registra datos administrativos y valida el documento.","textPreview":"Registra datos administrativos y valida el documento.","textChars":53,"textLines":1,"bbox":[90,404,199,52]}
+{"kind":"textbox","id":"sh/zqhg7idg","slide":2,"name":"034-Arrow 316","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[316,318,44,64]}
+{"kind":"shape","id":"sh/krqhgnu1","slide":2,"name":"035-Flow node 2","bbox":[355,235,235,235]}
+{"kind":"shape","id":"sh/lcjy9svm","slide":2,"name":"036-Flow step 2","bbox":[373,251,36,36]}
+{"kind":"textbox","id":"sh/mdszixc7","slide":2,"name":"037-Flow step text 2","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[373,253,36,31]}
+{"kind":"shape","id":"sh/7e1gb2ds","slide":2,"name":"038-Icon ring DB","bbox":[431.5,276,82,82]}
+{"kind":"textbox","id":"sh/8fahk7ud","slide":2,"name":"039-Icon DB","text":"DB","textPreview":"DB","textChars":2,"textLines":1,"bbox":[441.5,290,62,54]}
+{"kind":"textbox","id":"sh/tgjydcvy","slide":2,"name":"040-Flow title 2","text":"patients_db","textPreview":"patients_db","textChars":11,"textLines":1,"bbox":[371,365,203,34]}
+{"kind":"textbox","id":"sh/uhszmxc3","slide":2,"name":"041-Flow body 2","text":"Guarda el perfil; el UUID público viaja entre servicios.","textPreview":"Guarda el perfil; el UUID público viaja entre servicios.","textChars":56,"textLines":1,"bbox":[373,404,199,52]}
+{"kind":"textbox","id":"sh/vi10f2do","slide":2,"name":"042-Arrow 599","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[599,318,44,64]}
+{"kind":"shape","id":"sh/rmlg32tw","slide":2,"name":"043-Flow node 3","bbox":[638,235,235,235]}
+{"kind":"shape","id":"sh/qlcfuhsb","slide":2,"name":"044-Flow step 3","bbox":[656,251,36,36]}
+{"kind":"textbox","id":"sh/do3y5cr2","slide":2,"name":"045-Flow step text 3","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[656,253,36,31]}
+{"kind":"shape","id":"sh/snuxw7ah","slide":2,"name":"046-Icon ring API","bbox":[714.5,276,82,82]}
+{"kind":"textbox","id":"sh/3i1gz2t0","slide":2,"name":"047-Icon API","text":"API","textPreview":"API","textChars":3,"textLines":1,"bbox":[724.5,290,62,54]}
+{"kind":"textbox","id":"sh/ihsfqxsf","slide":2,"name":"048-Flow title 3","text":"Agenda e historial","textPreview":"Agenda e historial","textChars":18,"textLines":1,"bbox":[654,365,203,34]}
+{"kind":"textbox","id":"sh/5k3y1cbq","slide":2,"name":"049-Flow body 3","text":"Referencian al paciente sin consultar su base directamente.","textPreview":"Referencian al paciente sin consultar su base directamente.","textChars":59,"textLines":1,"bbox":[656,404,199,52]}
+{"kind":"textbox","id":"sh/4juxs7a5","slide":2,"name":"050-Arrow 882","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[882,318,44,64]}
+{"kind":"shape","id":"sh/ve1gvito","slide":2,"name":"051-Flow node 4","bbox":[921,235,287,235]}
+{"kind":"shape","id":"sh/utsfmxs3","slide":2,"name":"052-Flow step 4","bbox":[939,251,36,36]}
+{"kind":"textbox","id":"sh/kz6dwjq1","slide":2,"name":"053-Flow step text 4","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[939,253,36,31]}
+{"kind":"shape","id":"sh/lkzu5orm","slide":2,"name":"054-Icon ring $","bbox":[1023.5,276,82,82]}
+{"kind":"textbox","id":"sh/yxovut8v","slide":2,"name":"055-Icon $","text":"$","textPreview":"$","textChars":1,"textLines":1,"bbox":[1033.5,290,62,54]}
+{"kind":"textbox","id":"sh/zyxc3y9g","slide":2,"name":"056-Flow title 4","text":"Facturación","textPreview":"Facturación","textChars":11,"textLines":1,"bbox":[937,365,255,34]}
+{"kind":"textbox","id":"sh/8nqd03qx","slide":2,"name":"057-Flow body 4","text":"Usa la referencia del paciente para emitir el comprobante.","textPreview":"Usa la referencia del paciente para emitir el comprobante.","textChars":58,"textLines":1,"bbox":[939,404,251,52]}
+{"kind":"shape","id":"sh/9oze98ri","slide":2,"name":"058-Rules strip","bbox":[72,498,1136,85]}
+{"kind":"textbox","id":"sh/ml8vyt87","slide":2,"name":"059-Validation rule","text":"VALIDACIÓN\nCI · teléfono E.164 · documento único","textPreview":"VALIDACIÓN | CI · teléfono E.164 · documento único","textChars":48,"textLines":2,"bbox":[100,509,510,62]}
+{"kind":"textbox","id":"sh/7mhc7y9s","slide":2,"name":"060-Security rule","text":"ACCESO\nroles · tenant · X-Correlation-Id","textPreview":"ACCESO | roles · tenant · X-Correlation-Id","textChars":40,"textLines":2,"bbox":[670,509,510,62]}
+{"kind":"shape","id":"sh/ormdozqt","slide":2,"name":"061-Status band","bbox":[72,610,1136,62]}
+{"kind":"shape","id":"sh/psvux4re","slide":2,"name":"062-Status icon","bbox":[98,620,42,42]}
+{"kind":"textbox","id":"sh/10ret8vu","slide":2,"name":"063-Status check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[103,623,32,32]}
+{"kind":"textbox","id":"sh/gzidk3u9","slide":2,"name":"064-Status label","text":"Resultado:","textPreview":"Resultado:","textChars":10,"textLines":1,"bbox":[162,623,160,36]}
+{"kind":"textbox","id":"sh/fy9wryd4","slide":2,"name":"065-Status value","text":"un patientId público acompaña el flujo sin compartir la base","textPreview":"un patientId público acompaña el flujo sin compartir la base","textChars":60,"textLines":1,"bbox":[330,623,845,36]}
+{"kind":"notes","id":"nt/qs4huy","slide":2,"text":"Guion breve: presentar primero la responsabilidad del servicio; luego explicar el flujo visual y cerrar con la evidencia de funcionamiento.\n\n[Sources]\n- services/ms-pacientes/docs/contracts.md\n- services/ms-pacientes/src/main/resources/db/migration/V1__create_schema.sql\n- compose.yaml\n[/Sources]"}
+{"kind":"slide","id":"sl/qnapi2","slide":3,"title":"MEDICALSYS · SPRINT 2","textShapes":15}
+{"kind":"textbox","id":"sh/1wjy1sne","slide":3,"name":"066-Kicker","text":"MEDICALSYS · SPRINT 2","textPreview":"MEDICALSYS · SPRINT 2","textChars":21,"textLines":1,"bbox":[70,24,1140,24]}
+{"kind":"textbox","id":"sh/utszqxo3","slide":3,"name":"067-Title","text":"ms-documental","textPreview":"ms-documental","textChars":13,"textLines":1,"bbox":[70,58,1140,86]}
+{"kind":"textbox","id":"sh/fu1gzipo","slide":3,"name":"068-Subtitle","text":"Bytes en MinIO, metadatos e integridad en documents_db.","textPreview":"Bytes en MinIO, metadatos e integridad en documents_db.","textChars":55,"textLines":1,"bbox":[100,148,1080,42]}
+{"kind":"shape","id":"sh/ozuhw765","slide":3,"name":"069-Card 1","bbox":[72,218,350,375]}
+{"kind":"shape","id":"sh/p03y5cnq","slide":3,"name":"070-Icon ring ↑","bbox":[206,243,82,82]}
+{"kind":"textbox","id":"sh/2xczuxoz","slide":3,"name":"071-Icon ↑","text":"↑","textPreview":"↑","textChars":1,"textLines":1,"bbox":[216,257,62,54]}
+{"kind":"textbox","id":"sh/3ylg325k","slide":3,"name":"072-Card 1 title","text":"Archivo privado","textPreview":"Archivo privado","textChars":15,"textLines":1,"bbox":[92,334,310,38]}
+{"kind":"textbox","id":"sh/c3uh0761","slide":3,"name":"073-Card 1 body","text":"MinIO almacena PDF, imágenes y DICOM; el microservicio controla la clave del objeto.","textPreview":"MinIO almacena PDF, imágenes y DICOM; el microservicio controla la clave del objeto.","textChars":84,"textLines":1,"bbox":[97,375,300,201]}
+{"kind":"shape","id":"sh/d43i9cnm","slide":3,"name":"074-Card 2","bbox":[465,218,350,375]}
+{"kind":"shape","id":"sh/5ojutc3u","slide":3,"name":"075-Icon ring DB","bbox":[599,243,82,82]}
+{"kind":"textbox","id":"sh/43adk7m9","slide":3,"name":"076-Icon DB","text":"DB","textPreview":"DB","textChars":2,"textLines":1,"bbox":[609,257,62,54]}
+{"kind":"textbox","id":"sh/j21cr2lo","slide":3,"name":"077-Card 2 title","text":"Trazabilidad","textPreview":"Trazabilidad","textChars":12,"textLines":1,"bbox":[485,334,310,38]}
+{"kind":"textbox","id":"sh/i1svix43","slide":3,"name":"078-Card 2 body","text":"MySQL conserva tipo, MIME, tamaño, SHA-256, paciente y vínculos clínicos.","textPreview":"MySQL conserva tipo, MIME, tamaño, SHA-256, paciente y vínculos clínicos.","textChars":73,"textLines":1,"bbox":[490,375,300,201]}
+{"kind":"shape","id":"sh/ts3uxc3q","slide":3,"name":"079-Card 3","bbox":[858,218,350,375]}
+{"kind":"shape","id":"sh/srudo7m5","slide":3,"name":"080-Icon ring ✓","bbox":[992,243,82,82]}
+{"kind":"textbox","id":"sh/rqlcvml0","slide":3,"name":"081-Icon ✓","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[1002,257,62,54]}
+{"kind":"textbox","id":"sh/6psvmh4f","slide":3,"name":"082-Card 3 title","text":"Integridad real","textPreview":"Integridad real","textChars":15,"textLines":1,"bbox":[878,334,310,38]}
+{"kind":"textbox","id":"sh/9wzuls3m","slide":3,"name":"083-Card 3 body","text":"Al descargar se recalculan el hash y el tamaño antes de entregar el archivo.","textPreview":"Al descargar se recalculan el hash y el tamaño antes de entregar el archivo.","textChars":76,"textLines":1,"bbox":[883,375,300,201]}
+{"kind":"shape","id":"sh/8vqtcnm1","slide":3,"name":"084-Status band","bbox":[72,633,1136,62]}
+{"kind":"shape","id":"sh/0relory9","slide":3,"name":"085-Status icon","bbox":[98,643,42,42]}
+{"kind":"textbox","id":"sh/lsnmxwfu","slide":3,"name":"086-Status check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[103,646,32,32]}
+{"kind":"textbox","id":"sh/ypw3mhg3","slide":3,"name":"087-Status label","text":"Estado:","textPreview":"Estado:","textChars":7,"textLines":1,"bbox":[162,646,160,36]}
+{"kind":"textbox","id":"sh/zq54vmxo","slide":3,"name":"088-Status value","text":"MVP funcional · 15 pruebas · MinIO + MySQL UP","textPreview":"MVP funcional · 15 pruebas · MinIO + MySQL UP","textChars":45,"textLines":1,"bbox":[330,646,845,36]}
+{"kind":"notes","id":"nt/qnapi2","slide":3,"text":"Guion breve: presentar primero la responsabilidad del servicio; luego explicar el flujo visual y cerrar con la evidencia de funcionamiento.\n\n[Sources]\n- services/ms-documental/docs/contracts.md\n- services/ms-documental/src/main/java/com/medicalsys/documental/api/DocumentsController.java\n- services/ms-documental/src/main/java/com/medicalsys/documental/service/DocumentService.java\n[/Sources]"}
+{"kind":"slide","id":"sl/ukvzcy","slide":4,"title":"MEDICALSYS · SPRINT 2","textShapes":28}
+{"kind":"textbox","id":"sh/yl8vedo3","slide":4,"name":"089-Kicker","text":"MEDICALSYS · SPRINT 2","textPreview":"MEDICALSYS · SPRINT 2","textChars":21,"textLines":1,"bbox":[70,24,1140,24]}
+{"kind":"textbox","id":"sh/lozep8ne","slide":4,"name":"090-Title","text":"Del archivo al historial clínico","textPreview":"Del archivo al historial clínico","textChars":32,"textLines":1,"bbox":[70,58,1140,86]}
+{"kind":"textbox","id":"sh/0nqdg36t","slide":4,"name":"091-Subtitle","text":"La carga conecta un estudio con su resultado sin compartir bases.","textPreview":"La carga conecta un estudio con su resultado sin compartir bases.","textChars":65,"textLines":1,"bbox":[100,148,1080,42]}
+{"kind":"shape","id":"sh/bixwjy5c","slide":4,"name":"092-Flow node 1","bbox":[72,224,235,235]}
+{"kind":"shape","id":"sh/qhovator","slide":4,"name":"093-Flow step 1","bbox":[90,240,36,36]}
+{"kind":"textbox","id":"sh/dkzel8ni","slide":4,"name":"094-Flow step text 1","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[90,242,36,31]}
+{"kind":"shape","id":"sh/cj6dc36x","slide":4,"name":"095-Icon ring ↑","bbox":[148.5,265,82,82]}
+{"kind":"textbox","id":"sh/3uxcfy5g","slide":4,"name":"096-Icon ↑","text":"↑","textPreview":"↑","textChars":1,"textLines":1,"bbox":[158.5,279,62,54]}
+{"kind":"textbox","id":"sh/2tov6tov","slide":4,"name":"097-Flow title 1","text":"Cargar","textPreview":"Cargar","textChars":6,"textLines":1,"bbox":[88,354,203,34]}
+{"kind":"textbox","id":"sh/sju58r21","slide":4,"name":"098-Flow body 1","text":"Recibe archivo, paciente, tipo documental y contexto.","textPreview":"Recibe archivo, paciente, tipo documental y contexto.","textChars":53,"textLines":1,"bbox":[90,393,199,52]}
+{"kind":"textbox","id":"sh/tk361cjm","slide":4,"name":"099-Arrow 316","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[316,307,44,64]}
+{"kind":"shape","id":"sh/6hsn6hkv","slide":4,"name":"100-Flow node 2","bbox":[355,224,235,235]}
+{"kind":"shape","id":"sh/rilozm1g","slide":4,"name":"101-Flow step 2","bbox":[373,240,36,36]}
+{"kind":"textbox","id":"sh/4fa5472p","slide":4,"name":"102-Flow step text 2","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[373,242,36,31]}
+{"kind":"shape","id":"sh/5gj6xcja","slide":4,"name":"103-Icon ring #","bbox":[431.5,265,82,82]}
+{"kind":"textbox","id":"sh/idsn2xkz","slide":4,"name":"104-Icon #","text":"#","textPreview":"#","textChars":1,"textLines":1,"bbox":[441.5,279,62,54]}
+{"kind":"textbox","id":"sh/je1ov2lk","slide":4,"name":"105-Flow title 2","text":"Verificar","textPreview":"Verificar","textChars":9,"textLines":1,"bbox":[371,354,203,34]}
+{"kind":"textbox","id":"sh/obepgb29","slide":4,"name":"106-Flow body 2","text":"Calcula SHA-256, tamaño y MIME antes de persistir.","textPreview":"Calcula SHA-256, tamaño y MIME antes de persistir.","textChars":50,"textLines":1,"bbox":[373,393,199,52]}
+{"kind":"textbox","id":"sh/pcn69wju","slide":4,"name":"107-Arrow 599","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[599,307,44,64]}
+{"kind":"shape","id":"sh/xsj6twby","slide":4,"name":"108-Flow node 3","bbox":[638,224,235,235]}
+{"kind":"shape","id":"sh/wra5krud","slide":4,"name":"109-Flow step 3","bbox":[656,240,36,36]}
+{"kind":"textbox","id":"sh/bq1ormts","slide":4,"name":"110-Flow step text 3","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[656,242,36,31]}
+{"kind":"shape","id":"sh/a5sni1c7","slide":4,"name":"111-Icon ring DB","bbox":[714.5,265,82,82]}
+{"kind":"textbox","id":"sh/94j6pwbm","slide":4,"name":"112-Icon DB","text":"DB","textPreview":"DB","textChars":2,"textLines":1,"bbox":[724.5,279,62,54]}
+{"kind":"textbox","id":"sh/o3q5gru1","slide":4,"name":"113-Flow title 3","text":"Persistir","textPreview":"Persistir","textChars":9,"textLines":1,"bbox":[654,354,203,34]}
+{"kind":"textbox","id":"sh/n2honmtw","slide":4,"name":"114-Flow body 3","text":"Bytes a MinIO; metadatos y vínculos a documents_db.","textPreview":"Bytes a MinIO; metadatos y vínculos a documents_db.","textChars":51,"textLines":1,"bbox":[656,393,199,52]}
+{"kind":"textbox","id":"sh/218nehcb","slide":4,"name":"115-Arrow 882","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[882,307,44,64]}
+{"kind":"shape","id":"sh/10zmlcbq","slide":4,"name":"116-Flow node 4","bbox":[921,224,287,235]}
+{"kind":"shape","id":"sh/0zq5c7u5","slide":4,"name":"117-Flow step 4","bbox":[939,240,36,36]}
+{"kind":"textbox","id":"sh/q5o3mds3","slide":4,"name":"118-Flow step text 4","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[939,242,36,31]}
+{"kind":"shape","id":"sh/r6xkvi9o","slide":4,"name":"119-Icon ring API","bbox":[1023.5,265,82,82]}
+{"kind":"textbox","id":"sh/s76lonat","slide":4,"name":"120-Icon API","text":"API","textPreview":"API","textChars":3,"textLines":1,"bbox":[1033.5,279,62,54]}
+{"kind":"textbox","id":"sh/d8f2xsre","slide":4,"name":"121-Flow title 4","text":"Vincular","textPreview":"Vincular","textChars":8,"textLines":1,"bbox":[937,354,255,34]}
+{"kind":"textbox","id":"sh/i143idsr","slide":4,"name":"122-Flow body 4","text":"El historial consulta la referencia y descarga por la API.","textPreview":"El historial consulta la referencia y descarga por la API.","textChars":58,"textLines":1,"bbox":[939,393,251,52]}
+{"kind":"shape","id":"sh/32dkri9c","slide":4,"name":"123-Proof band","bbox":[72,482,1136,101]}
+{"kind":"shape","id":"sh/43mlk3ax","slide":4,"name":"124-Proof icon","bbox":[98,499,54,54]}
+{"kind":"textbox","id":"sh/54v2t8ri","slide":4,"name":"125-Proof check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[105,504,40,39]}
+{"kind":"textbox","id":"sh/udkjetsv","slide":4,"name":"126-Proof label","text":"PRUEBA REAL","textPreview":"PRUEBA REAL","textChars":11,"textLines":1,"bbox":[177,495,170,30]}
+{"kind":"textbox","id":"sh/vedkny9g","slide":4,"name":"127-Proof data","text":"141 B · mismo SHA-256 · 1 objeto · 3 vínculos","textPreview":"141 B · mismo SHA-256 · 1 objeto · 3 vínculos","textChars":45,"textLines":1,"bbox":[177,526,970,40]}
+{"kind":"shape","id":"sh/7qdgzedw","slide":4,"name":"128-Status band","bbox":[72,610,1136,62]}
+{"kind":"shape","id":"sh/mp4zq9wb","slide":4,"name":"129-Status icon","bbox":[98,620,42,42]}
+{"kind":"textbox","id":"sh/9sfy14v2","slide":4,"name":"130-Status check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[103,623,32,32]}
+{"kind":"textbox","id":"sh/8r6hszeh","slide":4,"name":"131-Status label","text":"Resultado:","textPreview":"Resultado:","textChars":10,"textLines":1,"bbox":[162,623,160,36]}
+{"kind":"textbox","id":"sh/z2dgvud0","slide":4,"name":"132-Status value","text":"descarga verificada y consulta disponible por gateway","textPreview":"descarga verificada y consulta disponible por gateway","textChars":53,"textLines":1,"bbox":[330,623,845,36]}
+{"kind":"notes","id":"nt/ukvzcy","slide":4,"text":"Guion breve: presentar primero la responsabilidad del servicio; luego explicar el flujo visual y cerrar con la evidencia de funcionamiento.\n\n[Sources]\n- services/ms-documental/src/main/resources/db/migration/V1__create_schema.sql\n- services/ms-documental/src/main/java/com/medicalsys/documental/service/DocumentService.java\n- Verificación local del MVP realizada el 25 de agosto de 2026: archivo de 141 bytes y SHA-256 coincidente.\n[/Sources]"}
+{"kind":"slide","id":"sl/qgsp0n","slide":5,"title":"MEDICALSYS · SPRINT 2","textShapes":20}
+{"kind":"textbox","id":"sh/50baxsjy","slide":5,"name":"133-Kicker","text":"MEDICALSYS · SPRINT 2","textPreview":"MEDICALSYS · SPRINT 2","textChars":21,"textLines":1,"bbox":[70,24,1140,24]}
+{"kind":"textbox","id":"sh/ix0r2x07","slide":5,"name":"134-Title","text":"API Gateway","textPreview":"API Gateway","textChars":11,"textLines":1,"bbox":[70,58,1140,86]}
+{"kind":"textbox","id":"sh/3y9sv21s","slide":5,"name":"135-Subtitle","text":"Un único punto de entrada enruta hacia cada microservicio.","textPreview":"Un único punto de entrada enruta hacia cada microservicio.","textChars":58,"textLines":1,"bbox":[100,148,1080,42]}
+{"kind":"shape","id":"sh/gvi90ni1","slide":5,"name":"136-Client box","bbox":[76,270,210,170]}
+{"kind":"shape","id":"sh/hwratsjm","slide":5,"name":"137-Icon ring UI","bbox":[140,290,82,82]}
+{"kind":"textbox","id":"sh/ut0ryd0b","slide":5,"name":"138-Icon UI","text":"UI","textPreview":"UI","textChars":2,"textLines":1,"bbox":[150,304,62,54]}
+{"kind":"textbox","id":"sh/vu98ri1g","slide":5,"name":"139-Client label","text":"Cliente","textPreview":"Cliente","textChars":7,"textLines":1,"bbox":[100,382,162,38]}
+{"kind":"textbox","id":"sh/0rm9cril","slide":5,"name":"140-Arrow 306","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[306,323,44,64]}
+{"kind":"shape","id":"sh/1sva5cz6","slide":5,"name":"141-Gateway box","bbox":[365,230,290,250]}
+{"kind":"shape","id":"sh/hsj214ru","slide":5,"name":"142-Icon ring GW","bbox":[469,261,82,82]}
+{"kind":"textbox","id":"sh/g7ql8zq9","slide":5,"name":"143-Icon GW","text":"GW","textPreview":"GW","textChars":2,"textLines":1,"bbox":[479,275,62,54]}
+{"kind":"textbox","id":"sh/f6hkzu9o","slide":5,"name":"144-Gateway label","text":"Gateway :18080","textPreview":"Gateway :18080","textChars":14,"textLines":1,"bbox":[395,356,230,40]}
+{"kind":"textbox","id":"sh/u5836p83","slide":5,"name":"145-Gateway description","text":"Reconoce el path\ny localiza el contenedor","textPreview":"Reconoce el path | y localiza el contenedor","textChars":41,"textLines":2,"bbox":[395,400,230,58]}
+{"kind":"textbox","id":"sh/t4z2d4ri","slide":5,"name":"146-Arrow 675","text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[675,323,44,64]}
+{"kind":"shape","id":"sh/s3ql4zqx","slide":5,"name":"147-Routes panel","bbox":[737,220,471,270]}
+{"kind":"textbox","id":"sh/72hkbu9c","slide":5,"name":"148-Routes title","text":"RUTAS DEL MVP","textPreview":"RUTAS DEL MVP","textChars":13,"textLines":1,"bbox":[777,242,391,34]}
+{"kind":"textbox","id":"sh/618j2psr","slide":5,"name":"149-Patient route","text":"/api/v1/patients/**  →  ms-pacientes","textPreview":"/api/v1/patients/**  →  ms-pacientes","textChars":36,"textLines":1,"bbox":[770,292,405,45]}
+{"kind":"textbox","id":"sh/d0329orm","slide":5,"name":"150-Document route","text":"/api/v1/documents/**  →  ms-documental","textPreview":"/api/v1/documents/**  →  ms-documental","textChars":38,"textLines":1,"bbox":[770,350,405,45]}
+{"kind":"textbox","id":"sh/czalgjqh","slide":5,"name":"151-Other route","text":"otros paths  →  servicios del compose","textPreview":"otros paths  →  servicios del compose","textChars":37,"textLines":1,"bbox":[770,408,405,45]}
+{"kind":"shape","id":"sh/wf2dsr2p","slide":5,"name":"152-Principles strip","bbox":[76,521,1132,78]}
+{"kind":"textbox","id":"sh/xgbe1w3a","slide":5,"name":"153-Principle 1","text":"① Enrutamiento por path","textPreview":"① Enrutamiento por path","textChars":23,"textLines":1,"bbox":[98,537,330,42]}
+{"kind":"textbox","id":"sh/adkvqhkj","slide":5,"name":"154-Principle 2","text":"② Nombres Docker internos","textPreview":"② Nombres Docker internos","textChars":25,"textLines":1,"bbox":[474,537,330,42]}
+{"kind":"textbox","id":"sh/betwzml4","slide":5,"name":"155-Principle 3","text":"③ Identidad y correlación","textPreview":"③ Identidad y correlación","textChars":25,"textLines":1,"bbox":[850,537,330,42]}
+{"kind":"shape","id":"sh/ob2dor2t","slide":5,"name":"156-Status band","bbox":[72,633,1136,62]}
+{"kind":"shape","id":"sh/9cbexc3y","slide":5,"name":"157-Status icon","bbox":[98,643,42,42]}
+{"kind":"textbox","id":"sh/mpkvmhkn","slide":5,"name":"158-Status check","text":"✓","textPreview":"✓","textChars":1,"textLines":1,"bbox":[103,646,32,32]}
+{"kind":"textbox","id":"sh/natwvml8","slide":5,"name":"159-Status label","text":"Verificado:","textPreview":"Verificado:","textChars":11,"textLines":1,"bbox":[162,646,160,36]}
+{"kind":"textbox","id":"sh/0nidk72h","slide":5,"name":"160-Status value","text":"pacientes y documentos responden correctamente por el gateway","textPreview":"pacientes y documentos responden correctamente por el gateway","textChars":61,"textLines":1,"bbox":[330,646,845,36]}
+{"kind":"notes","id":"nt/qgsp0n","slide":5,"text":"Guion breve: presentar primero la responsabilidad del servicio; luego explicar el flujo visual y cerrar con la evidencia de funcionamiento.\n\n[Sources]\n- services/ms-gateway/src/main/resources/application.yaml\n- compose.yaml\n- services/ms-pacientes/docs/contracts.md\n- services/ms-documental/docs/contracts.md\n[/Sources]"}

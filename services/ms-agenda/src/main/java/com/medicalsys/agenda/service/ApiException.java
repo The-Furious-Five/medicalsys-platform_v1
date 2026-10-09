@@ -18,6 +18,10 @@ public class ApiException extends RuntimeException {
         return new ApiException(HttpStatus.NOT_FOUND, "Recurso no encontrado", detail);
     }
 
+    public static ApiException unauthorized(String detail) {
+        return new ApiException(HttpStatus.UNAUTHORIZED, "Identidad requerida", detail);
+    }
+
     public static ApiException conflict(String detail) {
         return new ApiException(HttpStatus.CONFLICT, "Conflicto de agenda", detail);
     }

@@ -1,0 +1,58 @@
+# Configuracion de pruebas. Reemplaza a la de produccion porque el classpath de test tiene
+# prioridad: las pruebas no dependen de variables de entorno ni de un motor externo.
+# La datasource la inyecta cada prueba de integracion desde su contenedor.
+spring:
+  application:
+    name: ms-historial
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    # Los campos nulos no viajan en la respuesta y las fechas salen en ISO-8601, no como
+    # numero de epoch (Jackson 3 mueve la opcion a datatype.datetime).
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+
+medicalsys:
+  crypto:
+    mode: LOCAL
+    base-url: http://ms-criptografia:8084
+    demo-master-key: clave-local-de-prueba-no-secreta
+    key-public-id: 00000000-0000-4000-8000-0000000000c4
+    connect-timeout: 2s
+    read-timeout: 3s
+  catalogs:
+    validation-mode: LOCAL
+    base-url: http://ms-catalogos:8083
+    connect-timeout: 2s
+    read-timeout: 3s
+    local:
+      icd10-codes: J00,M54.5,R51,S52.50
+      study-type-codes: X_RAY,LAB_HEMOGRAM
+      medication-codes: PARACETAMOL_500,IBUPROFENO_400
+  patients:
+    base-url: http://ms-pacientes:8085
+    connect-timeout: 2s
+    read-timeout: 3s
+  numbering:
+    record-number-prefix: EXP
+    prescription-folio-prefix: REC
+    max-attempts: 5
+
+logging:
+  level:
+    root: WARN
+    com.medicalsys.historial: INFO
+    org.flywaydb: INFO

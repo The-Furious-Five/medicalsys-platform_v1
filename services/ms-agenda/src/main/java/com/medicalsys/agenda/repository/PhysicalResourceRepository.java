@@ -11,5 +11,7 @@ public interface PhysicalResourceRepository
 
     Optional<PhysicalResource> findByPublicId(UUID publicId);
 
+    Optional<PhysicalResource> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
+
     boolean existsByOrganizationPublicIdAndCodeIgnoreCase(UUID organizationPublicId, String code);
 }
