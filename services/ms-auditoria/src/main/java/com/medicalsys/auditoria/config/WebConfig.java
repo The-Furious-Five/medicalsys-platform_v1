@@ -1,23 +1,23 @@
 package com.medicalsys.auditoria.config;
 
-import com.medicalsys.auditoria.common.security.RoleAuthorizationInterceptor;
+import com.medicalsys.auditoria.common.security.PermissionAuthorizationInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Registra la autorizacion por rol para las rutas del contrato. */
+/** Registra la autorizacion por permiso para las rutas del contrato. */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final RoleAuthorizationInterceptor roleAuthorizationInterceptor;
+    private final PermissionAuthorizationInterceptor permissionAuthorizationInterceptor;
 
-    public WebConfig(RoleAuthorizationInterceptor roleAuthorizationInterceptor) {
-        this.roleAuthorizationInterceptor = roleAuthorizationInterceptor;
+    public WebConfig(PermissionAuthorizationInterceptor permissionAuthorizationInterceptor) {
+        this.permissionAuthorizationInterceptor = permissionAuthorizationInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(roleAuthorizationInterceptor)
+        registry.addInterceptor(permissionAuthorizationInterceptor)
                 .addPathPatterns("/api/**", "/internal/**");
     }
 }

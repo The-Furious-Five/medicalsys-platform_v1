@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.PrescriptionService;
 import com.medicalsys.historial.web.dto.AttachDocumentRequest;
@@ -34,7 +33,7 @@ public class PrescriptionController {
     }
 
     @PostMapping("/encuentros/{encounterId}/recetas")
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.prescription.create")
     public ResponseEntity<PrescriptionResponse> create(@PathVariable UUID encounterId,
             @Valid @RequestBody CreatePrescriptionRequest request) {
         PrescriptionResponse body = service.create(RequestContextHolder.require(), encounterId, request);
@@ -42,19 +41,19 @@ public class PrescriptionController {
     }
 
     @GetMapping("/encuentros/{encounterId}/recetas")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.prescription.read")
     public List<PrescriptionResponse> listByEncounter(@PathVariable UUID encounterId) {
         return service.listByEncounter(RequestContextHolder.require(), encounterId);
     }
 
     @GetMapping("/recetas/{prescriptionId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.prescription.read")
     public PrescriptionResponse get(@PathVariable UUID prescriptionId) {
         return service.get(RequestContextHolder.require(), prescriptionId);
     }
 
     @PatchMapping("/recetas/{prescriptionId}/estado")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.prescription.change_status")
     public PrescriptionResponse changeStatus(@PathVariable UUID prescriptionId,
             @Valid @RequestBody ChangePrescriptionStatusRequest request) {
         return service.changeStatus(RequestContextHolder.require(), prescriptionId, request);
@@ -62,7 +61,7 @@ public class PrescriptionController {
 
     /** Vincula el PDF firmado que produjo ms-documental. */
     @PutMapping("/recetas/{prescriptionId}/documento")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.prescription.attach_document")
     public PrescriptionResponse attachDocument(@PathVariable UUID prescriptionId,
             @Valid @RequestBody AttachDocumentRequest request) {
         return service.attachDocument(RequestContextHolder.require(), prescriptionId, request);

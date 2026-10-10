@@ -12,7 +12,7 @@ import com.medicalsys.pacientes.common.correlation.CorrelationIdFilter;
 import com.medicalsys.pacientes.common.error.ConflictException;
 import com.medicalsys.pacientes.common.error.ErrorCode;
 import com.medicalsys.pacientes.common.error.GlobalExceptionHandler;
-import com.medicalsys.pacientes.common.security.RoleAuthorizationInterceptor;
+import com.medicalsys.pacientes.common.security.PermissionAuthorizationInterceptor;
 import com.medicalsys.pacientes.common.tenant.TenantContextFilter;
 import com.medicalsys.pacientes.domain.enums.BloodType;
 import com.medicalsys.pacientes.domain.enums.Department;
@@ -56,7 +56,7 @@ class PatientControllerTest {
                         new InternalPatientController(service),
                         new PatientsPingController())
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .addInterceptors(new RoleAuthorizationInterceptor())
+                .addInterceptors(new PermissionAuthorizationInterceptor())
                 .addFilters(new CorrelationIdFilter(), new TenantContextFilter())
                 .build();
     }
@@ -68,7 +68,7 @@ class PatientControllerTest {
         mvc.perform(post("/api/v1/patients")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST")
+                        .header("X-Permissions", "patients.patient.create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest("")))
                 .andExpect(status().isCreated())
@@ -90,7 +90,7 @@ class PatientControllerTest {
         mvc.perform(post("/api/v1/patients")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST")
+                        .header("X-Permissions", "patients.patient.create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest("")))
                 .andExpect(status().isConflict())
@@ -105,7 +105,7 @@ class PatientControllerTest {
         mvc.perform(post("/api/v1/patients")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST")
+                        .header("X-Permissions", "patients.patient.create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest("A")))
                 .andExpect(status().isCreated())
@@ -117,7 +117,7 @@ class PatientControllerTest {
     void rejectsRequestsWithoutACompleteGatewayIdentity() throws Exception {
         mvc.perform(get("/api/v1/patients/" + PATIENT_ID)
                         .header("X-Organization-Id", ORGANIZATION_ID)
-                        .header("X-Roles", "RECEPTIONIST"))
+                        .header("X-Permissions", "patients.patient.read"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
     }

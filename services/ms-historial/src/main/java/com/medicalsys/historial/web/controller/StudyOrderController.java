@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.domain.enums.StudyOrderStatus;
 import com.medicalsys.historial.service.StudyOrderService;
@@ -49,7 +48,7 @@ public class StudyOrderController {
     }
 
     @PostMapping("/encuentros/{encounterId}/ordenes-estudio")
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.create")
     public ResponseEntity<StudyOrderResponse> create(@PathVariable UUID encounterId,
             @Valid @RequestBody CreateStudyOrderRequest request) {
         StudyOrderResponse body = service.create(RequestContextHolder.require(), encounterId, request);
@@ -57,20 +56,20 @@ public class StudyOrderController {
     }
 
     @GetMapping("/encuentros/{encounterId}/ordenes-estudio")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.read")
     public List<StudyOrderResponse> listByEncounter(@PathVariable UUID encounterId) {
         return service.listByEncounter(RequestContextHolder.require(), encounterId);
     }
 
     @GetMapping("/ordenes-estudio/{orderId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.read")
     public StudyOrderResponse get(@PathVariable UUID orderId) {
         return service.get(RequestContextHolder.require(), orderId);
     }
 
     /** Busqueda paginada por estado, tipo de estudio y paciente. */
     @GetMapping("/ordenes-estudio")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.read")
     public PageResponse<StudyOrderResponse> search(
             @RequestParam(required = false) StudyOrderStatus status,
             @RequestParam(required = false) String studyTypeCode,
@@ -82,14 +81,14 @@ public class StudyOrderController {
 
     /** Vincula la cita de toma creada por ms-agenda. */
     @PatchMapping("/ordenes-estudio/{orderId}/cita-toma")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.schedule_collection")
     public StudyOrderResponse scheduleCollection(@PathVariable UUID orderId,
             @Valid @RequestBody ScheduleStudyOrderRequest request) {
         return service.scheduleCollection(RequestContextHolder.require(), orderId, request);
     }
 
     @PatchMapping("/ordenes-estudio/{orderId}/estado")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_order.change_status")
     public StudyOrderResponse changeStatus(@PathVariable UUID orderId,
             @Valid @RequestBody ChangeStudyOrderStatusRequest request) {
         return service.changeStatus(RequestContextHolder.require(), orderId, request);
@@ -98,14 +97,14 @@ public class StudyOrderController {
     /** Registra el resultado del estudio con su referencia documental. */
     @PostMapping("/ordenes-estudio/{orderId}/resultados")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_result.create")
     public StudyResultResponse registerResult(@PathVariable UUID orderId,
             @Valid @RequestBody RegisterStudyResultRequest request) {
         return service.registerResult(RequestContextHolder.require(), orderId, request);
     }
 
     @GetMapping("/ordenes-estudio/{orderId}/resultados")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.study_result.read")
     public List<StudyResultResponse> listResults(@PathVariable UUID orderId) {
         return service.listResults(RequestContextHolder.require(), orderId);
     }

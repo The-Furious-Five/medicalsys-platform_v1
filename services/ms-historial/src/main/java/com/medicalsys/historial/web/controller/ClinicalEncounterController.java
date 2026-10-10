@@ -1,8 +1,7 @@
 package com.medicalsys.historial.web.controller;
 
 import com.medicalsys.historial.common.DateTimes;
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.domain.enums.EncounterStatus;
 import com.medicalsys.historial.service.ClinicalEncounterService;
@@ -54,21 +53,21 @@ public class ClinicalEncounterController {
 
     /** Abre un encuentro en borrador, recuperando o creando el expediente del paciente. */
     @PostMapping
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.open")
     public ResponseEntity<ClinicalEncounterResponse> open(@Valid @RequestBody OpenEncounterRequest request) {
         ClinicalEncounterResponse body = service.open(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/encuentros/" + body.id())).body(body);
     }
 
     @GetMapping("/{encounterId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.read")
     public ClinicalEncounterResponse get(@PathVariable UUID encounterId) {
         return service.get(RequestContextHolder.require(), encounterId);
     }
 
     /** Busqueda paginada por expediente, profesional, estado y rango de fechas. */
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.read")
     public PageResponse<EncounterSummaryResponse> search(
             @RequestParam(required = false) UUID recordId,
             @RequestParam(required = false) UUID professionalId,
@@ -82,7 +81,7 @@ public class ClinicalEncounterController {
 
     /** Reemplaza la narrativa SOAP; solo se acepta sobre un encuentro en borrador. */
     @PutMapping("/{encounterId}/notas")
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.update_notes")
     public ClinicalEncounterResponse updateNarrative(@PathVariable UUID encounterId,
             @Valid @RequestBody UpdateNarrativeRequest request) {
         return service.updateNarrative(RequestContextHolder.require(), encounterId, request);
@@ -90,7 +89,7 @@ public class ClinicalEncounterController {
 
     /** Firma el encuentro y lo vuelve inmutable. */
     @PostMapping("/{encounterId}/firma")
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.sign")
     public ClinicalEncounterResponse sign(@PathVariable UUID encounterId,
             @RequestBody(required = false) SignEncounterRequest request) {
         return service.sign(RequestContextHolder.require(), encounterId, request);
@@ -98,7 +97,7 @@ public class ClinicalEncounterController {
 
     /** Anula el encuentro conservando el registro y su motivo. */
     @PostMapping("/{encounterId}/anulacion")
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.encounter.void")
     public ClinicalEncounterResponse voidEncounter(@PathVariable UUID encounterId,
             @Valid @RequestBody VoidEncounterRequest request) {
         return service.voidEncounter(RequestContextHolder.require(), encounterId, request);
@@ -107,14 +106,14 @@ public class ClinicalEncounterController {
     /** Agrega una adicion inmutable sobre un encuentro firmado. */
     @PostMapping("/{encounterId}/addendums")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.addendum.create")
     public AddendumResponse addAddendum(@PathVariable UUID encounterId,
             @Valid @RequestBody CreateAddendumRequest request) {
         return service.addAddendum(RequestContextHolder.require(), encounterId, request);
     }
 
     @GetMapping("/{encounterId}/addendums")
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.addendum.read")
     public List<AddendumResponse> listAddendums(@PathVariable UUID encounterId) {
         return service.listAddendums(RequestContextHolder.require(), encounterId);
     }

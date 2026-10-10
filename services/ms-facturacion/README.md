@@ -108,6 +108,8 @@ autoridad tributaria.
 Rutas en español, campos JSON en inglés camelCase, fechas ISO-8601 con zona, dinero en `DECIMAL`.
 El detalle completo con ejemplos está en [`docs/contracts.md`](docs/contracts.md).
 
+Desde RBAC-03 cada endpoint exige un permiso del catálogo de ms-identidad (`@RequiresPermission`), no un rol. La columna de roles indica quién lo tiene en la asignación inicial; el permiso exacto de cada endpoint está en [`docs/seguridad/rbac-01-endpoints-permisos.csv`](../../docs/seguridad/rbac-01-endpoints-permisos.csv).
+
 | Método y ruta | Rol | Para qué |
 | --- | --- | --- |
 | `GET /api/v1/billing/ping` | público | Verificar temporalmente el servicio y el enrutamiento |
@@ -121,11 +123,11 @@ cliente: quien emite elige **qué** se cobra y **cuánta** cantidad, nunca **a q
 
 ## 6. Seguridad y aislamiento
 
-- El gateway valida el JWT y reescribe `X-Organization-Id`, `X-User-Id` y `X-Roles`. Este servicio
+- El gateway valida el JWT y reescribe `X-Organization-Id`, `X-User-Id`, `X-Roles` y `X-Permissions`. Este servicio
   **nunca** acepta un `organizationId` que venga del cuerpo o de la query.
 - Toda consulta está acotada por organización. Una factura de otro tenant responde **404**, no 403:
   revelar su existencia rompería el aislamiento.
-- Los endpoints declaran su rol con `@RequiresRole`.
+- Los endpoints declaran su permiso con `@RequiresPermission`.
 - Los logs llevan `serviceName`, `correlationId` y `organizationId`, y registran solo
   identificadores, correlativos e importes. Nunca un JWT, una credencial fiscal ni un dato clínico.
 - `billing_user` solo tiene permisos sobre `billing_db`; en particular **no** puede leer

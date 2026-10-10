@@ -7,9 +7,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private final RoleAuthorizationInterceptor authorizationInterceptor;
+    private final PermissionAuthorizationInterceptor authorizationInterceptor;
 
-    public WebMvcConfig(RoleAuthorizationInterceptor authorizationInterceptor) {
+    public WebMvcConfig(PermissionAuthorizationInterceptor authorizationInterceptor) {
         this.authorizationInterceptor = authorizationInterceptor;
     }
 

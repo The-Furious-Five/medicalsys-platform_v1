@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.service.SubscriptionService;
 import com.medicalsys.tenencia.web.dto.SubscriptionPlanResponse;
 import java.util.List;
@@ -27,7 +26,7 @@ public class SubscriptionPlanController {
 
     /** Planes activos, del mas barato al mas caro. Un limite nulo significa ilimitado. */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.BILLING_CLERK, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.plan.read")
     public List<SubscriptionPlanResponse> list() {
         return service.listActivePlans();
     }

@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.medicalsys.pacientes.common.correlation.CorrelationIdFilter;
 import com.medicalsys.pacientes.common.error.GlobalExceptionHandler;
-import com.medicalsys.pacientes.common.security.RoleAuthorizationInterceptor;
+import com.medicalsys.pacientes.common.security.PermissionAuthorizationInterceptor;
 import com.medicalsys.pacientes.common.tenant.TenantContextFilter;
 import com.medicalsys.pacientes.domain.enums.BloodType;
 import com.medicalsys.pacientes.domain.enums.DocumentType;
@@ -45,7 +45,7 @@ class PatientAccessControllerTest {
     void setUp() {
         mvc = MockMvcBuilders.standaloneSetup(new PatientAccessController(patients, access))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .addInterceptors(new RoleAuthorizationInterceptor())
+                .addInterceptors(new PermissionAuthorizationInterceptor())
                 .addFilters(new CorrelationIdFilter(), new TenantContextFilter())
                 .build();
     }
@@ -55,7 +55,7 @@ class PatientAccessControllerTest {
         mvc.perform(post("/api/v1/patients/" + PATIENT_ID + "/acceso/solicitudes")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PATIENT"))
+                        .header("X-Permissions", "marketing.opt_out.update"))
                 .andExpect(status().isForbidden());
     }
 
@@ -69,7 +69,7 @@ class PatientAccessControllerTest {
         mvc.perform(post("/api/v1/patients/" + PATIENT_ID + "/acceso/solicitudes")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST"))
+                        .header("X-Permissions", "patients.access_grant.request"))
                 .andExpect(status().isCreated());
     }
 

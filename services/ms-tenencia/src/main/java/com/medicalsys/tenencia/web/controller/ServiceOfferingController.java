@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.service.ServiceOfferingService;
 import com.medicalsys.tenencia.web.dto.ChangeServiceOfferingActiveRequest;
@@ -43,7 +42,7 @@ public class ServiceOfferingController {
     }
 
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.service_offering.create")
     public ResponseEntity<ServiceOfferingResponse> create(
             @Valid @RequestBody CreateServiceOfferingRequest request) {
         ServiceOfferingResponse offering = service.create(RequestContextHolder.require(), request);
@@ -57,7 +56,7 @@ public class ServiceOfferingController {
      * @param specialtyCode filtra por especialidad de ms-catalogos
      */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.service_offering.read")
     public PageResponse<ServiceOfferingResponse> list(@RequestParam(required = false) Boolean active,
             @RequestParam(required = false) String specialtyCode,
             @PageableDefault(size = 20, sort = "code", direction = Sort.Direction.ASC) Pageable pageable) {
@@ -65,13 +64,13 @@ public class ServiceOfferingController {
     }
 
     @GetMapping("/{serviceOfferingId}")
-    @RequiresRole({Role.ADMINISTRATOR, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.service_offering.read")
     public ServiceOfferingResponse get(@PathVariable UUID serviceOfferingId) {
         return service.get(RequestContextHolder.require(), serviceOfferingId);
     }
 
     @PutMapping("/{serviceOfferingId}")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.service_offering.update")
     public ServiceOfferingResponse update(@PathVariable UUID serviceOfferingId,
             @Valid @RequestBody UpdateServiceOfferingRequest request) {
         return service.update(RequestContextHolder.require(), serviceOfferingId, request);
@@ -79,7 +78,7 @@ public class ServiceOfferingController {
 
     /** Activa o desactiva la prestacion; desactivar no borra la fila. */
     @PatchMapping("/{serviceOfferingId}/vigencia")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.service_offering.change_status")
     public ServiceOfferingResponse changeActive(@PathVariable UUID serviceOfferingId,
             @Valid @RequestBody ChangeServiceOfferingActiveRequest request) {
         return service.changeActive(RequestContextHolder.require(), serviceOfferingId, request);

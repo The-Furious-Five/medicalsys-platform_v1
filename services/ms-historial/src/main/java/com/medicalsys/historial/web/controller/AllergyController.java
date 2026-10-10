@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.AllergyService;
 import com.medicalsys.historial.web.dto.AllergyResponse;
@@ -33,19 +32,19 @@ public class AllergyController {
 
     @PostMapping("/expedientes/{recordId}/alergias")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.allergy.create")
     public AllergyResponse create(@PathVariable UUID recordId, @Valid @RequestBody CreateAllergyRequest request) {
         return service.create(RequestContextHolder.require(), recordId, request);
     }
 
     @GetMapping("/expedientes/{recordId}/alergias")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.allergy.read")
     public List<AllergyResponse> list(@PathVariable UUID recordId) {
         return service.list(RequestContextHolder.require(), recordId);
     }
 
     @PatchMapping("/alergias/{allergyId}")
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.allergy.update")
     public AllergyResponse update(@PathVariable Long allergyId,
             @Valid @RequestBody UpdateAllergyRequest request) {
         return service.update(RequestContextHolder.require(), allergyId, request);

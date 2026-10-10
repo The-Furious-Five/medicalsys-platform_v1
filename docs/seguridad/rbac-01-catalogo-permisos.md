@@ -3,7 +3,7 @@
 **Issue:** SINS-11 · **Sección del informe:** 9.2 · **Migración:** `services/ms-identidad/src/main/resources/db/migration/V3__granular_permission_catalog.sql`
 **Hoja endpoint → permiso (borrador de la matriz RBAC-06):** [`rbac-01-endpoints-permisos.csv`](rbac-01-endpoints-permisos.csv)
 
-El catálogo define **168 permisos** en 12 módulos y cubre los **275 endpoints** que exponen hoy los 13 microservicios (267 en RBAC-01, más los 8 de gestión de roles de RBAC-02). Se inventariaron leyendo cada `@*Mapping` de los controladores, no la documentación. `GET /api/v1/identity/permissions` lo devuelve completo y acepta `?module=` para filtrar.
+El catálogo define **169 permisos** en 12 módulos (168 en RBAC-01, más `clinical.narrative.read` de RBAC-03) y cubre los **275 endpoints** que exponen hoy los 13 microservicios (267 en RBAC-01, más los 8 de gestión de roles de RBAC-02). Se inventariaron leyendo cada `@*Mapping` de los controladores, no la documentación. `GET /api/v1/identity/permissions` lo devuelve completo y acepta `?module=` para filtrar.
 
 ## Convención
 
@@ -171,7 +171,7 @@ PA = PLATFORM_ADMIN · AD = ADMINISTRATOR · PH = PHYSICIAN · RE = RECEPTIONIST
 | `scheduling.resource.update` | Modificar recursos fisicos |  | ✓ | ✓ |  |  |  |  | `PATCH /api/v1/scheduling/resources/{publicId}` |
 | `scheduling.resource.change_status` | Cambiar el estado de un recurso fisico |  | ✓ | ✓ |  |  |  |  | `PATCH /api/v1/scheduling/resources/{publicId}/status` |
 
-### Historia clínica (ms-historial) — 34 permisos
+### Historia clínica (ms-historial) — 35 permisos
 
 | Permiso | Qué permite | Sensible | PA | AD | PH | RE | BC | PT | Endpoints |
 |---|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|---|
@@ -209,6 +209,7 @@ PA = PLATFORM_ADMIN · AD = ADMINISTRATOR · PH = PHYSICIAN · RE = RECEPTIONIST
 | `clinical.study_result.create` | Registrar resultados de estudios | sí | ✓ | ✓ | ✓ | ✓ |  |  | `POST /api/v1/ordenes-estudio/{orderId}/resultados` |
 | `clinical.vital_sign.read` | Consultar signos vitales | sí | ✓ | ✓ | ✓ | ✓ |  |  | `GET /api/v1/encuentros/{encounterId}/signos-vitales` |
 | `clinical.vital_sign.create` | Registrar signos vitales | sí | ✓ |  | ✓ | ✓ |  |  | `POST /api/v1/encuentros/{encounterId}/signos-vitales` |
+| `clinical.narrative.read` | Leer en claro el contenido clinico cifrado (antecedentes y resultados de estudios) | sí | ✓ | ✓ | ✓ |  |  |  | Sin endpoint propio: decide si las respuestas de antecedentes y resultados traen el texto descifrado (V5, RBAC-03) |
 
 ### Gestión documental (ms-documental) — 13 permisos
 

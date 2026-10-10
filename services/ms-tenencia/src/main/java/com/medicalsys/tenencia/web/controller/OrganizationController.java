@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.service.OrganizationService;
 import com.medicalsys.tenencia.web.dto.ChangeOrganizationStatusRequest;
@@ -39,7 +38,7 @@ public class OrganizationController {
 
     /** Da de alta un tenant con su suscripcion de prueba y sus contadores de cuota. */
     @PostMapping
-    @RequiresRole(Role.PLATFORM_ADMIN)
+    @RequiresPermission("tenancy.organization.create")
     public ResponseEntity<OrganizationResponse> create(@Valid @RequestBody CreateOrganizationRequest request) {
         OrganizationResponse organization = service.create(request);
         return ResponseEntity.created(URI.create("/api/v1/tenancy/organizacion")).body(organization);
@@ -47,21 +46,21 @@ public class OrganizationController {
 
     /** Devuelve la ficha de la organizacion del token. */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.organization.read")
     public OrganizationResponse getCurrent() {
         return service.getCurrent(RequestContextHolder.require());
     }
 
     /** Actualiza los datos administrativos; code y nit no se editan. */
     @PutMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.organization.update")
     public OrganizationResponse update(@Valid @RequestBody UpdateOrganizationRequest request) {
         return service.update(RequestContextHolder.require(), request);
     }
 
     /** Cambia el estado del tenant; activar exige una suscripcion vigente. */
     @PatchMapping("/estado")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.organization.change_status")
     public OrganizationResponse changeStatus(@Valid @RequestBody ChangeOrganizationStatusRequest request) {
         return service.changeStatus(RequestContextHolder.require(), request);
     }

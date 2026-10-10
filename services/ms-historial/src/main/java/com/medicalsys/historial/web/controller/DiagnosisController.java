@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.DiagnosisService;
 import com.medicalsys.historial.web.dto.CreateDiagnosisRequest;
@@ -37,20 +36,20 @@ public class DiagnosisController {
 
     @PostMapping("/encuentros/{encounterId}/diagnosticos")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.diagnosis.create")
     public DiagnosisResponse create(@PathVariable UUID encounterId,
             @Valid @RequestBody CreateDiagnosisRequest request) {
         return service.create(RequestContextHolder.require(), encounterId, request);
     }
 
     @GetMapping("/encuentros/{encounterId}/diagnosticos")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.diagnosis.read")
     public List<DiagnosisResponse> list(@PathVariable UUID encounterId) {
         return service.list(RequestContextHolder.require(), encounterId);
     }
 
     @PatchMapping("/diagnosticos/{diagnosisId}")
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.diagnosis.update")
     public DiagnosisResponse update(@PathVariable Long diagnosisId,
             @Valid @RequestBody UpdateDiagnosisRequest request) {
         return service.update(RequestContextHolder.require(), diagnosisId, request);

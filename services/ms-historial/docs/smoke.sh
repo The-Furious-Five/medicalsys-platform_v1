@@ -23,8 +23,12 @@ PATIENT=$(uuidgen | tr 'A-Z' 'a-z')
 APPT=$(uuidgen | tr 'A-Z' 'a-z')
 CORR=smoke-$(date +%s)
 
-med=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PHYSICIAN" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
-rec=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "Content-Type: application/json")
+# Permisos que cada rol tiene en clinical.* segun la asignacion inicial de ms-identidad (RBAC-01/03):
+# desde RBAC-03 el servicio autoriza por X-Permissions, no por X-Roles.
+MED_PERMISSIONS="clinical.addendum.create,clinical.addendum.read,clinical.allergy.create,clinical.allergy.read,clinical.allergy.update,clinical.background.create,clinical.background.deactivate,clinical.background.read,clinical.diagnosis.create,clinical.diagnosis.read,clinical.diagnosis.update,clinical.encounter.open,clinical.encounter.read,clinical.encounter.sign,clinical.encounter.update_notes,clinical.encounter.void,clinical.narrative.read,clinical.prescription.attach_document,clinical.prescription.change_status,clinical.prescription.create,clinical.prescription.read,clinical.procedure.create,clinical.procedure.read,clinical.record.create,clinical.record.read,clinical.record.share,clinical.study_order.change_status,clinical.study_order.create,clinical.study_order.read,clinical.study_order.schedule_collection,clinical.study_result.create,clinical.study_result.read,clinical.vital_sign.create,clinical.vital_sign.read"
+REC_PERMISSIONS="clinical.allergy.read,clinical.background.read,clinical.diagnosis.read,clinical.encounter.read,clinical.prescription.attach_document,clinical.prescription.change_status,clinical.prescription.read,clinical.record.create,clinical.record.read,clinical.study_order.change_status,clinical.study_order.read,clinical.study_order.schedule_collection,clinical.study_result.create,clinical.study_result.read,clinical.vital_sign.create,clinical.vital_sign.read"
+med=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PHYSICIAN" -H "X-Permissions: $MED_PERMISSIONS" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
+rec=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "X-Permissions: $REC_PERMISSIONS" -H "Content-Type: application/json")
 
 say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 code() { curl -s -o /tmp/body.json -w '%{http_code}' "$@"; }
@@ -112,7 +116,7 @@ echo "  sin headers: $(code "$BASE/api/v1/encuentros/$ENC")  code=$(python3 -c "
 echo "  recepcion firma: $(code -X POST "$BASE/api/v1/encuentros/$ENC/firma" "${rec[@]}")  code=$(python3 -c "import json;print(json.load(open('/tmp/body.json'))['code'])")"
 
 say "17. Otra organizacion no ve el expediente -> 404"
-echo "  $(code "$BASE/api/v1/expedientes/$REC" -H "X-Organization-Id: 00000000-0000-4000-8000-0000000000a9" -H "X-Roles: PHYSICIAN")  code=$(python3 -c "import json;print(json.load(open('/tmp/body.json'))['code'])")"
+echo "  $(code "$BASE/api/v1/expedientes/$REC" -H "X-Organization-Id: 00000000-0000-4000-8000-0000000000a9" -H "X-Roles: PHYSICIAN" -H "X-Permissions: $MED_PERMISSIONS")  code=$(python3 -c "import json;print(json.load(open('/tmp/body.json'))['code'])")"
 
 say "18. Rutas internas para agenda y documental"
 echo "  /internal/v1/ordenes-estudio/{id}: $(code "$BASE/internal/v1/ordenes-estudio/$ORD" -H "X-Organization-Id: $ORG")"

@@ -1,7 +1,6 @@
 package com.medicalsys.pacientes.web.controller;
 
-import com.medicalsys.pacientes.common.security.RequiresRole;
-import com.medicalsys.pacientes.common.security.Role;
+import com.medicalsys.pacientes.common.security.RequiresPermission;
 import com.medicalsys.pacientes.domain.enums.NotificationCategory;
 import com.medicalsys.pacientes.domain.enums.NotificationChannel;
 import com.medicalsys.pacientes.service.NotificationPreferenceService;
@@ -29,13 +28,13 @@ public class NotificationPreferenceController {
     }
 
     @GetMapping
-    @RequiresRole({Role.RECEPTIONIST, Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.notification_preference.read")
     public List<NotificationPreferenceResponse> list(@PathVariable UUID patientId) {
         return preferences.list(patientId);
     }
 
     @PutMapping("/{channel}/{category}")
-    @RequiresRole({Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.notification_preference.update")
     public NotificationPreferenceResponse upsert(
             @PathVariable UUID patientId,
             @PathVariable NotificationChannel channel,

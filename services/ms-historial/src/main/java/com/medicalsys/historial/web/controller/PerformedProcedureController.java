@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.PerformedProcedureService;
 import com.medicalsys.historial.web.dto.CreateProcedureRequest;
@@ -31,14 +30,14 @@ public class PerformedProcedureController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.procedure.create")
     public PerformedProcedureResponse create(@PathVariable UUID encounterId,
             @Valid @RequestBody CreateProcedureRequest request) {
         return service.create(RequestContextHolder.require(), encounterId, request);
     }
 
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.procedure.read")
     public List<PerformedProcedureResponse> list(@PathVariable UUID encounterId) {
         return service.list(RequestContextHolder.require(), encounterId);
     }

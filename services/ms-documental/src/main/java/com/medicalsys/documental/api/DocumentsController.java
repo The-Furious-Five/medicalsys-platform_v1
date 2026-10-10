@@ -9,8 +9,7 @@ import com.medicalsys.documental.api.dto.UploadDocumentRequest;
 import com.medicalsys.documental.domain.DocumentStatus;
 import com.medicalsys.documental.domain.DocumentType;
 import com.medicalsys.documental.security.RequestIdentity;
-import com.medicalsys.documental.security.RequiresRole;
-import com.medicalsys.documental.security.Role;
+import com.medicalsys.documental.security.RequiresPermission;
 import com.medicalsys.documental.service.DocumentService;
 import com.medicalsys.documental.service.PreparedDownload;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +49,7 @@ public class DocumentsController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.upload")
     public ResponseEntity<DocumentResponse> upload(
             @RequestPart("file") MultipartFile file,
             @Valid @RequestPart("metadata") UploadDocumentRequest metadata,
@@ -63,13 +62,13 @@ public class DocumentsController {
     }
 
     @GetMapping("/{documentId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.read")
     public DocumentResponse get(@PathVariable UUID documentId, HttpServletRequest servletRequest) {
         return service.get(documentId, RequestIdentity.from(servletRequest).organizationId());
     }
 
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.read")
     public DocumentPageResponse search(
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) DocumentType type,
@@ -84,7 +83,7 @@ public class DocumentsController {
     }
 
     @PatchMapping("/{documentId}/classification")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.classify")
     public DocumentResponse classify(@PathVariable UUID documentId,
             @Valid @RequestBody ClassifyDocumentRequest request,
             HttpServletRequest servletRequest) {
@@ -93,7 +92,7 @@ public class DocumentsController {
     }
 
     @PostMapping("/{documentId}/links")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.link")
     public ResponseEntity<DocumentLinkResponse> addLink(@PathVariable UUID documentId,
             @Valid @RequestBody DocumentLinkRequest request,
             HttpServletRequest servletRequest) {
@@ -104,7 +103,7 @@ public class DocumentsController {
     }
 
     @GetMapping("/{documentId}/content")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.document.download")
     public ResponseEntity<StreamingResponseBody> download(@PathVariable UUID documentId,
             HttpServletRequest servletRequest) {
         PreparedDownload download = service.prepareDownload(

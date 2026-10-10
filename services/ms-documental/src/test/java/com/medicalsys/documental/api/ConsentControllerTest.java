@@ -11,7 +11,7 @@ import com.medicalsys.documental.api.dto.ConsentTemplateResponse;
 import com.medicalsys.documental.api.dto.InformedConsentResponse;
 import com.medicalsys.documental.common.CorrelationIdFilter;
 import com.medicalsys.documental.exception.GlobalExceptionHandler;
-import com.medicalsys.documental.security.RoleAuthorizationInterceptor;
+import com.medicalsys.documental.security.PermissionAuthorizationInterceptor;
 import com.medicalsys.documental.service.ConsentTemplateService;
 import com.medicalsys.documental.service.InformedConsentService;
 import java.time.Instant;
@@ -44,7 +44,7 @@ class ConsentControllerTest {
                         new ConsentTemplateController(templateService),
                         new InformedConsentController(consentService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .addInterceptors(new RoleAuthorizationInterceptor())
+                .addInterceptors(new PermissionAuthorizationInterceptor())
                 .addFilters(new CorrelationIdFilter())
                 .build();
     }
@@ -55,7 +55,7 @@ class ConsentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST")
+                        .header("X-Permissions", "documents.consent_template.read")
                         .content(templateJson()))
                 .andExpect(status().isForbidden());
     }
@@ -77,7 +77,7 @@ class ConsentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "ADMINISTRATOR")
+                        .header("X-Permissions", "documents.consent_template.create")
                         .content(templateJson()))
                 .andExpect(status().isCreated());
     }
@@ -91,7 +91,7 @@ class ConsentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST")
+                        .header("X-Permissions", "documents.consent.generate")
                         .content(generateConsentJson()))
                 .andExpect(status().isCreated());
     }
@@ -102,7 +102,7 @@ class ConsentControllerTest {
                         .param("patientId", UUID.randomUUID().toString())
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PATIENT"))
+                        .header("X-Permissions", "marketing.advertisement.view"))
                 .andExpect(status().isForbidden());
     }
 
