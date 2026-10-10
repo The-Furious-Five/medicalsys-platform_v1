@@ -56,12 +56,13 @@ public class UserService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("Ya existe una cuenta con el correo " + email);
         }
+        Actor actor = governance.resolve(actorPublicId);
 
         UserAccount user = new UserAccount();
         user.setEmail(email);
         user.setFullName(request.fullName().trim());
         user.setPhoneE164(StringUtils.hasText(request.phoneE164()) ? request.phoneE164() : null);
-        user.setOrganizationPublicId(request.organizationPublicId());
+        user.setOrganizationPublicId(governance.organizationForNewAccount(actor, request.organizationPublicId()));
         user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "es-BO");
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setHashAlgorithm("argon2id");
@@ -70,7 +71,6 @@ public class UserService {
                 ? UserStatus.ACTIVE
                 : UserStatus.PENDING_ACTIVATION);
 
-        Actor actor = governance.resolve(actorPublicId);
         boolean withRoles = request.roles() != null && !request.roles().isEmpty();
         // identity.user.create no basta: sin esto, crear la cuenta con roles evitaria identity.role.assign.
         if (actor != null && withRoles && !actor.holds(ASSIGN_PERMISSION)) {
@@ -86,21 +86,25 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> search(UUID organizationPublicId, UserStatus status, String query,
-                                             Pageable pageable) {
+                                             Pageable pageable, UUID actorPublicId) {
+        UUID scope = governance.searchScope(governance.resolve(actorPublicId), organizationPublicId);
         String search = StringUtils.hasText(query) ? "%" + query.trim().toLowerCase() + "%" : null;
-        Page<UserAccount> page = users.search(organizationPublicId, status, search, pageable);
+        Page<UserAccount> page = users.search(scope, status, search, pageable);
         page.getContent().forEach(user -> user.getRoleAssignments().size());
         return PageResponse.of(page, mapper::toUserResponse);
     }
 
     @Transactional(readOnly = true)
-    public UserResponse get(UUID publicId) {
-        return mapper.toUserResponse(require(publicId));
+    public UserResponse get(UUID publicId, UUID actorPublicId) {
+        UserAccount user = require(publicId);
+        governance.checkCanSee(governance.resolve(actorPublicId), user);
+        return mapper.toUserResponse(user);
     }
 
     @Transactional
-    public UserResponse update(UUID publicId, UpdateUserRequest request) {
+    public UserResponse update(UUID publicId, UpdateUserRequest request, UUID actorPublicId) {
         UserAccount user = require(publicId);
+        governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
         if (StringUtils.hasText(request.fullName())) {
             user.setFullName(request.fullName().trim());
         }
@@ -114,9 +118,11 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse changeStatus(UUID publicId, ChangeStatusRequest request) {
+    public UserResponse changeStatus(UUID publicId, ChangeStatusRequest request, UUID actorPublicId) {
         UserAccount user = require(publicId);
+        governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
         UserStatus target = request.status();
+        long administrators = target == UserStatus.ACTIVE ? 0 : governance.roleAdministrators();
         if (target == UserStatus.LOCKED && user.getLockedUntil() == null) {
             user.setLockedUntil(Instant.now().plusSeconds(3600));
         }
@@ -125,6 +131,7 @@ public class UserService {
         }
         user.setStatus(target);
         if (target != UserStatus.ACTIVE) {
+            governance.checkRoleAdministrationSurvives(administrators);
             sessionStore.closeAll(user.getPublicId());
         }
         return mapper.toUserResponse(user);
@@ -148,7 +155,9 @@ public class UserService {
     @Transactional
     public UserResponse assignRole(UUID publicId, RoleAssignmentRequest request, UUID actorPublicId) {
         UserAccount user = require(publicId);
-        attachRole(user, request, governance.resolve(actorPublicId));
+        Actor actor = governance.resolve(actorPublicId);
+        governance.checkCanManageAccount(actor, user);
+        attachRole(user, request, actor);
         return mapper.toUserResponse(user);
     }
 
@@ -156,6 +165,7 @@ public class UserService {
     public UserResponse revokeRole(UUID publicId, String roleCode, UUID actorPublicId) {
         UserAccount user = require(publicId);
         Actor actor = governance.resolve(actorPublicId);
+        governance.checkCanManageAccount(actor, user);
         String code = RoleManagementService.normalize(roleCode);
         List<UserRole> revoked = user.getRoleAssignments().stream()
                 .filter(assignment -> assignment.getRole().getCode().equals(code))
@@ -166,7 +176,9 @@ public class UserService {
         for (UserRole assignment : revoked) {
             governance.checkCanManageAssignment(actor, user, assignment.getRole(), assignment.getOrganizationPublicId());
         }
+        long administrators = governance.roleAdministrators();
         user.getRoleAssignments().removeAll(revoked);
+        governance.checkRoleAdministrationSurvives(administrators);
         sessionStore.closeAll(user.getPublicId());
         return mapper.toUserResponse(user);
     }

@@ -57,6 +57,15 @@ public class Role {
     @OrderBy("code asc")
     private Set<Permission> permissions = new LinkedHashSet<>();
 
+    /** Roles que quien tiene este rol puede asignar o revocar, si el rol es de organizacion. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "role_delegation",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "assignable_role_id"))
+    @OrderBy("code asc")
+    private Set<Role> assignableRoles = new LinkedHashSet<>();
+
     /** Rol creado desde la API: nunca es de sistema y nace activo y sin permisos. */
     public static Role custom(String code, String name, String description, RoleScope scope) {
         Role role = new Role();
@@ -115,5 +124,9 @@ public class Role {
 
     public Set<Permission> getPermissions() {
         return permissions;
+    }
+
+    public Set<Role> getAssignableRoles() {
+        return assignableRoles;
     }
 }

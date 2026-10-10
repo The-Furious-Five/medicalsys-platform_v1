@@ -20,7 +20,8 @@ que el resto de la plataforma consume. Backend puro con Spring Boot, sin fronten
 permisos del MVP, y `V3__granular_permission_catalog.sql` lo reemplaza por el catálogo granular de
 permisos por funcionalidad (`modulo.recurso.accion`) con su asignación inicial a roles.
 `V4__role_management.sql` abre la lista de roles (el código solo exige formato), agrega la baja lógica
-(`role.is_active`) y la tabla `role_incompatibility` de pares de roles incompatibles.
+(`role.is_active`), la tabla `role_incompatibility` de pares de roles incompatibles y `role_delegation`,
+que dice qué roles puede asignar quien tiene cada rol de organización.
 
 Dos decisiones que conviene conocer al leer la migración:
 
@@ -53,6 +54,7 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | PATCH | `/api/v1/identity/roles/{code}` | `identity.role.manage` |
 | DELETE | `/api/v1/identity/roles/{code}` (desactiva) | `identity.role.manage` |
 | PUT | `/api/v1/identity/roles/{code}/permissions` | `identity.role.manage` |
+| PUT | `/api/v1/identity/roles/{code}/assignable-roles` | `identity.role.manage` |
 | POST | `/api/v1/identity/role-incompatibilities` | `identity.role.manage` |
 | DELETE | `/api/v1/identity/role-incompatibilities/{roleA}/{roleB}` | `identity.role.manage` |
 | GET | `/api/v1/identity/users`, `/users/{publicId}` | `identity.user.read` |
@@ -65,10 +67,15 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 Cualquier otra operación bajo `/users/**`, `/roles/**` o `/role-incompatibilities/**` responde 403 hasta
 que se le asigne su permiso.
 
-Asignar, revocar y editar roles pasa además por las reglas de segregación de funciones de
-`RoleGovernance`. Nadie modifica sus propios roles ni los permisos de un rol que tiene, nadie otorga
-permisos de gestión que no tiene, y un administrador de organización solo gestiona cuentas de su
-organización. Los pares incompatibles se respetan. El detalle está en
+Gestionar cuentas y roles pasa además por las reglas de `RoleGovernance`:
+- un administrador de organización solo ve y gestiona cuentas de su organización;
+- nadie modifica cuentas ni roles con permisos de gestión que no tiene;
+- nadie modifica sus propios roles ni un rol que tiene asignado;
+- solo se asignan roles delegados explícitamente;
+- los pares incompatibles se respetan;
+- ninguna operación deja a la plataforma sin quien administre roles.
+
+El detalle está en
 [`docs/seguridad/rbac-02-gestion-de-roles.md`](../../docs/seguridad/rbac-02-gestion-de-roles.md).
 `GET /permissions` devuelve el catálogo granular completo de la plataforma (RBAC-01, migración V3);
 la hoja endpoint → permiso y la asignación inicial por rol están en

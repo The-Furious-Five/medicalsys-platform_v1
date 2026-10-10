@@ -10,5 +10,6 @@ public record RoleResponse(
         RoleScope scope,
         boolean system,
         boolean active,
-        List<PermissionResponse> permissions) {
+        List<PermissionResponse> permissions,
+        List<String> assignableRoles) {
 }

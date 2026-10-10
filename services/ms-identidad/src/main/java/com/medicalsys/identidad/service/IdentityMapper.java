@@ -65,7 +65,8 @@ public class IdentityMapper {
                 role.getScope(),
                 role.isSystem(),
                 role.isActive(),
-                role.getPermissions().stream().map(this::toPermissionResponse).toList());
+                role.getPermissions().stream().map(this::toPermissionResponse).toList(),
+                role.getAssignableRoles().stream().map(Role::getCode).sorted().toList());
     }
 
     public PermissionResponse toPermissionResponse(Permission permission) {

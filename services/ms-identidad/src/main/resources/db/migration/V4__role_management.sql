@@ -30,3 +30,22 @@ CREATE TABLE role_incompatibility (
 
 CREATE INDEX ix_role_incompatibility_incompatible_role_id ON role_incompatibility (incompatible_role_id);
 CREATE INDEX ix_role_incompatibility_created_by_user_id ON role_incompatibility (created_by_user_id);
+
+-- Delegacion administrativa: que roles puede asignar o revocar quien tiene cada rol. Un rol de
+-- plataforma no la necesita, porque gestiona cualquier rol; uno de organizacion solo asigna los
+-- roles que figuran aqui, y la lista se edita con PUT /roles/{code}/assignable-roles.
+CREATE TABLE role_delegation (
+    role_id            SMALLINT UNSIGNED NOT NULL,
+    assignable_role_id SMALLINT UNSIGNED NOT NULL,
+    PRIMARY KEY (role_id, assignable_role_id),
+    CONSTRAINT fk_role_delegation_role FOREIGN KEY (role_id) REFERENCES `role` (id),
+    CONSTRAINT fk_role_delegation_assignable_role FOREIGN KEY (assignable_role_id) REFERENCES `role` (id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE INDEX ix_role_delegation_assignable_role_id ON role_delegation (assignable_role_id);
+
+-- El administrador de un centro da de alta a su personal: los roles de organizacion del seed.
+INSERT INTO role_delegation (role_id, assignable_role_id)
+SELECT grantor.id, assignable.id FROM `role` grantor JOIN `role` assignable
+WHERE grantor.code = 'ADMINISTRATOR'
+  AND assignable.code IN ('ADMINISTRATOR', 'PHYSICIAN', 'RECEPTIONIST', 'BILLING_CLERK', 'PATIENT');

@@ -89,8 +89,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/roles",
                                 "/api/v1/identity/role-incompatibilities").hasAuthority("identity.role.manage")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/roles/*").hasAuthority("identity.role.manage")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/identity/roles/*/permissions")
-                                .hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/identity/roles/*/permissions",
+                                "/api/v1/identity/roles/*/assignable-roles").hasAuthority("identity.role.manage")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/roles/*",
                                 "/api/v1/identity/role-incompatibilities/*/*").hasAuthority("identity.role.manage")
                         // Igual que con las cuentas: una operacion nueva sobre roles necesita su propio permiso.

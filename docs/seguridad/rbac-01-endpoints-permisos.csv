@@ -6,6 +6,7 @@ ms-identidad,DELETE,/api/v1/identity/role-incompatibilities/{roleA}/{roleB},PERM
 ms-identidad,POST,/api/v1/identity/roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
 ms-identidad,DELETE,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
 ms-identidad,PATCH,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PUT,/api/v1/identity/roles/{code}/assignable-roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
 ms-identidad,PUT,/api/v1/identity/roles/{code}/permissions,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
 ms-identidad,GET,/api/v1/identity/permissions,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
 ms-identidad,GET,/api/v1/identity/role-incompatibilities,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva

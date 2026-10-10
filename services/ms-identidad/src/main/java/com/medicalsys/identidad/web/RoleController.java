@@ -5,6 +5,7 @@ import com.medicalsys.identidad.service.RoleCatalogService;
 import com.medicalsys.identidad.service.RoleManagementService;
 import com.medicalsys.identidad.web.dto.CreateRoleRequest;
 import com.medicalsys.identidad.web.dto.PermissionResponse;
+import com.medicalsys.identidad.web.dto.RoleAssignableRolesRequest;
 import com.medicalsys.identidad.web.dto.RolePermissionsRequest;
 import com.medicalsys.identidad.web.dto.RoleResponse;
 import com.medicalsys.identidad.web.dto.UpdateRoleRequest;
@@ -69,6 +70,12 @@ public class RoleController {
     public RoleResponse replacePermissions(Authentication authentication, @PathVariable String code,
                                            @Valid @RequestBody RolePermissionsRequest request) {
         return management.replacePermissions(code, request, Actors.publicId(authentication));
+    }
+
+    @PutMapping("/roles/{code}/assignable-roles")
+    public RoleResponse replaceAssignableRoles(Authentication authentication, @PathVariable String code,
+                                               @Valid @RequestBody RoleAssignableRolesRequest request) {
+        return management.replaceAssignableRoles(code, request, Actors.publicId(authentication));
     }
 
     @GetMapping("/permissions")

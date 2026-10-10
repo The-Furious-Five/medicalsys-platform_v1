@@ -2,7 +2,6 @@ package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.domain.Permission;
 import com.medicalsys.identidad.domain.Role;
-import com.medicalsys.identidad.domain.RoleCode;
 import com.medicalsys.identidad.domain.RoleIncompatibility;
 import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.repository.PermissionRepository;
@@ -12,6 +11,7 @@ import com.medicalsys.identidad.repository.UserRoleRepository;
 import com.medicalsys.identidad.security.SessionStore;
 import com.medicalsys.identidad.service.RoleGovernance.Actor;
 import com.medicalsys.identidad.web.dto.CreateRoleRequest;
+import com.medicalsys.identidad.web.dto.RoleAssignableRolesRequest;
 import com.medicalsys.identidad.web.dto.RoleIncompatibilityRequest;
 import com.medicalsys.identidad.web.dto.RoleIncompatibilityResponse;
 import com.medicalsys.identidad.web.dto.RolePermissionsRequest;
@@ -30,9 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Alta, edicion, baja logica y permisos de los roles, y pares de roles incompatibles (RBAC-02).
- * Toda operacion que quita acceso cierra las sesiones de las cuentas afectadas, igual que revocar
- * un rol: el cambio no espera a que el token expire.
+ * Alta, edicion, baja logica, permisos y delegacion de los roles, y pares de roles incompatibles
+ * (RBAC-02). Toda operacion que quita acceso cierra las sesiones de las cuentas afectadas, igual
+ * que revocar un rol: el cambio no espera a que el token expire. Y ninguna puede dejar a la
+ * plataforma sin una cuenta activa que administre roles.
  */
 @Service
 public class RoleManagementService {
@@ -72,7 +73,7 @@ public class RoleManagementService {
     public RoleResponse update(String code, UpdateRoleRequest request, UUID actorPublicId) {
         Actor actor = governance.resolve(actorPublicId);
         Role role = require(code);
-        governance.checkDoesNotHold(actor, role);
+        governance.checkCanEdit(actor, role);
         if (Boolean.FALSE.equals(request.active())) {
             deactivate(role);
         }
@@ -93,7 +94,7 @@ public class RoleManagementService {
     public RoleResponse deactivate(String code, UUID actorPublicId) {
         Actor actor = governance.resolve(actorPublicId);
         Role role = require(code);
-        governance.checkDoesNotHold(actor, role);
+        governance.checkCanEdit(actor, role);
         deactivate(role);
         return mapper.toRoleResponse(role);
     }
@@ -102,11 +103,7 @@ public class RoleManagementService {
     public RoleResponse replacePermissions(String code, RolePermissionsRequest request, UUID actorPublicId) {
         Actor actor = governance.resolve(actorPublicId);
         Role role = require(code);
-        if (role.is(RoleCode.PLATFORM_ADMIN)) {
-            throw ApiException.conflict("PLATFORM_ADMIN conserva siempre el catalogo completo: es el rol de "
-                    + "recuperacion si una edicion deja a la plataforma sin quien administre accesos");
-        }
-        governance.checkDoesNotHold(actor, role);
+        governance.checkCanEdit(actor, role);
 
         Set<String> requested = request.permissions().stream()
                 .map(String::trim)
@@ -123,11 +120,50 @@ public class RoleManagementService {
         boolean removesAccess = current.stream().anyMatch(currentCode -> !foundCodes.contains(currentCode));
         governance.checkCanGrant(actor, added);
 
+        long administrators = removesAccess ? governance.roleAdministrators() : 0;
         role.getPermissions().clear();
         found.stream().sorted(Comparator.comparing(Permission::getCode)).forEach(role.getPermissions()::add);
         if (removesAccess) {
+            governance.checkRoleAdministrationSurvives(administrators);
             closeSessionsOfHolders(role);
         }
+        return mapper.toRoleResponse(role);
+    }
+
+    /**
+     * Roles que quien tiene {@code code} puede asignar o revocar. Solo pesa para roles de
+     * organizacion: los de plataforma gestionan cualquier rol. Cambiarla no altera ningun token, asi
+     * que no cierra sesiones.
+     */
+    @Transactional
+    public RoleResponse replaceAssignableRoles(String code, RoleAssignableRolesRequest request, UUID actorPublicId) {
+        Actor actor = governance.resolve(actorPublicId);
+        Role role = require(code);
+        governance.checkCanEdit(actor, role);
+
+        Set<String> requested = request.roles().stream()
+                .map(RoleManagementService::normalize)
+                .collect(Collectors.toCollection(TreeSet::new));
+        List<Role> found = roles.findAllByCodeIn(requested);
+        Set<String> foundCodes = found.stream().map(Role::getCode).collect(Collectors.toSet());
+        List<String> unknown = requested.stream().filter(requestedCode -> !foundCodes.contains(requestedCode)).toList();
+        if (!unknown.isEmpty()) {
+            throw ApiException.badRequest("Roles inexistentes: " + String.join(", ", unknown));
+        }
+        if (role.getScope() == RoleScope.ORGANIZATION) {
+            List<String> platformRoles = found.stream()
+                    .filter(delegated -> delegated.getScope() == RoleScope.PLATFORM)
+                    .map(Role::getCode)
+                    .sorted()
+                    .toList();
+            if (!platformRoles.isEmpty()) {
+                throw ApiException.badRequest("Un rol de organizacion no puede delegar roles de plataforma: "
+                        + String.join(", ", platformRoles));
+            }
+        }
+
+        role.getAssignableRoles().clear();
+        found.stream().sorted(Comparator.comparing(Role::getCode)).forEach(role.getAssignableRoles()::add);
         return mapper.toRoleResponse(role);
     }
 
@@ -140,6 +176,8 @@ public class RoleManagementService {
     public RoleIncompatibilityResponse declareIncompatible(RoleIncompatibilityRequest request, UUID actorPublicId) {
         Actor actor = governance.resolve(actorPublicId);
         Role[] pair = orderedPair(request.roleA(), request.roleB());
+        governance.checkCanEdit(actor, pair[0]);
+        governance.checkCanEdit(actor, pair[1]);
         if (incompatibilities.findByRoleAndIncompatibleRole(pair[0], pair[1]).isPresent()) {
             throw ApiException.conflict("Los roles " + pair[0].getCode() + " y " + pair[1].getCode()
                     + " ya estan declarados incompatibles");
@@ -155,8 +193,11 @@ public class RoleManagementService {
     }
 
     @Transactional
-    public void removeIncompatibility(String roleA, String roleB) {
+    public void removeIncompatibility(String roleA, String roleB, UUID actorPublicId) {
+        Actor actor = governance.resolve(actorPublicId);
         Role[] pair = orderedPair(roleA, roleB);
+        governance.checkCanEdit(actor, pair[0]);
+        governance.checkCanEdit(actor, pair[1]);
         RoleIncompatibility existing = incompatibilities.findByRoleAndIncompatibleRole(pair[0], pair[1])
                 .orElseThrow(() -> ApiException.notFound("Los roles " + pair[0].getCode() + " y "
                         + pair[1].getCode() + " no estan declarados incompatibles"));
@@ -169,7 +210,9 @@ public class RoleManagementService {
                     + "si sobra algun permiso, quiteselo con PUT /roles/" + role.getCode() + "/permissions");
         }
         if (role.isActive()) {
+            long administrators = governance.roleAdministrators();
             role.setActive(false);
+            governance.checkRoleAdministrationSurvives(administrators);
             closeSessionsOfHolders(role);
         }
     }

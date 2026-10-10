@@ -44,28 +44,32 @@ public class UserController {
 
     @GetMapping
     public PageResponse<UserResponse> search(
+            Authentication authentication,
             @RequestParam(required = false) UUID organizationPublicId,
             @RequestParam(required = false) UserStatus status,
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return userService.search(organizationPublicId, status, query,
-                PageRequest.of(page, Math.min(size, 100), Sort.by("email").ascending()));
+                PageRequest.of(page, Math.min(size, 100), Sort.by("email").ascending()),
+                Actors.publicId(authentication));
     }
 
     @GetMapping("/{publicId}")
-    public UserResponse get(@PathVariable UUID publicId) {
-        return userService.get(publicId);
+    public UserResponse get(Authentication authentication, @PathVariable UUID publicId) {
+        return userService.get(publicId, Actors.publicId(authentication));
     }
 
     @PatchMapping("/{publicId}")
-    public UserResponse update(@PathVariable UUID publicId, @Valid @RequestBody UpdateUserRequest request) {
-        return userService.update(publicId, request);
+    public UserResponse update(Authentication authentication, @PathVariable UUID publicId,
+                               @Valid @RequestBody UpdateUserRequest request) {
+        return userService.update(publicId, request, Actors.publicId(authentication));
     }
 
     @PatchMapping("/{publicId}/status")
-    public UserResponse changeStatus(@PathVariable UUID publicId, @Valid @RequestBody ChangeStatusRequest request) {
-        return userService.changeStatus(publicId, request);
+    public UserResponse changeStatus(Authentication authentication, @PathVariable UUID publicId,
+                                     @Valid @RequestBody ChangeStatusRequest request) {
+        return userService.changeStatus(publicId, request, Actors.publicId(authentication));
     }
 
     @PostMapping("/{publicId}/roles")

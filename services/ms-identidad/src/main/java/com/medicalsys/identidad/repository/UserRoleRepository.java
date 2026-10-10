@@ -2,6 +2,7 @@ package com.medicalsys.identidad.repository;
 
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.UserRole;
+import com.medicalsys.identidad.domain.UserStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -27,5 +28,17 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
                     and (other.validUntil is null or other.validUntil >= :today))
             """)
     long countHoldersOfBoth(@Param("first") Role first, @Param("second") Role second,
+                            @Param("today") LocalDate today);
+
+    /** Cuentas activas que hoy ejercen el permiso por algun rol activo con asignacion vigente. */
+    @Query("""
+            select count(distinct ur.userAccount.id) from UserRole ur join ur.role r join r.permissions p
+            where p.code = :permission
+              and r.active = true
+              and ur.userAccount.status = :status
+              and ur.validFrom <= :today
+              and (ur.validUntil is null or ur.validUntil >= :today)
+            """)
+    long countActiveHolders(@Param("permission") String permission, @Param("status") UserStatus status,
                             @Param("today") LocalDate today);
 }

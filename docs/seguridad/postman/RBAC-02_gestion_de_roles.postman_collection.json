@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "MedicalSys · RBAC-02 Gestión de roles",
-    "description": "Evidencia de SINS-25 (RBAC-02). Ejecutar en orden contra el gateway (o contra ms-identidad en :8081, mismas rutas).\n\nVariables a completar en un environment, nunca en la colección: `paEmail` y `paPassword` (la cuenta que siembra PLATFORM_ADMIN_SEED_ENABLED), `adminEmail` y `adminPassword` (un ADMINISTRATOR de la organización) y `testPassword` (contraseña para la cuenta de prueba que se crea y se desactiva al final).\n\nCon newman: `newman run RBAC-02_gestion_de_roles.postman_collection.json --env-var baseUrl=http://localhost:8080 --env-var paPassword=... --env-var adminPassword=... --env-var testPassword=...`",
+    "description": "Evidencia de SINS-25 (RBAC-02). Ejecutar en orden contra el gateway (o contra ms-identidad en :8081, mismas rutas).\n\nDeja el entorno como estaba: restaura la delegacion de ADMINISTRATOR y desactiva el rol y las cuentas de prueba. `otherOrgId` es una organizacion distinta de la del ADMINISTRATOR.\n\nVariables a completar en un environment, nunca en la colección: `paEmail` y `paPassword` (la cuenta que siembra PLATFORM_ADMIN_SEED_ENABLED), `adminEmail` y `adminPassword` (un ADMINISTRATOR de la organización) y `testPassword` (contraseña para la cuenta de prueba que se crea y se desactiva al final).\n\nCon newman: `newman run RBAC-02_gestion_de_roles.postman_collection.json --env-var baseUrl=http://localhost:8080 --env-var paPassword=... --env-var adminPassword=... --env-var testPassword=...`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -50,6 +50,7 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.collectionVariables.set(\"paToken\", pm.response.json().accessToken);",
+                  "pm.collectionVariables.set(\"paId\", pm.response.json().user.publicId);",
                   "pm.test(\"tiene identity.role.manage\", () => pm.expect(pm.response.json().user.permissions).to.include(\"identity.role.manage\"));"
                 ]
               }
@@ -208,6 +209,55 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.collectionVariables.set(\"testToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PLATFORM_ADMIN crea una cuenta en otra organización",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rbac02.otra.{{stamp}}@medicalsys.demo\",\n  \"fullName\": \"Otra organizacion\",\n  \"password\": \"{{testPassword}}\",\n  \"organizationPublicId\": \"{{otherOrgId}}\",\n  \"activateImmediately\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"foreignUserId\", pm.response.json().publicId);"
                 ]
               }
             }
@@ -555,6 +605,156 @@
           ]
         },
         {
+          "name": "Sin delegación, ADMINISTRATOR no puede asignar el rol nuevo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users/{{testUserId}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users",
+                "{{testUserId}}",
+                "roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"{{roleCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"el detalle explica el motivo\", () => pm.expect(pm.response.json().detail).to.include(\"delegada\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver qué roles delega hoy ADMINISTRATOR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/roles/ADMINISTRATOR",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "roles",
+                "ADMINISTRATOR"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"adminAssignableBefore\", JSON.stringify(pm.response.json().assignableRoles));",
+                  "pm.test(\"delega los roles operativos del seed\", () => pm.expect(pm.response.json().assignableRoles).to.include(\"PHYSICIAN\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delegar el rol nuevo a ADMINISTRATOR",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/roles/ADMINISTRATOR/assignable-roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "roles",
+                "ADMINISTRATOR",
+                "assignable-roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{delegationBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const before = JSON.parse(pm.collectionVariables.get(\"adminAssignableBefore\"));",
+                  "pm.collectionVariables.set(\"delegationBody\", JSON.stringify({roles: before.concat([pm.collectionVariables.get(\"roleCode\")])}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ADMINISTRATOR ya puede asignarlo\", () => pm.expect(pm.response.json().assignableRoles).to.include(pm.collectionVariables.get(\"roleCode\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Asignar el rol a la cuenta de prueba",
           "request": {
             "method": "POST",
@@ -744,7 +944,7 @@
     },
     {
       "name": "02 · Segregación de funciones",
-      "description": "Nadie modifica sus propios roles ni permisos, no se otorga más de lo que se tiene y los pares de roles incompatibles se respetan.",
+      "description": "Nadie modifica sus propios roles ni permisos, nadie gestiona cuentas por encima de las suyas ni de otra organización, y los pares de roles incompatibles se respetan.",
       "item": [
         {
           "name": "ADMINISTRATOR se asigna un rol a sí mismo",
@@ -899,9 +1099,9 @@
           ]
         },
         {
-          "name": "Los permisos de PLATFORM_ADMIN no se editan",
+          "name": "ADMINISTRATOR no puede modificar la cuenta de PLATFORM_ADMIN",
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -909,11 +1109,11 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{paToken}}"
+                "value": "Bearer {{adminToken}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/identity/roles/PLATFORM_ADMIN/permissions",
+              "raw": "{{baseUrl}}/api/v1/identity/users/{{paId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -921,14 +1121,13 @@
                 "api",
                 "v1",
                 "identity",
-                "roles",
-                "PLATFORM_ADMIN",
-                "permissions"
+                "users",
+                "{{paId}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"permissions\": []\n}",
+              "raw": "{\n  \"language\": \"es-BO\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -942,7 +1141,127 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"el detalle explica el motivo\", () => pm.expect(pm.response.json().detail).to.include(\"permisos de gestion\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Una cuenta de otra organización no existe para ADMINISTRATOR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users/{{foreignUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users",
+                "{{foreignUserId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMINISTRATOR no lista cuentas de otra organización",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users?organizationPublicId={{otherOrgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users?organizationPublicId={{otherOrgId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMINISTRATOR no crea cuentas en otra organización",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rbac02.no.{{stamp}}@medicalsys.demo\",\n  \"fullName\": \"No deberia existir\",\n  \"password\": \"{{testPassword}}\",\n  \"organizationPublicId\": \"{{otherOrgId}}\",\n  \"activateImmediately\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
                 ]
               }
             }
@@ -1655,7 +1974,7 @@
     },
     {
       "name": "04 · Limpieza",
-      "description": "Deja el entorno como estaba: sin el par, con el rol desactivado y la cuenta de prueba inactiva.",
+      "description": "Deja el entorno como estaba: sin el par, con la delegación de ADMINISTRATOR original, el rol desactivado y las cuentas de prueba inactivas.",
       "item": [
         {
           "name": "Eliminar el par incompatible",
@@ -1689,6 +2008,66 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurar la delegación de ADMINISTRATOR",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/roles/ADMINISTRATOR/assignable-roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "roles",
+                "ADMINISTRATOR",
+                "assignable-roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{delegationBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"delegationBody\", JSON.stringify({roles: JSON.parse(pm.collectionVariables.get(\"adminAssignableBefore\"))}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"queda como estaba\", () => pm.expect(JSON.stringify(pm.response.json().assignableRoles)).to.eql(pm.collectionVariables.get(\"adminAssignableBefore\")));"
                 ]
               }
             }
@@ -1779,6 +2158,56 @@
               }
             }
           ]
+        },
+        {
+          "name": "Desactivar la cuenta de la otra organización",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/identity/users/{{foreignUserId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "identity",
+                "users",
+                "{{foreignUserId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\",\n  \"reason\": \"Fin de la prueba RBAC-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
@@ -1807,6 +2236,10 @@
     {
       "key": "testPassword",
       "value": ""
+    },
+    {
+      "key": "otherOrgId",
+      "value": "00000000-0000-4000-8000-0000000000b2"
     }
   ]
 }

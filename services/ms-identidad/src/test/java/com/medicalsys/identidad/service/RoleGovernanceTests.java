@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-/** Reglas de segregacion de funciones y de no escalada de RBAC-02, sin base de datos. */
+/** Reglas de RBAC-02 sobre la administracion de accesos, sin base de datos. */
 class RoleGovernanceTests {
 
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 10);
@@ -34,21 +34,36 @@ class RoleGovernanceTests {
     private static final Permission BRANCH_READ = permission("tenancy.branch.read", PermissionModule.TENANCY);
     private static final Permission ENCOUNTER_SIGN = permission("clinical.encounter.sign", PermissionModule.CLINICAL);
 
-    private final RoleGovernance governance = new RoleGovernance(null, null);
+    private final RoleGovernance governance = new RoleGovernance(null, null, null);
 
-    private final Role administrator = role("ADMINISTRATOR", RoleScope.ORGANIZATION, USER_READ, ROLE_ASSIGN, BRANCH_READ);
     private final Role physician = role("PHYSICIAN", RoleScope.ORGANIZATION, BRANCH_READ, ENCOUNTER_SIGN);
+    private final Role receptionist = role("RECEPTIONIST", RoleScope.ORGANIZATION, BRANCH_READ);
+    private final Role administrator = role("ADMINISTRATOR", RoleScope.ORGANIZATION, USER_READ, ROLE_ASSIGN, BRANCH_READ);
     private final Role platformAdmin = role("PLATFORM_ADMIN", RoleScope.PLATFORM,
             USER_READ, ROLE_ASSIGN, ROLE_MANAGE, ORG_CREATE, BRANCH_READ, ENCOUNTER_SIGN);
 
+    {
+        administrator.getAssignableRoles().addAll(List.of(administrator, physician));
+    }
+
     private final UserAccount admin = account(CLINIC, administrator);
-    private final UserAccount doctor = account(CLINIC);
+    private final UserAccount doctor = account(CLINIC, physician);
+    private final UserAccount operator = account(CLINIC, platformAdmin);
+
+    // ------------------------------------------------------------------ asignaciones
 
     @Test
-    @DisplayName("el administrador asigna un rol operativo a una cuenta de su centro aunque no tenga sus permisos clinicos")
-    void adminDelegatesOperationalRole() {
+    @DisplayName("el administrador asigna un rol delegado aunque no tenga sus permisos clinicos")
+    void adminAssignsDelegatedOperationalRole() {
         assertThatCode(() -> governance.checkCanManageAssignment(actor(admin), doctor, physician, CLINIC))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("sin delegacion explicita, el administrador no asigna el rol")
+    void delegationIsExplicit() {
+        assertForbidden(() -> governance.checkCanManageAssignment(actor(admin), doctor, receptionist, CLINIC),
+                "delegada");
     }
 
     @Test
@@ -66,32 +81,28 @@ class RoleGovernanceTests {
     }
 
     @Test
-    @DisplayName("no se otorga un permiso de gestion de accesos que quien asigna no tiene")
-    void noGovernanceEscalation() {
+    @DisplayName("aunque este delegado, no se otorga un permiso de gestion que quien asigna no tiene")
+    void delegationNeverEscalatesGovernance() {
         Role roleManager = role("ROLE_MANAGER", RoleScope.ORGANIZATION, ROLE_MANAGE, ORG_CREATE);
+        administrator.getAssignableRoles().add(roleManager);
 
         assertForbidden(() -> governance.checkCanManageAssignment(actor(admin), doctor, roleManager, CLINIC),
                 "identity.role.manage, tenancy.organization.create");
     }
 
     @Test
-    @DisplayName("un administrador de centro no gestiona roles de otra organizacion")
-    void adminStaysInsideOwnOrganization() {
-        UserAccount foreign = account(OTHER_CLINIC);
-
-        assertForbidden(() -> governance.checkCanManageAssignment(actor(admin), foreign, physician, OTHER_CLINIC),
-                "su propia organizacion");
+    @DisplayName("un administrador de centro no asigna roles con alcance de otra organizacion")
+    void assignmentStaysInsideOwnOrganization() {
         assertForbidden(() -> governance.checkCanManageAssignment(actor(admin), doctor, physician, OTHER_CLINIC),
                 "su propia organizacion");
     }
 
     @Test
-    @DisplayName("el administrador de plataforma gestiona cualquier organizacion y los roles de plataforma")
-    void platformActorIsNotBoundToOrganization() {
-        UserAccount operator = account(CLINIC, platformAdmin);
+    @DisplayName("el rol de plataforma no necesita delegacion ni esta limitado a una organizacion")
+    void platformActorAssignsAnything() {
         UserAccount foreign = account(OTHER_CLINIC);
 
-        assertThatCode(() -> governance.checkCanManageAssignment(actor(operator), foreign, physician, OTHER_CLINIC))
+        assertThatCode(() -> governance.checkCanManageAssignment(actor(operator), foreign, receptionist, OTHER_CLINIC))
                 .doesNotThrowAnyException();
         assertThatCode(() -> governance.checkCanManageAssignment(actor(operator), foreign, platformAdmin, null))
                 .doesNotThrowAnyException();
@@ -104,15 +115,65 @@ class RoleGovernanceTests {
                 .doesNotThrowAnyException();
     }
 
+    // ------------------------------------------------------------------ cuentas
+
+    @Test
+    @DisplayName("una cuenta de otra organizacion no existe para el administrador de un centro")
+    void otherOrganizationIsInvisible() {
+        UserAccount foreign = account(OTHER_CLINIC);
+
+        assertThatThrownBy(() -> governance.checkCanManageAccount(actor(admin), foreign))
+                .isInstanceOf(ApiException.class)
+                .extracting(error -> ((ApiException) error).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThatCode(() -> governance.checkCanSee(actor(operator), foreign)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("el administrador de un centro no gestiona la cuenta del de plataforma, aunque comparta organizacion")
+    void cannotManageAccountAboveYou() {
+        assertForbidden(() -> governance.checkCanManageAccount(actor(admin), operator),
+                "identity.role.manage, tenancy.organization.create");
+        assertThatCode(() -> governance.checkCanSee(actor(admin), operator)).doesNotThrowAnyException();
+        assertThatCode(() -> governance.checkCanManageAccount(actor(admin), doctor)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("la busqueda y las altas de un administrador de centro quedan en su organizacion")
+    void organizationScopeForSearchAndCreation() {
+        assertThat(governance.searchScope(actor(admin), null)).isEqualTo(CLINIC);
+        assertForbidden(() -> governance.searchScope(actor(admin), OTHER_CLINIC), "propia organizacion");
+        assertThat(governance.searchScope(actor(operator), null)).isNull();
+
+        assertThat(governance.organizationForNewAccount(actor(admin), null)).isEqualTo(CLINIC);
+        assertForbidden(() -> governance.organizationForNewAccount(actor(admin), OTHER_CLINIC), "propia organizacion");
+        assertThat(governance.organizationForNewAccount(actor(operator), OTHER_CLINIC)).isEqualTo(OTHER_CLINIC);
+    }
+
+    // ------------------------------------------------------------------ definicion de roles
+
     @Test
     @DisplayName("nadie modifica un rol que tiene asignado, pero una asignacion vencida no cuenta")
     void cannotEditOwnRole() {
-        assertForbidden(() -> governance.checkDoesNotHold(actor(admin), administrator), "lo tiene asignado");
+        assertForbidden(() -> governance.checkCanEdit(actor(admin), administrator), "lo tiene asignado");
 
-        UserAccount former = account(CLINIC);
+        UserAccount former = account(CLINIC, platformAdmin);
         former.getRoleAssignments().add(new UserRole(former, administrator, CLINIC, null,
                 LocalDate.now().minusYears(1), LocalDate.now().minusDays(1), null));
-        assertThatCode(() -> governance.checkDoesNotHold(actor(former), administrator)).doesNotThrowAnyException();
+        assertThatCode(() -> governance.checkCanEdit(actor(former), administrator)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("un gestor de roles delegado no edita un rol con permisos de gestion que el no tiene")
+    void cannotEditRoleAboveYou() {
+        Role delegatedManager = role("ROLE_MANAGER", RoleScope.ORGANIZATION, ROLE_MANAGE, USER_READ);
+        UserAccount manager = account(CLINIC, delegatedManager);
+
+        assertForbidden(() -> governance.checkCanEdit(actor(manager), administrator),
+                "identity.role.assign, tenancy.branch.read");
+        assertForbidden(() -> governance.checkCanEdit(actor(manager), platformAdmin), "tenancy.organization.create");
+        assertThatCode(() -> governance.checkCanEdit(actor(manager), role("AUX", RoleScope.ORGANIZATION, USER_READ)))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -124,12 +185,15 @@ class RoleGovernanceTests {
                 .doesNotThrowAnyException();
     }
 
+    // ------------------------------------------------------------------ estado efectivo
+
     @Test
-    @DisplayName("los permisos del actor salen solo de roles activos con asignacion vigente")
-    void actorPermissionsIgnoreInactiveRolesAndExpiredAssignments() {
+    @DisplayName("los permisos y la delegacion del actor salen solo de roles activos con asignacion vigente")
+    void actorIgnoresInactiveRolesAndExpiredAssignments() {
         Role retired = role("RETIRED", RoleScope.PLATFORM, ROLE_MANAGE);
         retired.setActive(false);
         Role expired = role("EXPIRED", RoleScope.ORGANIZATION, ORG_CREATE);
+        expired.getAssignableRoles().add(receptionist);
         UserAccount account = account(CLINIC, administrator, retired);
         account.getRoleAssignments().add(new UserRole(account, expired, CLINIC, null,
                 TODAY.minusMonths(2), TODAY.minusDays(1), null));
@@ -138,6 +202,7 @@ class RoleGovernanceTests {
 
         assertThat(actor.permissions()).containsExactlyInAnyOrder("identity.user.read", "identity.role.assign",
                 "tenancy.branch.read");
+        assertThat(actor.assignableRoles()).containsExactlyInAnyOrder("ADMINISTRATOR", "PHYSICIAN");
         assertThat(actor.platform()).isFalse();
     }
 

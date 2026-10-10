@@ -41,7 +41,7 @@ public class RoleIncompatibilityController {
 
     @DeleteMapping("/{roleA}/{roleB}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void remove(@PathVariable String roleA, @PathVariable String roleB) {
-        management.removeIncompatibility(roleA, roleB);
+    public void remove(Authentication authentication, @PathVariable String roleA, @PathVariable String roleB) {
+        management.removeIncompatibility(roleA, roleB, Actors.publicId(authentication));
     }
 }
