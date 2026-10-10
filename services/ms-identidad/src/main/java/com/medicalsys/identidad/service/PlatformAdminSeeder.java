@@ -63,7 +63,7 @@ public class PlatformAdminSeeder implements ApplicationRunner {
             userService.create(new CreateUserRequest(
                     config.getEmail(), config.getFullName(), config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
-                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN, null, null, null, null))), null);
+                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))), null);
             log.info("Cuenta PLATFORM_ADMIN creada: {}", config.getEmail());
         }
 
@@ -79,7 +79,7 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
         boolean hasPlatformRole = false;
         for (UserRole assignment : user.getRoleAssignments()) {
-            if (assignment.getRole().getCode() == RoleCode.PLATFORM_ADMIN) {
+            if (assignment.getRole().is(RoleCode.PLATFORM_ADMIN)) {
                 hasPlatformRole = true;
                 if (assignment.getOrganizationPublicId() != null) {
                     assignment.setOrganizationPublicId(null);
@@ -88,7 +88,7 @@ public class PlatformAdminSeeder implements ApplicationRunner {
             }
         }
         if (!hasPlatformRole) {
-            Role role = roles.findByCode(RoleCode.PLATFORM_ADMIN)
+            Role role = roles.findByCode(RoleCode.PLATFORM_ADMIN.name())
                     .orElseThrow(() -> new IllegalStateException("El rol PLATFORM_ADMIN no fue sembrado"));
             user.getRoleAssignments().add(new UserRole(user, role, null, null, null, null, null));
             changed = true;

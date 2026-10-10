@@ -84,8 +84,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*").hasAuthority("identity.user.update")
                         // Una operacion nueva sobre cuentas no queda abierta por omision: necesita su propio permiso.
                         .requestMatchers("/api/v1/identity/users/**").denyAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/identity/roles/**", "/api/v1/identity/permissions")
-                                .hasAuthority("identity.role.read")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/identity/roles/**", "/api/v1/identity/permissions",
+                                "/api/v1/identity/role-incompatibilities").hasAuthority("identity.role.read")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/roles",
+                                "/api/v1/identity/role-incompatibilities").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/roles/*").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/identity/roles/*/permissions",
+                                "/api/v1/identity/roles/*/assignable-roles").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/roles/*",
+                                "/api/v1/identity/role-incompatibilities/*/*").hasAuthority("identity.role.manage")
+                        // Igual que con las cuentas: una operacion nueva sobre roles necesita su propio permiso.
+                        .requestMatchers("/api/v1/identity/roles/**", "/api/v1/identity/role-incompatibilities/**")
+                                .denyAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex

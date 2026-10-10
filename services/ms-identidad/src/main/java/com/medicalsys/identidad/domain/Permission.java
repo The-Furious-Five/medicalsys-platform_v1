@@ -32,6 +32,17 @@ public class Permission {
     @Column(name = "is_sensitive", nullable = false)
     private boolean sensitive;
 
+    protected Permission() {
+    }
+
+    /** El catalogo lo escriben las migraciones; la API solo asigna permisos existentes a roles. */
+    public Permission(String code, PermissionModule module, String description, boolean sensitive) {
+        this.code = code;
+        this.module = module;
+        this.description = description;
+        this.sensitive = sensitive;
+    }
+
     public Short getId() {
         return id;
     }
