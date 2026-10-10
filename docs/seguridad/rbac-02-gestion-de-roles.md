@@ -61,7 +61,7 @@ La delegación nunca escala. Aunque un rol esté delegado, nadie otorga permisos
 
 ## Reglas sobre la administración de accesos
 
-Están todas en `RoleGovernance`, el único lugar del código que respalda la política de control de acceso (PO-02).
+Están todas en `RoleGovernance`, el único lugar del código que respalda la política de control de acceso ([PO-02](politicas/PO-02.md), lineamientos 6.3 a 6.6).
 
 | Regla | Dónde aplica | Respuesta |
 |---|---|---|
