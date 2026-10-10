@@ -1,7 +1,6 @@
 package com.medicalsys.marketing.web.controller;
 
-import com.medicalsys.marketing.common.security.RequiresRole;
-import com.medicalsys.marketing.common.security.Role;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.domain.enums.CampaignStatus;
 import com.medicalsys.marketing.domain.enums.RecipientStatus;
@@ -49,7 +48,7 @@ public class CampaignController {
 
     /** Crea una campana en BORRADOR. */
     @PostMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.create")
     public ResponseEntity<CampaignResponse> create(@Valid @RequestBody CreateCampaignRequest request) {
         CampaignResponse campaign = service.create(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/campanas/" + campaign.id())).body(campaign);
@@ -57,7 +56,7 @@ public class CampaignController {
 
     /** Lista las campanas del tenant. */
     @GetMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.campaign.read")
     public PageResponse<CampaignSummaryResponse> list(@RequestParam(required = false) CampaignStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), status, pageable));
@@ -65,56 +64,56 @@ public class CampaignController {
 
     /** Devuelve una campana con sus contadores. */
     @GetMapping("/{campaignId}")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.campaign.read")
     public CampaignResponse get(@PathVariable UUID campaignId) {
         return service.get(RequestContextHolder.require(), campaignId);
     }
 
     /** Congela la audiencia: quien recibira la campana y quien queda excluido, con su motivo. */
     @PostMapping("/{campaignId}/audiencia")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.build_audience")
     public MaterializeAudienceResponse materializeAudience(@PathVariable UUID campaignId) {
         return service.materializeAudience(RequestContextHolder.require(), campaignId);
     }
 
     /** Programa la campana para su fecha de inicio. */
     @PostMapping("/{campaignId}/programacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.schedule")
     public CampaignResponse schedule(@PathVariable UUID campaignId) {
         return service.schedule(RequestContextHolder.require(), campaignId);
     }
 
     /** Lanza la campana y publica {@code marketing.campana} en la misma transaccion. */
     @PostMapping("/{campaignId}/lanzamiento")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.launch")
     public CampaignResponse launch(@PathVariable UUID campaignId) {
         return service.launch(RequestContextHolder.require(), campaignId);
     }
 
     /** Pausa la campana. */
     @PostMapping("/{campaignId}/pausa")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.pause")
     public CampaignResponse pause(@PathVariable UUID campaignId) {
         return service.pause(RequestContextHolder.require(), campaignId);
     }
 
     /** Cierra la campana. */
     @PostMapping("/{campaignId}/finalizacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.finish")
     public CampaignResponse finish(@PathVariable UUID campaignId) {
         return service.finish(RequestContextHolder.require(), campaignId);
     }
 
     /** Cancela la campana. */
     @PostMapping("/{campaignId}/cancelacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.campaign.cancel")
     public CampaignResponse cancel(@PathVariable UUID campaignId) {
         return service.cancel(RequestContextHolder.require(), campaignId);
     }
 
     /** Lista los destinatarios materializados con su resultado individual. */
     @GetMapping("/{campaignId}/destinatarios")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.recipient.read")
     public PageResponse<CampaignRecipientResponse> recipients(@PathVariable UUID campaignId,
             @RequestParam(required = false) RecipientStatus status,
             @PageableDefault(size = 50) Pageable pageable) {
@@ -124,7 +123,7 @@ public class CampaignController {
 
     /** Rendimiento con las tasas calculadas por la vista de la base. */
     @GetMapping("/{campaignId}/rendimiento")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.campaign.read")
     public CampaignPerformanceResponse performance(@PathVariable UUID campaignId) {
         return service.performance(RequestContextHolder.require(), campaignId);
     }

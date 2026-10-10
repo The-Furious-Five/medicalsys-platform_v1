@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.service.OrganizationService;
 import com.medicalsys.tenencia.service.SubscriptionService;
@@ -39,7 +38,7 @@ public class SubscriptionController {
 
     /** Contrata un plan para el tenant. */
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.subscription.subscribe")
     public ResponseEntity<SubscriptionResponse> subscribe(@Valid @RequestBody CreateSubscriptionRequest request) {
         var context = RequestContextHolder.require();
         SubscriptionResponse subscription = subscriptions.subscribe(context,
@@ -49,21 +48,21 @@ public class SubscriptionController {
 
     /** Devuelve la suscripcion vigente y si habilita el uso del producto hoy. */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.BILLING_CLERK, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.subscription.read")
     public SubscriptionResponse getCurrent() {
         return subscriptions.getCurrent(RequestContextHolder.require());
     }
 
     /** Historial de contratos del tenant, del mas reciente al mas antiguo. */
     @GetMapping("/historial")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.subscription.read_history")
     public List<SubscriptionResponse> history() {
         return subscriptions.listHistory(RequestContextHolder.require());
     }
 
     /** Cambia el estado del contrato; cancelar cierra tambien su vigencia. */
     @PatchMapping("/estado")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.subscription.change_status")
     public SubscriptionResponse changeStatus(@Valid @RequestBody ChangeSubscriptionStatusRequest request) {
         return subscriptions.changeStatus(RequestContextHolder.require(), request);
     }

@@ -1,7 +1,6 @@
 package com.medicalsys.pacientes.web.controller;
 
-import com.medicalsys.pacientes.common.security.RequiresRole;
-import com.medicalsys.pacientes.common.security.Role;
+import com.medicalsys.pacientes.common.security.RequiresPermission;
 import com.medicalsys.pacientes.common.tenant.RequestContextHolder;
 import com.medicalsys.pacientes.service.PatientMergeService;
 import com.medicalsys.pacientes.web.dto.MergePatientRequest;
@@ -30,7 +29,7 @@ public class PatientMergeController {
     }
 
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.merge.create")
     public ResponseEntity<PatientMergeResponse> merge(@PathVariable UUID survivingPatientId,
             @Valid @RequestBody MergePatientRequest request) {
         UUID userId = RequestContextHolder.requireUserId();
@@ -40,7 +39,7 @@ public class PatientMergeController {
     }
 
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.merge.read")
     public List<PatientMergeResponse> history(@PathVariable UUID survivingPatientId) {
         return merges.history(survivingPatientId);
     }

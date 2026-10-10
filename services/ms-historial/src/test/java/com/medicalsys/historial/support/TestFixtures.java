@@ -5,6 +5,7 @@ import com.medicalsys.historial.common.tenant.RequestContext;
 import com.medicalsys.historial.domain.enums.EncounterType;
 import com.medicalsys.historial.domain.model.ClinicalEncounter;
 import com.medicalsys.historial.domain.model.MedicalRecord;
+import com.medicalsys.historial.service.NarrativeAccessPolicy;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +29,9 @@ public final class TestFixtures {
 
     /** Contexto de un profesional autenticado del tenant de demostracion. */
     public static RequestContext physicianContext() {
-        return new RequestContext(ORGANIZATION_ID, USER_ID, Set.of(Role.PHYSICIAN));
+        // Como en ms-identidad: el medico tiene clinical.narrative.read y la recepcion no.
+        return new RequestContext(ORGANIZATION_ID, USER_ID, Set.of(Role.PHYSICIAN),
+                Set.of(NarrativeAccessPolicy.NARRATIVE_PERMISSION));
     }
 
     /** Contexto de una recepcionista: ve el encuentro pero no su narrativa. */

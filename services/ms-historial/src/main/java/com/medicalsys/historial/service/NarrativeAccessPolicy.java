@@ -1,9 +1,7 @@
 package com.medicalsys.historial.service;
 
 import com.medicalsys.historial.client.NarrativeCipher;
-import com.medicalsys.historial.common.security.Role;
 import com.medicalsys.historial.common.tenant.RequestContext;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -12,13 +10,13 @@ import org.springframework.stereotype.Component;
  *
  * <p>Una recepcionista necesita ver que existe un encuentro y su estado, pero no su contenido
  * clinico. El aislamiento por organizacion ya se aplico en la consulta; esta politica agrega el
- * filtro por rol sobre el contenido sensible.
+ * filtro sobre el contenido sensible con el permiso {@value #NARRATIVE_PERMISSION}, que ms-identidad
+ * asigna a cada rol (RBAC-03) en lugar de una lista fija de roles en el codigo.
  */
 @Component
 public class NarrativeAccessPolicy {
 
-    private static final Set<Role> CLINICAL_READERS = Set.of(Role.PHYSICIAN, Role.ADMINISTRATOR,
-            Role.PLATFORM_ADMIN);
+    public static final String NARRATIVE_PERMISSION = "clinical.narrative.read";
 
     private final NarrativeCipher cipher;
 
@@ -28,13 +26,13 @@ public class NarrativeAccessPolicy {
 
     /** Indica si la identidad en curso puede leer contenido clinico descifrado. */
     public boolean canReadNarrative(RequestContext context) {
-        return context.roles().stream().anyMatch(CLINICAL_READERS::contains);
+        return context.hasPermission(NARRATIVE_PERMISSION);
     }
 
     /**
-     * Descifra un valor solo si el rol lo permite.
+     * Descifra un valor solo si el permiso lo autoriza.
      *
-     * @return el texto en claro, o {@code null} si el rol no autoriza o no hay contenido
+     * @return el texto en claro, o {@code null} si el permiso no autoriza o no hay contenido
      */
     public String reveal(RequestContext context, UUID keyPublicId, byte[] ciphertext) {
         if (ciphertext == null || ciphertext.length == 0 || !canReadNarrative(context)) {

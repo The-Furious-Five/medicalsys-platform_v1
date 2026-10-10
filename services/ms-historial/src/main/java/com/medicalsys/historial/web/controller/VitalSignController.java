@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.VitalSignService;
 import com.medicalsys.historial.web.dto.CreateVitalSignRequest;
@@ -31,14 +30,14 @@ public class VitalSignController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.vital_sign.create")
     public VitalSignResponse create(@PathVariable UUID encounterId,
             @Valid @RequestBody CreateVitalSignRequest request) {
         return service.create(RequestContextHolder.require(), encounterId, request);
     }
 
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.vital_sign.read")
     public List<VitalSignResponse> list(@PathVariable UUID encounterId) {
         return service.list(RequestContextHolder.require(), encounterId);
     }

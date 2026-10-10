@@ -28,9 +28,14 @@ APPT=$(uuidgen | tr 'A-Z' 'a-z')
 CORR=smoke-$(date +%s)
 BODY=$(mktemp)
 
-caja=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
-otra=(-H "X-Organization-Id: $OTHER_ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "Content-Type: application/json")
-paciente=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PATIENT" -H "Content-Type: application/json")
+# Permisos que cada rol tiene en billing.* segun la asignacion inicial de ms-identidad (RBAC-01/03):
+# desde RBAC-03 el servicio autoriza por X-Permissions, no por X-Roles.
+CAJA_PERMISSIONS="billing.invoice.issue,billing.invoice.read"
+OTRA_PERMISSIONS="billing.invoice.issue,billing.invoice.read"
+PACIENTE_PERMISSIONS=""  # el paciente no tiene permisos de facturacion
+caja=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "X-Permissions: $CAJA_PERMISSIONS" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
+otra=(-H "X-Organization-Id: $OTHER_ORG" -H "X-User-Id: $USER" -H "X-Roles: RECEPTIONIST" -H "X-Permissions: $OTRA_PERMISSIONS" -H "Content-Type: application/json")
+paciente=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PATIENT" -H "X-Permissions: $PACIENTE_PERMISSIONS" -H "Content-Type: application/json")
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$1"; }
 code() { curl -s -o "$BODY" -w '%{http_code}' "$@"; }

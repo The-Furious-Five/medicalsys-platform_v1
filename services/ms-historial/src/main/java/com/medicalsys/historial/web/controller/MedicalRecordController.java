@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContext;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.MedicalRecordService;
@@ -45,7 +44,7 @@ public class MedicalRecordController {
 
     /** Crea el expediente del paciente o devuelve el existente. */
     @PostMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.record.create")
     public ResponseEntity<MedicalRecordResponse> open(@Valid @RequestBody OpenMedicalRecordRequest request) {
         OpenResult result = service.openOrGet(RequestContextHolder.require(), request);
         URI location = URI.create("/api/v1/expedientes/" + result.record().id());
@@ -55,14 +54,14 @@ public class MedicalRecordController {
     }
 
     @GetMapping("/{recordId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.record.read")
     public MedicalRecordResponse get(@PathVariable UUID recordId) {
         return service.getByPublicId(RequestContextHolder.require(), recordId);
     }
 
     /** Lista los expedientes del tenant o resuelve el de un paciente concreto. */
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.record.read")
     public Object list(@RequestParam(required = false) UUID patientId,
             @PageableDefault(size = 20, sort = "openedOn", direction = Sort.Direction.DESC) Pageable pageable) {
         RequestContext context = RequestContextHolder.require();
@@ -73,7 +72,7 @@ public class MedicalRecordController {
 
     /** Registra o revoca la autorizacion del paciente para compartir su historial. */
     @PatchMapping("/{recordId}/compartir")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.record.share")
     public MedicalRecordResponse updateSharing(@PathVariable UUID recordId,
             @Valid @RequestBody UpdateSharingRequest request) {
         return service.updateSharing(RequestContextHolder.require(), recordId, request);
@@ -81,7 +80,7 @@ public class MedicalRecordController {
 
     /** Cambia el estado administrativo del expediente. */
     @PatchMapping("/{recordId}/estado")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.record.change_status")
     public MedicalRecordResponse changeStatus(@PathVariable UUID recordId,
             @Valid @RequestBody ChangeRecordStatusRequest request) {
         return service.changeStatus(RequestContextHolder.require(), recordId, request);

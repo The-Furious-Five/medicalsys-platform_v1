@@ -1,7 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
-import com.medicalsys.historial.common.security.RequiresRole;
-import com.medicalsys.historial.common.security.Role;
+import com.medicalsys.historial.common.security.RequiresPermission;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.domain.enums.BackgroundType;
 import com.medicalsys.historial.service.MedicalBackgroundService;
@@ -34,14 +33,14 @@ public class MedicalBackgroundController {
 
     @PostMapping("/expedientes/{recordId}/antecedentes")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.background.create")
     public MedicalBackgroundResponse create(@PathVariable UUID recordId,
             @Valid @RequestBody CreateMedicalBackgroundRequest request) {
         return service.create(RequestContextHolder.require(), recordId, request);
     }
 
     @GetMapping("/expedientes/{recordId}/antecedentes")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.background.read")
     public List<MedicalBackgroundResponse> list(@PathVariable UUID recordId,
             @RequestParam(required = false) BackgroundType type) {
         return service.list(RequestContextHolder.require(), recordId, type);
@@ -50,7 +49,7 @@ public class MedicalBackgroundController {
     /** Marca el antecedente como no vigente; el registro clinico nunca se borra. */
     @DeleteMapping("/antecedentes/{backgroundId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequiresRole({Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("clinical.background.deactivate")
     public void deactivate(@PathVariable Long backgroundId) {
         service.deactivate(RequestContextHolder.require(), backgroundId);
     }

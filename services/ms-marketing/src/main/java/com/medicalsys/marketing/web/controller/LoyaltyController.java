@@ -1,7 +1,6 @@
 package com.medicalsys.marketing.web.controller;
 
-import com.medicalsys.marketing.common.security.RequiresRole;
-import com.medicalsys.marketing.common.security.Role;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.service.LoyaltyService;
 import com.medicalsys.marketing.web.dto.CreateLoyaltyProgramRequest;
@@ -44,7 +43,7 @@ public class LoyaltyController {
 
     /** Crea un programa de fidelizacion. */
     @PostMapping("/programas")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.loyalty_program.create")
     public ResponseEntity<LoyaltyProgramResponse> createProgram(
             @Valid @RequestBody CreateLoyaltyProgramRequest request) {
         LoyaltyProgramResponse program = service.createProgram(RequestContextHolder.require(), request);
@@ -53,22 +52,21 @@ public class LoyaltyController {
 
     /** Lista los programas del tenant. */
     @GetMapping("/programas")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.loyalty_program.read")
     public List<LoyaltyProgramResponse> listPrograms() {
         return service.listPrograms(RequestContextHolder.require());
     }
 
     /** Desactiva un programa; sus asientos se conservan. */
     @PostMapping("/programas/{programId}/desactivacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.loyalty_program.deactivate")
     public LoyaltyProgramResponse deactivateProgram(@PathVariable UUID programId) {
         return service.deactivateProgram(RequestContextHolder.require(), programId);
     }
 
     /** Saldo de puntos de un paciente. Sin {@code programId} usa el programa activo del tenant. */
     @GetMapping("/saldo")
-    @RequiresRole({Role.PATIENT, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.MARKETING_MANAGER,
-            Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.loyalty_account.read")
     public LoyaltyBalanceResponse balance(@RequestParam UUID patientId,
             @RequestParam(required = false) UUID programId) {
         return service.balance(RequestContextHolder.require(), patientId, programId);
@@ -76,8 +74,7 @@ public class LoyaltyController {
 
     /** Libro mayor del paciente, del asiento mas reciente al mas antiguo. */
     @GetMapping("/movimientos")
-    @RequiresRole({Role.PATIENT, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.MARKETING_MANAGER,
-            Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.loyalty_account.read")
     public PageResponse<LoyaltyMovementResponse> listMovements(@RequestParam UUID patientId,
             @RequestParam(required = false) UUID programId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -87,8 +84,7 @@ public class LoyaltyController {
 
     /** Registra un canje, un ajuste manual o una bonificacion. La acumulacion no pasa por aqui. */
     @PostMapping("/movimientos")
-    @RequiresRole({Role.RECEPTIONIST, Role.BILLING_CLERK, Role.MARKETING_MANAGER, Role.ADMINISTRATOR,
-            Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.loyalty_movement.create")
     public LoyaltyMovementResponse registerMovement(@Valid @RequestBody LoyaltyMovementRequest request,
             @RequestParam(required = false) UUID programId) {
         return service.registerMovement(RequestContextHolder.require(), request, programId);

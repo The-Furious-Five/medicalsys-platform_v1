@@ -1,7 +1,6 @@
 package com.medicalsys.auditoria.web.controller;
 
-import com.medicalsys.auditoria.common.security.RequiresRole;
-import com.medicalsys.auditoria.common.security.Role;
+import com.medicalsys.auditoria.common.security.RequiresPermission;
 import com.medicalsys.auditoria.domain.enums.AuditCategory;
 import com.medicalsys.auditoria.domain.enums.AuditOutcome;
 import com.medicalsys.auditoria.domain.enums.AuditSeverity;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/v1/audit")
-@RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
 public class AuditQueryController {
 
     private final AuditEventService auditEvents;
@@ -61,6 +59,7 @@ public class AuditQueryController {
      * revisa un incidente: lo ultimo que paso, primero.
      */
     @GetMapping("/events")
+    @RequiresPermission("audit.log.read")
     public PageResponse<AuditEventResponse> search(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
@@ -83,12 +82,14 @@ public class AuditQueryController {
     }
 
     @GetMapping("/events/{eventId}")
+    @RequiresPermission("audit.log.read")
     public AuditEventResponse get(@PathVariable UUID eventId) {
         return auditEvents.get(eventId);
     }
 
     /** Cortes agregados de la ventana; alimenta el encabezado de la pantalla. */
     @GetMapping("/summary")
+    @RequiresPermission("audit.log.read")
     public AuditSummaryResponse summary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
@@ -97,6 +98,7 @@ public class AuditQueryController {
 
     /** Recalculo de la cadena de hashes sobre los ultimos eventos de la organizacion. */
     @GetMapping("/integrity")
+    @RequiresPermission("audit.log.verify")
     public AuditIntegrityResponse integrity(@RequestParam(required = false) Integer window) {
         return integrityService.verifyLatest(window);
     }

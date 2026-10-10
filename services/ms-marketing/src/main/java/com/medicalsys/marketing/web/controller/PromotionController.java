@@ -1,7 +1,6 @@
 package com.medicalsys.marketing.web.controller;
 
-import com.medicalsys.marketing.common.security.RequiresRole;
-import com.medicalsys.marketing.common.security.Role;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.service.PromotionService;
 import com.medicalsys.marketing.web.dto.CouponRedemptionResponse;
@@ -47,7 +46,7 @@ public class PromotionController {
 
     /** Crea un cupon vigente. */
     @PostMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.promotion.create")
     public ResponseEntity<PromotionResponse> create(@Valid @RequestBody CreatePromotionRequest request) {
         PromotionResponse promotion = service.create(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/promociones/" + promotion.id())).body(promotion);
@@ -55,8 +54,7 @@ public class PromotionController {
 
     /** Lista los cupones del tenant. */
     @GetMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST,
-            Role.BILLING_CLERK})
+    @RequiresPermission("marketing.promotion.read")
     public PageResponse<PromotionResponse> list(@RequestParam(required = false) Boolean active,
             @PageableDefault(size = 20) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), active, pageable));
@@ -64,8 +62,7 @@ public class PromotionController {
 
     /** Devuelve un cupon. */
     @GetMapping("/{promotionId}")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST,
-            Role.BILLING_CLERK})
+    @RequiresPermission("marketing.promotion.read")
     public PromotionResponse get(@PathVariable UUID promotionId) {
         return service.get(RequestContextHolder.require(), promotionId);
     }
@@ -77,23 +74,21 @@ public class PromotionController {
      * lleva el paciente y el importe, que no deben viajar en la URL ni quedar en los logs de acceso.
      */
     @PostMapping("/validar")
-    @RequiresRole({Role.BILLING_CLERK, Role.RECEPTIONIST, Role.MARKETING_MANAGER, Role.ADMINISTRATOR,
-            Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.coupon.validate")
     public CouponValidationResponse validate(@Valid @RequestBody ValidateCouponRequest request) {
         return service.validate(RequestContextHolder.require(), request);
     }
 
     /** Canjea el cupon; reintentar con la misma factura devuelve el canje ya registrado. */
     @PostMapping("/canjes")
-    @RequiresRole({Role.BILLING_CLERK, Role.RECEPTIONIST, Role.MARKETING_MANAGER, Role.ADMINISTRATOR,
-            Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.coupon.redeem")
     public CouponRedemptionResponse redeem(@Valid @RequestBody RedeemCouponRequest request) {
         return service.redeem(RequestContextHolder.require(), request);
     }
 
     /** Desactiva el cupon; los canjes ya registrados se conservan. */
     @PostMapping("/{promotionId}/desactivacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.promotion.deactivate")
     public PromotionResponse deactivate(@PathVariable UUID promotionId) {
         return service.deactivate(RequestContextHolder.require(), promotionId);
     }

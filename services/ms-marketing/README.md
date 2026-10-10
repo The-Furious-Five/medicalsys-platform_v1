@@ -181,6 +181,8 @@ distintos no lo garantiza nadie.
 
 El detalle completo con ejemplos está en [`docs/contracts.md`](docs/contracts.md). En resumen:
 
+Desde RBAC-03 cada endpoint exige un permiso del catálogo de ms-identidad (`@RequiresPermission`), no un rol. La columna de roles indica quién lo tiene en la asignación inicial; el permiso exacto de cada endpoint está en [`docs/seguridad/rbac-01-endpoints-permisos.csv`](../../docs/seguridad/rbac-01-endpoints-permisos.csv).
+
 | Método y ruta | Rol | Para qué |
 | --- | --- | --- |
 | `GET /api/v1/marketing/ping` | público | Verificar el servicio y el enrutamiento |
@@ -272,7 +274,7 @@ de `marketing.campana`, y los `401`/`403`/`404`.
 
 Va **directo al servicio** y no por el gateway, a propósito: fabrica cuatro identidades distintas
 —admin, caja, paciente y otra organización— para poder comprobar el `403` por rol y el `404` entre
-tenants. El gateway, correctamente, borra cualquier `X-Organization-Id` / `X-Roles` que mande el
+tenants. El gateway, correctamente, borra cualquier `X-Organization-Id` / `X-Roles` / `X-Permissions` que mande el
 cliente y los recrea desde el JWT.
 
 ### 9.3 Camino autenticado completo, por el gateway

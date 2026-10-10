@@ -39,10 +39,16 @@ BODY=$(mktemp)
 PATIENT=00000000-0000-4000-8000-000000000701
 OTHER_PATIENT=00000000-0000-4000-8000-000000000702
 
-admin=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: ADMINISTRATOR" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
-caja=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: BILLING_CLERK" -H "Content-Type: application/json")
-paciente=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PATIENT" -H "Content-Type: application/json")
-otra=(-H "X-Organization-Id: $OTHER_ORG" -H "X-User-Id: $USER" -H "X-Roles: ADMINISTRATOR" -H "Content-Type: application/json")
+# Permisos que cada rol tiene en marketing.* segun la asignacion inicial de ms-identidad (RBAC-01/03):
+# desde RBAC-03 el servicio autoriza por X-Permissions, no por X-Roles.
+ADMIN_PERMISSIONS="marketing.advertisement.create,marketing.advertisement.finish,marketing.advertisement.pause,marketing.advertisement.publish,marketing.advertisement.read,marketing.advertisement.track,marketing.advertisement.view,marketing.campaign.build_audience,marketing.campaign.cancel,marketing.campaign.create,marketing.campaign.finish,marketing.campaign.launch,marketing.campaign.pause,marketing.campaign.read,marketing.campaign.schedule,marketing.coupon.redeem,marketing.coupon.validate,marketing.loyalty_account.read,marketing.loyalty_movement.create,marketing.loyalty_program.create,marketing.loyalty_program.deactivate,marketing.loyalty_program.read,marketing.opt_out.update,marketing.patient_activity.read,marketing.promotion.create,marketing.promotion.deactivate,marketing.promotion.read,marketing.recipient.read,marketing.segment.create,marketing.segment.deactivate,marketing.segment.delete,marketing.segment.evaluate,marketing.segment.read,marketing.segment.update"
+CAJA_PERMISSIONS="marketing.coupon.redeem,marketing.coupon.validate,marketing.loyalty_account.read,marketing.loyalty_movement.create,marketing.promotion.read"
+PACIENTE_PERMISSIONS="marketing.advertisement.track,marketing.advertisement.view,marketing.loyalty_account.read,marketing.opt_out.update"
+OTRA_PERMISSIONS="marketing.advertisement.create,marketing.advertisement.finish,marketing.advertisement.pause,marketing.advertisement.publish,marketing.advertisement.read,marketing.advertisement.track,marketing.advertisement.view,marketing.campaign.build_audience,marketing.campaign.cancel,marketing.campaign.create,marketing.campaign.finish,marketing.campaign.launch,marketing.campaign.pause,marketing.campaign.read,marketing.campaign.schedule,marketing.coupon.redeem,marketing.coupon.validate,marketing.loyalty_account.read,marketing.loyalty_movement.create,marketing.loyalty_program.create,marketing.loyalty_program.deactivate,marketing.loyalty_program.read,marketing.opt_out.update,marketing.patient_activity.read,marketing.promotion.create,marketing.promotion.deactivate,marketing.promotion.read,marketing.recipient.read,marketing.segment.create,marketing.segment.deactivate,marketing.segment.delete,marketing.segment.evaluate,marketing.segment.read,marketing.segment.update"
+admin=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: ADMINISTRATOR" -H "X-Permissions: $ADMIN_PERMISSIONS" -H "X-Correlation-Id: $CORR" -H "Content-Type: application/json")
+caja=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: BILLING_CLERK" -H "X-Permissions: $CAJA_PERMISSIONS" -H "Content-Type: application/json")
+paciente=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USER" -H "X-Roles: PATIENT" -H "X-Permissions: $PACIENTE_PERMISSIONS" -H "Content-Type: application/json")
+otra=(-H "X-Organization-Id: $OTHER_ORG" -H "X-User-Id: $USER" -H "X-Roles: ADMINISTRATOR" -H "X-Permissions: $OTRA_PERMISSIONS" -H "Content-Type: application/json")
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$1"; }
 code() { curl -s -o "$BODY" -w '%{http_code}' "$@"; }
