@@ -2,11 +2,13 @@ package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.domain.Permission;
 import com.medicalsys.identidad.domain.Role;
+import com.medicalsys.identidad.domain.RoleIncompatibility;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.web.dto.InternalUserResponse;
 import com.medicalsys.identidad.web.dto.PermissionResponse;
 import com.medicalsys.identidad.web.dto.RoleAssignmentResponse;
+import com.medicalsys.identidad.web.dto.RoleIncompatibilityResponse;
 import com.medicalsys.identidad.web.dto.RoleResponse;
 import com.medicalsys.identidad.web.dto.UserResponse;
 import java.time.LocalDate;
@@ -52,7 +54,7 @@ public class IdentityMapper {
                 assignment.getBranchPublicId(),
                 assignment.getValidFrom(),
                 assignment.getValidUntil(),
-                assignment.isActiveOn(LocalDate.now()));
+                isEffective(assignment, LocalDate.now()));
     }
 
     public RoleResponse toRoleResponse(Role role) {
@@ -62,6 +64,7 @@ public class IdentityMapper {
                 role.getDescription(),
                 role.getScope(),
                 role.isSystem(),
+                role.isActive(),
                 role.getPermissions().stream().map(this::toPermissionResponse).toList());
     }
 
@@ -73,11 +76,25 @@ public class IdentityMapper {
                 permission.isSensitive());
     }
 
+    public RoleIncompatibilityResponse toIncompatibilityResponse(RoleIncompatibility pair) {
+        return new RoleIncompatibilityResponse(
+                pair.getRole().getCode(),
+                pair.getIncompatibleRole().getCode(),
+                pair.getReason(),
+                pair.getCreatedBy() == null ? null : pair.getCreatedBy().getPublicId(),
+                pair.getCreatedAt());
+    }
+
+    /** Un rol desactivado (RBAC-02) no aporta roles ni permisos aunque la asignacion siga vigente. */
+    public static boolean isEffective(UserRole assignment, LocalDate day) {
+        return assignment.isActiveOn(day) && assignment.getRole().isActive();
+    }
+
     public List<String> activeRoleCodes(UserAccount user) {
         LocalDate today = LocalDate.now();
         return user.getRoleAssignments().stream()
-                .filter(assignment -> assignment.isActiveOn(today))
-                .map(assignment -> assignment.getRole().getCode().name())
+                .filter(assignment -> isEffective(assignment, today))
+                .map(assignment -> assignment.getRole().getCode())
                 .distinct()
                 .sorted()
                 .toList();
@@ -86,7 +103,7 @@ public class IdentityMapper {
     public List<String> activePermissionCodes(UserAccount user) {
         LocalDate today = LocalDate.now();
         return user.getRoleAssignments().stream()
-                .filter(assignment -> assignment.isActiveOn(today))
+                .filter(assignment -> isEffective(assignment, today))
                 .flatMap(assignment -> assignment.getRole().getPermissions().stream())
                 .map(Permission::getCode)
                 .distinct()

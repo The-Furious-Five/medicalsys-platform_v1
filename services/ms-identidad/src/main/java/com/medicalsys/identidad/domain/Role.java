@@ -16,7 +16,10 @@ import jakarta.persistence.Table;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/** Rol de autorizacion definido por la plataforma o por un tenant. */
+/**
+ * Rol de autorizacion. Los de sistema ({@link RoleCode}) los siembran las migraciones; el resto se
+ * crea desde la API de gestion de roles (RBAC-02).
+ */
 @Entity
 @Table(name = "role")
 public class Role {
@@ -26,9 +29,9 @@ public class Role {
     @Column(name = "id", nullable = false)
     private Short id;
 
-    @Enumerated(EnumType.STRING)
+    /** Inmutable: viaja en el claim roles del JWT y en el header X-Roles hacia los servicios. */
     @Column(name = "code", nullable = false, length = 30)
-    private RoleCode code;
+    private String code;
 
     @Column(name = "name", nullable = false, length = 80)
     private String name;
@@ -43,6 +46,9 @@ public class Role {
     @Column(name = "is_system", nullable = false)
     private boolean system;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "role_permission",
@@ -51,11 +57,27 @@ public class Role {
     @OrderBy("code asc")
     private Set<Permission> permissions = new LinkedHashSet<>();
 
+    /** Rol creado desde la API: nunca es de sistema y nace activo y sin permisos. */
+    public static Role custom(String code, String name, String description, RoleScope scope) {
+        Role role = new Role();
+        role.code = code;
+        role.name = name;
+        role.description = description;
+        role.scope = scope;
+        role.system = false;
+        role.active = true;
+        return role;
+    }
+
+    public boolean is(RoleCode systemCode) {
+        return systemCode.name().equals(code);
+    }
+
     public Short getId() {
         return id;
     }
 
-    public RoleCode getCode() {
+    public String getCode() {
         return code;
     }
 
@@ -63,8 +85,16 @@ public class Role {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public RoleScope getScope() {
@@ -73,6 +103,14 @@ public class Role {
 
     public boolean isSystem() {
         return system;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Set<Permission> getPermissions() {

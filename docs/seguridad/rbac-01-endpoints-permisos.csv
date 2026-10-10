@@ -1,20 +1,23 @@
 servicio,metodo,ruta,tipo_acceso,permiso,modulo,sensible,roles_iniciales,control_actual,origen_asignacion
 ms-identidad,POST,/api/v1/identity/users/{publicId}/roles,PERMISO,identity.role.assign,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.assign,replica control vigente
 ms-identidad,DELETE,/api/v1/identity/users/{publicId}/roles/{role},PERMISO,identity.role.assign,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.assign,replica control vigente
-ms-identidad,POST,/api/v1/identity/roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,No existe (lo crea RBAC-02),propuesta nueva
-ms-identidad,DELETE,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,No existe (lo crea RBAC-02),propuesta nueva
-ms-identidad,PATCH,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,No existe (lo crea RBAC-02),propuesta nueva
-ms-identidad,PUT,/api/v1/identity/roles/{code}/permissions,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,No existe (lo crea RBAC-02),propuesta nueva
-ms-identidad,GET,/api/v1/identity/permissions,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,Solo autenticado,propuesta nueva
-ms-identidad,GET,/api/v1/identity/roles,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,Solo autenticado,propuesta nueva
-ms-identidad,GET,/api/v1/identity/roles/{code},PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,Solo autenticado,propuesta nueva
-ms-identidad,PATCH,/api/v1/identity/users/{publicId}/status,PERMISO,identity.user.change_status,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.write,replica control vigente
-ms-identidad,POST,/api/v1/identity/users,PERMISO,identity.user.create,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.write,replica control vigente
+ms-identidad,POST,/api/v1/identity/role-incompatibilities,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,DELETE,/api/v1/identity/role-incompatibilities/{roleA}/{roleB},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,POST,/api/v1/identity/roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,DELETE,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PATCH,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PUT,/api/v1/identity/roles/{code}/permissions,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,GET,/api/v1/identity/permissions,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/role-incompatibilities,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/roles,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/roles/{code},PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,PATCH,/api/v1/identity/users/{publicId}/status,PERMISO,identity.user.change_status,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.change_status,replica control vigente
+ms-identidad,POST,/api/v1/identity/users,PERMISO,identity.user.create,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.create,replica control vigente
 ms-identidad,GET,/api/v1/identity/users,PERMISO,identity.user.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.read,replica control vigente
 ms-identidad,GET,/api/v1/identity/users/{publicId},PERMISO,identity.user.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.read,replica control vigente
 ms-identidad,POST,/api/v1/identity/users/{publicId}/reset-password,PERMISO,identity.user.reset,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,No existe (lo crea IAM-05),propuesta nueva
 ms-identidad,POST,/api/v1/identity/users/{publicId}/unlock,PERMISO,identity.user.unlock,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,No existe (lo crea IAM-05),propuesta nueva
-ms-identidad,PATCH,/api/v1/identity/users/{publicId},PERMISO,identity.user.update,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.write,replica control vigente
+ms-identidad,PATCH,/api/v1/identity/users/{publicId},PERMISO,identity.user.update,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.update,replica control vigente
 ms-identidad,POST,/api/v1/identity/auth/change-password,AUTENTICADO,,,,,Solo autenticado,
 ms-identidad,POST,/api/v1/identity/auth/login,PUBLICO,,,,,Publico,
 ms-identidad,POST,/api/v1/identity/auth/logout,AUTENTICADO,,,,,Solo autenticado,

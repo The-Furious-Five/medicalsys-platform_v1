@@ -1,7 +1,6 @@
 package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.domain.Role;
-import com.medicalsys.identidad.domain.RoleCode;
 import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
@@ -9,6 +8,7 @@ import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
+import com.medicalsys.identidad.service.RoleGovernance.Actor;
 import com.medicalsys.identidad.web.dto.ChangePasswordRequest;
 import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
@@ -18,6 +18,7 @@ import com.medicalsys.identidad.web.dto.UpdateUserRequest;
 import com.medicalsys.identidad.web.dto.UserResponse;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -30,19 +31,23 @@ import org.springframework.util.StringUtils;
 @Service
 public class UserService {
 
+    private static final String ASSIGN_PERMISSION = "identity.role.assign";
+
     private final UserAccountRepository users;
     private final RoleRepository roles;
     private final PasswordEncoder passwordEncoder;
     private final IdentityMapper mapper;
     private final SessionStore sessionStore;
+    private final RoleGovernance governance;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
-                       IdentityMapper mapper, SessionStore sessionStore) {
+                       IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
+        this.governance = governance;
     }
 
     @Transactional
@@ -65,8 +70,13 @@ public class UserService {
                 ? UserStatus.ACTIVE
                 : UserStatus.PENDING_ACTIVATION);
 
-        UserAccount actor = actorPublicId == null ? null : users.findByPublicId(actorPublicId).orElse(null);
-        if (request.roles() != null) {
+        Actor actor = governance.resolve(actorPublicId);
+        boolean withRoles = request.roles() != null && !request.roles().isEmpty();
+        // identity.user.create no basta: sin esto, crear la cuenta con roles evitaria identity.role.assign.
+        if (actor != null && withRoles && !actor.holds(ASSIGN_PERMISSION)) {
+            throw ApiException.forbidden("Crear una cuenta con roles requiere el permiso " + ASSIGN_PERMISSION);
+        }
+        if (withRoles) {
             for (RoleAssignmentRequest assignment : request.roles()) {
                 attachRole(user, assignment, actor);
             }
@@ -138,26 +148,33 @@ public class UserService {
     @Transactional
     public UserResponse assignRole(UUID publicId, RoleAssignmentRequest request, UUID actorPublicId) {
         UserAccount user = require(publicId);
-        UserAccount actor = actorPublicId == null ? null : users.findByPublicId(actorPublicId).orElse(null);
-        attachRole(user, request, actor);
+        attachRole(user, request, governance.resolve(actorPublicId));
         return mapper.toUserResponse(user);
     }
 
     @Transactional
-    public UserResponse revokeRole(UUID publicId, RoleCode roleCode) {
+    public UserResponse revokeRole(UUID publicId, String roleCode, UUID actorPublicId) {
         UserAccount user = require(publicId);
-        boolean removed = user.getRoleAssignments()
-                .removeIf(assignment -> assignment.getRole().getCode() == roleCode);
-        if (!removed) {
-            throw ApiException.notFound("La cuenta no tiene asignado el rol " + roleCode);
+        Actor actor = governance.resolve(actorPublicId);
+        String code = RoleManagementService.normalize(roleCode);
+        List<UserRole> revoked = user.getRoleAssignments().stream()
+                .filter(assignment -> assignment.getRole().getCode().equals(code))
+                .toList();
+        if (revoked.isEmpty()) {
+            throw ApiException.notFound("La cuenta no tiene asignado el rol " + code);
         }
+        for (UserRole assignment : revoked) {
+            governance.checkCanManageAssignment(actor, user, assignment.getRole(), assignment.getOrganizationPublicId());
+        }
+        user.getRoleAssignments().removeAll(revoked);
         sessionStore.closeAll(user.getPublicId());
         return mapper.toUserResponse(user);
     }
 
-    private void attachRole(UserAccount user, RoleAssignmentRequest request, UserAccount actor) {
-        Role role = roles.findByCode(request.role())
-                .orElseThrow(() -> ApiException.badRequest("Rol desconocido: " + request.role()));
+    private void attachRole(UserAccount user, RoleAssignmentRequest request, Actor actor) {
+        String code = RoleManagementService.normalize(request.role());
+        Role role = roles.findByCode(code)
+                .orElseThrow(() -> ApiException.badRequest("Rol desconocido: " + code));
 
         UUID organizationPublicId = role.getScope() == RoleScope.PLATFORM
                 ? null
@@ -165,21 +182,27 @@ public class UserService {
                         ? request.organizationPublicId()
                         : user.getOrganizationPublicId();
 
+        governance.checkCanManageAssignment(actor, user, role, organizationPublicId);
+        if (!role.isActive()) {
+            throw ApiException.conflict("El rol " + code + " esta desactivado y no se puede asignar");
+        }
+
         boolean duplicated = user.getRoleAssignments().stream()
-                .anyMatch(existing -> existing.getRole().getCode() == request.role()
+                .anyMatch(existing -> existing.getRole().getCode().equals(code)
                         && Objects.equals(existing.getOrganizationPublicId(), organizationPublicId)
                         && Objects.equals(existing.getBranchPublicId(), request.branchPublicId()));
         if (duplicated) {
-            throw ApiException.conflict("El rol " + request.role() + " ya esta asignado en ese alcance");
+            throw ApiException.conflict("El rol " + code + " ya esta asignado en ese alcance");
         }
 
         LocalDate validFrom = request.validFrom() == null ? LocalDate.now() : request.validFrom();
         if (request.validUntil() != null && request.validUntil().isBefore(validFrom)) {
             throw ApiException.badRequest("validUntil no puede ser anterior a validFrom");
         }
+        governance.checkCompatible(user, role);
 
         user.getRoleAssignments().add(new UserRole(user, role, organizationPublicId, request.branchPublicId(),
-                validFrom, request.validUntil(), actor));
+                validFrom, request.validUntil(), actor == null ? null : actor.account()));
     }
 
     @Transactional(readOnly = true)

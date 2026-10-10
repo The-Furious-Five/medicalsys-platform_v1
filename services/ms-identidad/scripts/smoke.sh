@@ -28,10 +28,14 @@ check "listar roles" 200 "$(code $B/api/v1/identity/roles -H "$AUTH")"
 check "listar permisos por modulo" 200 "$(code "$B/api/v1/identity/permissions?module=SCHEDULING" -H "$AUTH")"
 check "listar usuarios" 200 "$(code $B/api/v1/identity/users -H "$AUTH")"
 
+# La cuenta nueva va en la organizacion del administrador: desde RBAC-02 un administrador de centro
+# solo asigna roles a cuentas de su propia organizacion.
+ORG=$(curl -s $B/api/v1/identity/auth/me -H "$AUTH" | python -c 'import json,sys;print(json.load(sys.stdin)["organizationPublicId"])')
+ADMIN_ID=$(curl -s $B/api/v1/identity/auth/me -H "$AUTH" | python -c 'import json,sys;print(json.load(sys.stdin)["publicId"])')
 EMAIL="prueba-$RANDOM@medicalsys.demo"
 NEW=$(curl -s -X POST $B/api/v1/identity/users -H "$AUTH" -H 'Content-Type: application/json' -d "{
   \"email\":\"$EMAIL\",\"fullName\":\"Usuario De Prueba\",\"password\":\"Prueba1234!\",
-  \"phoneE164\":\"+59171234567\",\"organizationPublicId\":\"11111111-1111-1111-1111-111111111111\",
+  \"phoneE164\":\"+59171234567\",\"organizationPublicId\":\"$ORG\",
   \"activateImmediately\":true,\"roles\":[{\"role\":\"RECEPTIONIST\"}]}")
 PID=$(echo "$NEW" | python -c 'import json,sys;print(json.load(sys.stdin)["publicId"])')
 echo "  usuario creado: $PID"
@@ -43,6 +47,8 @@ check "telefono invalido rechazado" 400 "$(code -X PATCH $B/api/v1/identity/user
 check "asignar rol" 200 "$(code -X POST $B/api/v1/identity/users/$PID/roles -H "$AUTH" -H 'Content-Type: application/json' -d '{"role":"PHYSICIAN"}')"
 check "asignar rol repetido" 409 "$(code -X POST $B/api/v1/identity/users/$PID/roles -H "$AUTH" -H 'Content-Type: application/json' -d '{"role":"PHYSICIAN"}')"
 check "revocar rol" 200 "$(code -X DELETE $B/api/v1/identity/users/$PID/roles/PHYSICIAN -H "$AUTH")"
+check "asignarse un rol a si mismo" 403 "$(code -X POST $B/api/v1/identity/users/$ADMIN_ID/roles -H "$AUTH" -H 'Content-Type: application/json' -d '{"role":"PHYSICIAN"}')"
+check "asignar un rol de plataforma sin serlo" 403 "$(code -X POST $B/api/v1/identity/users/$PID/roles -H "$AUTH" -H 'Content-Type: application/json' -d '{"role":"PLATFORM_ADMIN"}')"
 check "revocar rol no asignado" 404 "$(code -X DELETE $B/api/v1/identity/users/$PID/roles/BILLING_CLERK -H "$AUTH")"
 check "contrato interno" 200 "$(code $B/internal/v1/users/$PID)"
 
