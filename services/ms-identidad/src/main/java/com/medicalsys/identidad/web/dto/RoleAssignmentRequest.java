@@ -1,12 +1,12 @@
 package com.medicalsys.identidad.web.dto;
 
-import com.medicalsys.identidad.domain.RoleCode;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
 
 public record RoleAssignmentRequest(
-        @NotNull RoleCode role,
+        @NotBlank @Size(max = 30) String role,
         UUID organizationPublicId,
         UUID branchPublicId,
         LocalDate validFrom,

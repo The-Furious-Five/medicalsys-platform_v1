@@ -3,7 +3,7 @@
 **Issue:** SINS-11 · **Sección del informe:** 9.2 · **Migración:** `services/ms-identidad/src/main/resources/db/migration/V3__granular_permission_catalog.sql`
 **Hoja endpoint → permiso (borrador de la matriz RBAC-06):** [`rbac-01-endpoints-permisos.csv`](rbac-01-endpoints-permisos.csv)
 
-El catálogo define **168 permisos** en 12 módulos y cubre los **267 endpoints** que exponen hoy los 13 microservicios. Se inventariaron leyendo cada `@*Mapping` de los controladores, no la documentación. `GET /api/v1/identity/permissions` lo devuelve completo y acepta `?module=` para filtrar.
+El catálogo define **168 permisos** en 12 módulos y cubre los **275 endpoints** que exponen hoy los 13 microservicios (267 en RBAC-01, más los 8 de gestión de roles de RBAC-02). Se inventariaron leyendo cada `@*Mapping` de los controladores, no la documentación. `GET /api/v1/identity/permissions` lo devuelve completo y acepta `?module=` para filtrar.
 
 ## Convención
 
@@ -12,16 +12,16 @@ El catálogo define **168 permisos** en 12 módulos y cubre los **267 endpoints*
 - `read` cubre listar y ver el detalle. Las acciones de negocio (firmar, anular, cancelar, canjear, lanzar…) tienen su propio permiso, aunque hoy las ejerzan los mismos roles: separarlas es lo que permite restringirlas después desde la API de roles (RBAC-02) sin tocar código.
 - `is_sensitive` marca lo que expone datos clínicos o personales, o lo que cambia el acceso de otras personas. La matriz de RBAC-06 debería justificar cada asignación de estos permisos.
 
-## Cobertura de los 267 endpoints
+## Cobertura de los 275 endpoints
 
 | Tipo de acceso | Endpoints | Criterio |
 |---|---:|---|
-| `PERMISO` | 204 | Endpoint de negocio en `/api/v1/**`: exige un permiso del catálogo. |
+| `PERMISO` | 212 | Endpoint de negocio en `/api/v1/**`: exige un permiso del catálogo. |
 | `PUBLICO` | 16 | Los 13 `/ping`, `POST /auth/login` y el webhook de WhatsApp (`GET` de verificación y `POST` firmado por Meta). |
 | `AUTENTICADO` | 3 | Autoservicio de la propia sesión: `GET /auth/me`, `POST /auth/logout`, `POST /auth/change-password`. Lo necesita cualquier usuario, incluido `PATIENT`. |
 | `INTERNO` | 44 | `/internal/v1/**`: llamadas entre servicios que el gateway no publica. Su protección es de red (HARD-01), no de rol. |
 
-Además, el catálogo reserva los permisos de 6 endpoints que todavía no existen pero cuyo código ya fija el plan: `identity.user.unlock` e `identity.user.reset` (IAM-05) e `identity.role.manage` (RBAC-02).
+Además, el catálogo reserva los permisos de 2 endpoints que todavía no existen pero cuyo código ya fija el plan: `identity.user.unlock` e `identity.user.reset` (IAM-05). Los de `identity.role.manage` ya existen desde RBAC-02 ([`rbac-02-gestion-de-roles.md`](rbac-02-gestion-de-roles.md)).
 
 ## Asignación inicial a roles
 
@@ -53,7 +53,7 @@ La asignación replica el control vigente para que RBAC-03 pueda cambiar `@Requi
 
 Replicar el control vigente hace visibles decisiones que no son de mínimo privilegio. No se cambian aquí para no alterar la demo, pero la matriz debería justificarlas o corregirlas:
 
-1. **PLATFORM_ADMIN tiene todos los permisos**, incluidos los clínicos (`clinical.encounter.sign`, `clinical.diagnosis.create`…), porque figura en todos los `@RequiresRole`. Un operador de la plataforma no debería firmar actos médicos (segregación de funciones).
+1. **PLATFORM_ADMIN tiene todos los permisos**, incluidos los clínicos (`clinical.encounter.sign`, `clinical.diagnosis.create`…), porque figura en todos los `@RequiresRole`. Un operador de la plataforma no debería firmar actos médicos (segregación de funciones). Desde RBAC-02 se corrige por la API: un oficial de seguridad, con un rol propio que reúna los permisos de gestión, se los quita (ver [`rbac-02-gestion-de-roles.md`](rbac-02-gestion-de-roles.md)).
 2. **ADMINISTRATOR lee la historia clínica** (`clinical.record.read`, `clinical.encounter.read`, `clinical.study_result.read`…) y puede abrir y anular encuentros. El seed V2 lo excluía de la historia clínica a propósito.
 3. **RECEPTIONIST registra resultados de estudios** y consulta diagnósticos y recetas.
 4. **`MARKETING_MANAGER`** figura en los `@RequiresRole` de ms-marketing pero no existe en ms-identidad, y LOG-04 menciona un rol `AUDITOR` que tampoco existe. Ambos se pueden crear con la API de RBAC-02 y asignarles los permisos `marketing.*` y `audit.log.*`.
@@ -80,9 +80,9 @@ PA = PLATFORM_ADMIN · AD = ADMINISTRATOR · PH = PHYSICIAN · RE = RECEPTIONIST
 | `identity.user.change_status` | Activar, desactivar o bloquear una cuenta de usuario | sí | ✓ | ✓ |  |  |  |  | `PATCH /api/v1/identity/users/{publicId}/status` |
 | `identity.user.unlock` | Desbloquear una cuenta bloqueada por intentos fallidos (IAM-05) | sí | ✓ | ✓ |  |  |  |  | `POST /api/v1/identity/users/{publicId}/unlock` *(futuro)* |
 | `identity.user.reset` | Reiniciar la contrasena de una cuenta con una temporal (IAM-05) | sí | ✓ | ✓ |  |  |  |  | `POST /api/v1/identity/users/{publicId}/reset-password` *(futuro)* |
-| `identity.role.read` | Consultar roles y el catalogo de permisos |  | ✓ | ✓ |  |  |  |  | `GET /api/v1/identity/permissions`<br>`GET /api/v1/identity/roles`<br>`GET /api/v1/identity/roles/{code}` |
+| `identity.role.read` | Consultar roles y el catalogo de permisos |  | ✓ | ✓ |  |  |  |  | `GET /api/v1/identity/permissions`<br>`GET /api/v1/identity/role-incompatibilities`<br>`GET /api/v1/identity/roles`<br>`GET /api/v1/identity/roles/{code}` |
 | `identity.role.assign` | Asignar o revocar roles a una cuenta de usuario | sí | ✓ | ✓ |  |  |  |  | `POST /api/v1/identity/users/{publicId}/roles`<br>`DELETE /api/v1/identity/users/{publicId}/roles/{role}` |
-| `identity.role.manage` | Crear, editar y desactivar roles y sus permisos (RBAC-02) | sí | ✓ |  |  |  |  |  | `POST /api/v1/identity/roles` *(futuro)*<br>`DELETE /api/v1/identity/roles/{code}` *(futuro)*<br>`PATCH /api/v1/identity/roles/{code}` *(futuro)*<br>`PUT /api/v1/identity/roles/{code}/permissions` *(futuro)* |
+| `identity.role.manage` | Crear, editar y desactivar roles y sus permisos (RBAC-02) | sí | ✓ |  |  |  |  |  | `POST /api/v1/identity/role-incompatibilities`<br>`DELETE /api/v1/identity/role-incompatibilities/{roleA}/{roleB}`<br>`POST /api/v1/identity/roles`<br>`DELETE /api/v1/identity/roles/{code}`<br>`PATCH /api/v1/identity/roles/{code}`<br>`PUT /api/v1/identity/roles/{code}/assignable-roles`<br>`PUT /api/v1/identity/roles/{code}/permissions` |
 
 ### Tenencia (ms-tenencia) — 19 permisos
 

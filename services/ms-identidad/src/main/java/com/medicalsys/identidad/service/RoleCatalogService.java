@@ -1,7 +1,6 @@
 package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.domain.PermissionModule;
-import com.medicalsys.identidad.domain.RoleCode;
 import com.medicalsys.identidad.repository.PermissionRepository;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.web.dto.PermissionResponse;
@@ -27,7 +26,7 @@ public class RoleCatalogService {
     @Transactional(readOnly = true)
     public List<RoleResponse> listRoles() {
         return roles.findAll().stream()
-                .sorted(Comparator.comparing(role -> role.getCode().name()))
+                .sorted(Comparator.comparing(role -> role.getCode()))
                 .map(role -> {
                     role.getPermissions().size();
                     return mapper.toRoleResponse(role);
@@ -36,10 +35,11 @@ public class RoleCatalogService {
     }
 
     @Transactional(readOnly = true)
-    public RoleResponse getRole(RoleCode code) {
-        return roles.findByCode(code)
+    public RoleResponse getRole(String code) {
+        String normalized = RoleManagementService.normalize(code);
+        return roles.findByCode(normalized)
                 .map(mapper::toRoleResponse)
-                .orElseThrow(() -> ApiException.notFound("No existe el rol " + code));
+                .orElseThrow(() -> ApiException.notFound("No existe el rol " + normalized));
     }
 
     @Transactional(readOnly = true)

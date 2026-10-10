@@ -19,6 +19,9 @@ que el resto de la plataforma consume. Backend puro con Spring Boot, sin fronten
 `role_permission` y `user_role`. `V2__seed_roles_and_permissions.sql` siembra el catálogo de roles y
 permisos del MVP, y `V3__granular_permission_catalog.sql` lo reemplaza por el catálogo granular de
 permisos por funcionalidad (`modulo.recurso.accion`) con su asignación inicial a roles.
+`V4__role_management.sql` abre la lista de roles (el código solo exige formato), agrega la baja lógica
+(`role.is_active`), la tabla `role_incompatibility` de pares de roles incompatibles y `role_delegation`,
+que dice qué roles puede asignar quien tiene cada rol de organización.
 
 Dos decisiones que conviene conocer al leer la migración:
 
@@ -46,7 +49,14 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | GET | `/api/v1/identity/auth/me` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/logout` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/change-password` | solo estar autenticado |
-| GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions` | `identity.role.read` |
+| GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions`, `/role-incompatibilities` | `identity.role.read` |
+| POST | `/api/v1/identity/roles` | `identity.role.manage` |
+| PATCH | `/api/v1/identity/roles/{code}` | `identity.role.manage` |
+| DELETE | `/api/v1/identity/roles/{code}` (desactiva) | `identity.role.manage` |
+| PUT | `/api/v1/identity/roles/{code}/permissions` | `identity.role.manage` |
+| PUT | `/api/v1/identity/roles/{code}/assignable-roles` | `identity.role.manage` |
+| POST | `/api/v1/identity/role-incompatibilities` | `identity.role.manage` |
+| DELETE | `/api/v1/identity/role-incompatibilities/{roleA}/{roleB}` | `identity.role.manage` |
 | GET | `/api/v1/identity/users`, `/users/{publicId}` | `identity.user.read` |
 | POST | `/api/v1/identity/users` | `identity.user.create` |
 | PATCH | `/api/v1/identity/users/{publicId}` | `identity.user.update` |
@@ -54,7 +64,19 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | POST | `/api/v1/identity/users/{publicId}/roles` | `identity.role.assign` |
 | DELETE | `/api/v1/identity/users/{publicId}/roles/{role}` | `identity.role.assign` |
 
-Cualquier otra operación bajo `/users/**` responde 403 hasta que se le asigne su permiso.
+Cualquier otra operación bajo `/users/**`, `/roles/**` o `/role-incompatibilities/**` responde 403 hasta
+que se le asigne su permiso.
+
+Gestionar cuentas y roles pasa además por las reglas de `RoleGovernance`:
+- un administrador de organización solo ve y gestiona cuentas de su organización;
+- nadie modifica cuentas ni roles con permisos de gestión que no tiene;
+- nadie modifica sus propios roles ni un rol que tiene asignado;
+- solo se asignan roles delegados explícitamente;
+- los pares incompatibles se respetan;
+- ninguna operación deja a la plataforma sin quien administre roles.
+
+El detalle está en
+[`docs/seguridad/rbac-02-gestion-de-roles.md`](../../docs/seguridad/rbac-02-gestion-de-roles.md).
 `GET /permissions` devuelve el catálogo granular completo de la plataforma (RBAC-01, migración V3);
 la hoja endpoint → permiso y la asignación inicial por rol están en
 [`docs/seguridad/rbac-01-catalogo-permisos.md`](../../docs/seguridad/rbac-01-catalogo-permisos.md).
