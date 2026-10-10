@@ -17,7 +17,8 @@ que el resto de la plataforma consume. Backend puro con Spring Boot, sin fronten
 
 `V1__create_schema.sql` crea las cinco tablas del diccionario: `user_account`, `role`, `permission`,
 `role_permission` y `user_role`. `V2__seed_roles_and_permissions.sql` siembra el catálogo de roles y
-permisos del MVP.
+permisos del MVP, y `V3__granular_permission_catalog.sql` lo reemplaza por el catálogo granular de
+permisos por funcionalidad (`modulo.recurso.accion`) con su asignación inicial a roles.
 
 Dos decisiones que conviene conocer al leer la migración:
 
@@ -45,13 +46,18 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | GET | `/api/v1/identity/auth/me` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/logout` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/change-password` | solo estar autenticado |
-| GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions` | solo estar autenticado |
+| GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions` | `identity.role.read` |
 | GET | `/api/v1/identity/users`, `/users/{publicId}` | `identity.user.read` |
-| POST | `/api/v1/identity/users` | `identity.user.write` |
-| PATCH | `/api/v1/identity/users/{publicId}` | `identity.user.write` |
-| PATCH | `/api/v1/identity/users/{publicId}/status` | `identity.user.write` |
+| POST | `/api/v1/identity/users` | `identity.user.create` |
+| PATCH | `/api/v1/identity/users/{publicId}` | `identity.user.update` |
+| PATCH | `/api/v1/identity/users/{publicId}/status` | `identity.user.change_status` |
 | POST | `/api/v1/identity/users/{publicId}/roles` | `identity.role.assign` |
 | DELETE | `/api/v1/identity/users/{publicId}/roles/{role}` | `identity.role.assign` |
+
+Cualquier otra operación bajo `/users/**` responde 403 hasta que se le asigne su permiso.
+`GET /permissions` devuelve el catálogo granular completo de la plataforma (RBAC-01, migración V3);
+la hoja endpoint → permiso y la asignación inicial por rol están en
+[`docs/seguridad/rbac-01-catalogo-permisos.md`](../../docs/seguridad/rbac-01-catalogo-permisos.md).
 
 ### Interno (red de Compose, no expuesto por el gateway)
 

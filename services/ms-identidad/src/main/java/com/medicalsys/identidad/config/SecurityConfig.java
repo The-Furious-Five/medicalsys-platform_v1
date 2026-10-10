@@ -79,7 +79,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/roles").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/users/*/roles/*").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/users/**").hasAuthority("identity.user.read")
-                        .requestMatchers("/api/v1/identity/users/**").hasAuthority("identity.user.write")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/users").hasAuthority("identity.user.create")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*/status").hasAuthority("identity.user.change_status")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*").hasAuthority("identity.user.update")
+                        // Una operacion nueva sobre cuentas no queda abierta por omision: necesita su propio permiso.
+                        .requestMatchers("/api/v1/identity/users/**").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/identity/roles/**", "/api/v1/identity/permissions")
+                                .hasAuthority("identity.role.read")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
