@@ -51,7 +51,7 @@ La asignación replica el control vigente para que RBAC-03 pueda cambiar `@Requi
 
 ### Puntos a revisar en la matriz (RBAC-06)
 
-Replicar el control vigente hace visibles decisiones que no son de mínimo privilegio. No se cambian aquí para no alterar la demo, pero la matriz debería justificarlas o corregirlas:
+Replicar el control vigente hace visibles decisiones que no son de mínimo privilegio. No se cambian aquí para no alterar la demo, pero la matriz debería justificarlas o corregirlas. La política de control de acceso las registra como desviaciones a resolver ([PO-02](politicas/PO-02.md), Anexo C.3):
 
 1. **PLATFORM_ADMIN tiene todos los permisos**, incluidos los clínicos (`clinical.encounter.sign`, `clinical.diagnosis.create`…), porque figura en todos los `@RequiresRole`. Un operador de la plataforma no debería firmar actos médicos (segregación de funciones). Desde RBAC-02 se corrige por la API: un oficial de seguridad, con un rol propio que reúna los permisos de gestión, se los quita (ver [`rbac-02-gestion-de-roles.md`](rbac-02-gestion-de-roles.md)).
 2. **ADMINISTRATOR lee la historia clínica** (`clinical.record.read`, `clinical.encounter.read`, `clinical.study_result.read`…) y puede abrir y anular encuentros. El seed V2 lo excluía de la historia clínica a propósito.
