@@ -1,7 +1,6 @@
 package com.medicalsys.auditoria.web.controller;
 
-import com.medicalsys.auditoria.common.security.RequiresRole;
-import com.medicalsys.auditoria.common.security.Role;
+import com.medicalsys.auditoria.common.security.RequiresPermission;
 import com.medicalsys.auditoria.common.tenant.RequestContextHolder;
 import com.medicalsys.auditoria.domain.enums.AuditCategory;
 import com.medicalsys.auditoria.domain.enums.AuditOutcome;
@@ -44,7 +43,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/v1/audit")
-@RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
 public class AuditExportController {
 
     /**
@@ -66,6 +64,7 @@ public class AuditExportController {
     }
 
     @GetMapping(value = "/events/export", produces = "text/csv")
+    @RequiresPermission("audit.log.export")
     public void export(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,

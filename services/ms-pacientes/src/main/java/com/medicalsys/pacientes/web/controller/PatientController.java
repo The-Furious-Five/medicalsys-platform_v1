@@ -1,7 +1,6 @@
 package com.medicalsys.pacientes.web.controller;
 
-import com.medicalsys.pacientes.common.security.RequiresRole;
-import com.medicalsys.pacientes.common.security.Role;
+import com.medicalsys.pacientes.common.security.RequiresPermission;
 import com.medicalsys.pacientes.domain.enums.DocumentType;
 import com.medicalsys.pacientes.service.PatientService;
 import com.medicalsys.pacientes.web.dto.PageResponse;
@@ -39,21 +38,21 @@ public class PatientController {
     }
 
     @PostMapping
-    @RequiresRole({Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.patient.create")
     public ResponseEntity<PatientResponse> register(@Valid @RequestBody RegisterPatientRequest request) {
         PatientResponse response = patients.register(request);
         return ResponseEntity.created(URI.create("/api/v1/patients/" + response.patientId())).body(response);
     }
 
     @GetMapping("/{patientId}")
-    @RequiresRole({Role.RECEPTIONIST, Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.patient.read")
     public PatientResponse get(@PathVariable UUID patientId) {
         return patients.get(patientId);
     }
 
     /** Búsqueda exacta por la terna que también utiliza la restricción UNIQUE. */
     @GetMapping
-    @RequiresRole({Role.RECEPTIONIST, Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.patient.read")
     public PatientResponse getByDocument(
             @RequestParam DocumentType documentType,
             @RequestParam @NotBlank @Size(max = 20) String documentNumber,
@@ -63,7 +62,7 @@ public class PatientController {
 
     /** Búsqueda parcial separada para no cambiar el contrato de GET /patients. */
     @GetMapping("/search")
-    @RequiresRole({Role.RECEPTIONIST, Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.patient.read")
     public PageResponse<PatientResponse> search(
             @RequestParam(required = false) @Size(max = 160) String q,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -71,7 +70,7 @@ public class PatientController {
     }
 
     @PutMapping("/{patientId}")
-    @RequiresRole({Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("patients.patient.update")
     public PatientResponse update(@PathVariable UUID patientId,
             @Valid @RequestBody UpdatePatientRequest request) {
         return patients.update(patientId, request);

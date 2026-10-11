@@ -1,7 +1,6 @@
 package com.medicalsys.facturacion.web.controller;
 
-import com.medicalsys.facturacion.common.security.RequiresRole;
-import com.medicalsys.facturacion.common.security.Role;
+import com.medicalsys.facturacion.common.security.RequiresPermission;
 import com.medicalsys.facturacion.common.tenant.RequestContextHolder;
 import com.medicalsys.facturacion.service.InvoiceService;
 import com.medicalsys.facturacion.web.dto.CreateInvoiceRequest;
@@ -41,7 +40,7 @@ public class InvoiceController {
 
     /** Emite una factura a partir del paciente y las prestaciones indicadas. */
     @PostMapping
-    @RequiresRole({Role.BILLING_CLERK, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("billing.invoice.issue")
     public ResponseEntity<InvoiceResponse> issue(@Valid @RequestBody CreateInvoiceRequest request) {
         InvoiceResponse invoice = service.issue(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/facturas/" + invoice.id())).body(invoice);
@@ -49,7 +48,7 @@ public class InvoiceController {
 
     /** Devuelve la factura con su detalle, su correlativo y su etiqueta de demostracion. */
     @GetMapping("/{invoiceId}")
-    @RequiresRole({Role.BILLING_CLERK, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("billing.invoice.read")
     public InvoiceResponse get(@PathVariable UUID invoiceId) {
         return service.get(RequestContextHolder.require(), invoiceId);
     }
@@ -61,7 +60,7 @@ public class InvoiceController {
      * solo hace falta para pedir otro.
      */
     @GetMapping
-    @RequiresRole({Role.BILLING_CLERK, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("billing.invoice.read")
     public PageResponse<InvoiceSummaryResponse> list(@RequestParam(required = false) UUID patientId,
             @PageableDefault(size = 20) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), patientId, pageable));

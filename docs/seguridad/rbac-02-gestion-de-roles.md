@@ -117,9 +117,8 @@ El cierre de sesión hoy solo lo respeta ms-identidad. El gateway valida la firm
 ## Para las siguientes issues
 
 - **RBAC-03:**
-  - Un rol personalizado viaja en `X-Roles` y los servicios lo ignoran sin fallar (`Role.parse` devuelve vacío).
-  - Hasta que exista `@RequiresPermission`, el acceso fuera de ms-identidad sigue decidiéndose por los roles de sistema.
-  - Crear por la API el rol `MARKETING_MANAGER` ya lo hace reconocible para los `@RequiresRole` de ms-marketing, que lo esperan. `AUDITOR` (LOG-04) no lo conoce ningún servicio: dependerá de `@RequiresPermission`.
+  - Implementado: los servicios autorizan con `@RequiresPermission` sobre los permisos que el gateway propaga en `X-Permissions`, así que un rol personalizado da acceso real en cuanto se le asignan permisos ([`rbac-03-autorizacion-por-permisos.md`](rbac-03-autorizacion-por-permisos.md)).
+  - Un rol personalizado sigue viajando en `X-Roles`, y los servicios lo ignoran sin fallar (`Role.parse` devuelve vacío): solo cuenta para registros informativos.
 - **RBAC-05:**
   - `GET /roles` devuelve todos los roles, incluidos los inactivos, con `active`, sus permisos y `assignableRoles`.
   - `GET /permissions` da el catálogo para armar la matriz.

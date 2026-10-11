@@ -1,7 +1,6 @@
 package com.medicalsys.pacientes.web.controller;
 
-import com.medicalsys.pacientes.common.security.RequiresRole;
-import com.medicalsys.pacientes.common.security.Role;
+import com.medicalsys.pacientes.common.security.RequiresPermission;
 import com.medicalsys.pacientes.common.tenant.RequestContextHolder;
 import com.medicalsys.pacientes.domain.model.Patient;
 import com.medicalsys.pacientes.service.PatientAccessService;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/v1/patients/{patientId}/acceso")
-@RequiresRole({Role.RECEPTIONIST, Role.PHYSICIAN, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
 public class PatientAccessController {
 
     private final PatientService patients;
@@ -41,6 +39,7 @@ public class PatientAccessController {
     }
 
     @PostMapping("/solicitudes")
+    @RequiresPermission("patients.access_grant.request")
     public ResponseEntity<PatientAccessGrantResponse> requestAccess(@PathVariable UUID patientId) {
         Patient patient = patients.requireEntity(patientId);
         PatientAccessGrantResponse response = access.requestAccess(patient,
@@ -49,6 +48,7 @@ public class PatientAccessController {
     }
 
     @PostMapping("/solicitudes/{grantId}/confirmacion")
+    @RequiresPermission("patients.access_grant.confirm")
     public PatientAccessGrantResponse confirmAccess(@PathVariable UUID patientId, @PathVariable UUID grantId,
             @Valid @RequestBody ConfirmPatientAccessRequest request) {
         Patient patient = patients.requireEntity(patientId);
@@ -56,12 +56,14 @@ public class PatientAccessController {
     }
 
     @PostMapping("/solicitudes/{grantId}/revocacion")
+    @RequiresPermission("patients.access_grant.revoke")
     public PatientAccessGrantResponse revoke(@PathVariable UUID patientId, @PathVariable UUID grantId) {
         Patient patient = patients.requireEntity(patientId);
         return access.revoke(patient, grantId, RequestContextHolder.require().organizationId());
     }
 
     @GetMapping("/solicitudes")
+    @RequiresPermission("patients.access_grant.read")
     public List<PatientAccessGrantResponse> list(@PathVariable UUID patientId) {
         Patient patient = patients.requireEntity(patientId);
         return access.list(patient, RequestContextHolder.require().organizationId());

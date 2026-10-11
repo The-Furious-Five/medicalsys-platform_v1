@@ -1,7 +1,6 @@
 package com.medicalsys.marketing.web.controller;
 
-import com.medicalsys.marketing.common.security.RequiresRole;
-import com.medicalsys.marketing.common.security.Role;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.service.SegmentService;
 import com.medicalsys.marketing.web.dto.CreateSegmentRequest;
@@ -45,7 +44,7 @@ public class SegmentController {
 
     /** Crea un segmento y devuelve su tamano estimado ya evaluado. */
     @PostMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.create")
     public ResponseEntity<SegmentResponse> create(@Valid @RequestBody CreateSegmentRequest request) {
         SegmentResponse segment = service.create(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/segmentos/" + segment.id())).body(segment);
@@ -53,7 +52,7 @@ public class SegmentController {
 
     /** Lista los segmentos del tenant. */
     @GetMapping
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.segment.read")
     public PageResponse<SegmentResponse> list(@RequestParam(required = false) Boolean active,
             @PageableDefault(size = 20) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), active, pageable));
@@ -61,14 +60,14 @@ public class SegmentController {
 
     /** Devuelve un segmento con su criterio. */
     @GetMapping("/{segmentId}")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.segment.read")
     public SegmentResponse get(@PathVariable UUID segmentId) {
         return service.get(RequestContextHolder.require(), segmentId);
     }
 
     /** Modifica la descripcion o el criterio. */
     @PatchMapping("/{segmentId}")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.update")
     public SegmentResponse update(@PathVariable UUID segmentId,
             @Valid @RequestBody UpdateSegmentRequest request) {
         return service.update(RequestContextHolder.require(), segmentId, request);
@@ -76,7 +75,7 @@ public class SegmentController {
 
     /** Reevalua el segmento y devuelve su tamano con una muestra. */
     @PostMapping("/{segmentId}/evaluacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.evaluate")
     public SegmentPreviewResponse evaluate(@PathVariable UUID segmentId) {
         return service.evaluate(RequestContextHolder.require(), segmentId);
     }
@@ -88,21 +87,21 @@ public class SegmentController {
      * crear la campana, cuando todavia se puede corregir.
      */
     @PostMapping("/vista-previa")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.evaluate")
     public SegmentPreviewResponse preview(@RequestBody Map<String, Object> criteria) {
         return service.previewRaw(RequestContextHolder.require(), criteria);
     }
 
     /** Desactiva el segmento sin borrarlo. */
     @PostMapping("/{segmentId}/desactivacion")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.deactivate")
     public SegmentResponse deactivate(@PathVariable UUID segmentId) {
         return service.deactivate(RequestContextHolder.require(), segmentId);
     }
 
     /** Elimina el segmento; falla con 409 si alguna campana lo referencia. */
     @DeleteMapping("/{segmentId}")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.segment.delete")
     public ResponseEntity<Void> delete(@PathVariable UUID segmentId) {
         service.delete(RequestContextHolder.require(), segmentId);
         return ResponseEntity.noContent().build();

@@ -1,41 +1,37 @@
 package com.medicalsys.pacientes.common.security;
 
 import com.medicalsys.pacientes.common.error.ForbiddenException;
+import com.medicalsys.pacientes.common.error.UnauthenticatedException;
 import com.medicalsys.pacientes.common.tenant.RequestContext;
 import com.medicalsys.pacientes.common.tenant.RequestContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.Arrays;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-/** Aplica {@link RequiresRole} antes de ejecutar el controlador. */
+/** Aplica {@link RequiresPermission} antes de ejecutar el controlador. */
 @Component
-public class RoleAuthorizationInterceptor implements HandlerInterceptor {
+public class PermissionAuthorizationInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
-        RequiresRole required = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getMethod(),
-                RequiresRole.class);
-        if (required == null) {
-            required = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), RequiresRole.class);
-        }
+        RequiresPermission required = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getMethod(),
+                RequiresPermission.class);
         if (required == null) {
             return true;
         }
         RequestContext context = RequestContextHolder.require();
         if (context.userId() == null) {
-            throw new com.medicalsys.pacientes.common.error.UnauthenticatedException(
-                    "La identidad propagada por el gateway no incluye un X-User-Id valido");
+            throw new UnauthenticatedException("La identidad propagada por el gateway no incluye un X-User-Id valido");
         }
-        if (Arrays.stream(required.value()).noneMatch(context::hasRole)) {
-            throw new ForbiddenException(
-                    "El rol de la identidad autenticada no permite ejecutar esta operacion de pacientes");
+        if (!context.hasPermission(required.value())) {
+            throw new ForbiddenException("La identidad autenticada no tiene el permiso " + required.value()
+                    + " que exige esta operacion de pacientes");
         }
         return true;
     }

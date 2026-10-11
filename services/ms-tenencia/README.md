@@ -46,10 +46,12 @@ Este servicio **no llama a ningun otro microservicio**: no necesita `*_BASE_URL`
 ## Contrato
 
 Todas las rutas exigen la identidad que el gateway propaga (`X-Organization-Id`, `X-User-Id`,
-`X-Roles`) y devuelven el JSON de error comun con `code`, `correlationId` y `path`. El
+`X-Roles`, `X-Permissions`) y devuelven el JSON de error comun con `code`, `correlationId` y `path`. El
 `organizationId` **nunca** se acepta desde el cuerpo ni desde la query.
 
 ### Rutas publicas — `/api/v1/tenancy`
+
+Desde RBAC-03 cada endpoint exige un permiso del catálogo de ms-identidad (`@RequiresPermission`), no un rol. La columna de roles indica quién lo tiene en la asignación inicial; el permiso exacto de cada endpoint está en [`docs/seguridad/rbac-01-endpoints-permisos.csv`](../../docs/seguridad/rbac-01-endpoints-permisos.csv).
 
 | Metodo y ruta | Roles | Descripcion |
 | --- | --- | --- |
@@ -98,7 +100,7 @@ aislamiento por organizacion que las rutas publicas.
 | --- | --- | --- |
 | 400 | `VALIDATION_ERROR` | Campo invalido; `details` lleva el campo exacto |
 | 401 | `UNAUTHENTICATED` | El gateway no propago identidad |
-| 403 | `FORBIDDEN` | Rol sin permiso para la operacion |
+| 403 | `FORBIDDEN` | El token no trae el permiso que exige la operacion |
 | 404 | `ORGANIZATION_NOT_FOUND`, `BRANCH_NOT_FOUND`, `SERVICE_OFFERING_NOT_FOUND` | No existe **o pertenece a otro tenant** |
 | 409 | `BRANCH_CODE_ALREADY_USED`, `SERVICE_OFFERING_CODE_ALREADY_USED`, `ORGANIZATION_NIT_ALREADY_USED` | Unicidad |
 | 422 | `PLAN_LIMIT_REACHED`, `ORGANIZATION_NOT_ACTIVE` | Regla de negocio no procesable |

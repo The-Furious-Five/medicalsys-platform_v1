@@ -42,7 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(ClinicalEncounterController.class)
 class ClinicalEncounterControllerTest {
 
-    private static final String ROLES_HEADER = TenantContextFilter.ROLES_HEADER;
+    private static final String PERMISSIONS_HEADER = TenantContextFilter.PERMISSIONS_HEADER;
     private static final String ORGANIZATION_HEADER = TenantContextFilter.ORGANIZATION_HEADER;
     private static final String USER_HEADER = TenantContextFilter.USER_HEADER;
 
@@ -82,7 +82,7 @@ class ClinicalEncounterControllerTest {
         mockMvc.perform(post("/api/v1/encuentros")
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
                         .header(USER_HEADER, TestFixtures.USER_ID)
-                        .header(ROLES_HEADER, "RECEPTIONIST")
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
                 .andExpect(status().isForbidden())
@@ -98,7 +98,7 @@ class ClinicalEncounterControllerTest {
 
         mockMvc.perform(post("/api/v1/encuentros")
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN")
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.open")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -127,7 +127,7 @@ class ClinicalEncounterControllerTest {
         mockMvc.perform(post("/api/v1/encuentros")
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
                         .header(USER_HEADER, TestFixtures.USER_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN")
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.open")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
                 .andExpect(status().isCreated())
@@ -145,7 +145,7 @@ class ClinicalEncounterControllerTest {
 
         mockMvc.perform(get("/api/v1/encuentros/{id}", encounterId)
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN"))
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.narrative.subjective").value("Relato del paciente ficticio"));
     }
@@ -157,7 +157,7 @@ class ClinicalEncounterControllerTest {
 
         mockMvc.perform(get("/api/v1/encuentros/{id}", encounterId)
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "RECEPTIONIST"))
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(encounterId.toString()))
                 .andExpect(jsonPath("$.narrative").doesNotExist());
@@ -171,7 +171,7 @@ class ClinicalEncounterControllerTest {
 
         mockMvc.perform(get("/api/v1/encuentros/{id}", UUID.randomUUID())
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN"))
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("ENCOUNTER_NOT_EDITABLE"));
     }
@@ -184,7 +184,7 @@ class ClinicalEncounterControllerTest {
 
         mockMvc.perform(get("/api/v1/encuentros/{id}", UUID.randomUUID())
                         .header(ORGANIZATION_HEADER, TestFixtures.OTHER_ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN"))
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("CLINICAL_ENCOUNTER_NOT_FOUND"));
     }
@@ -194,7 +194,7 @@ class ClinicalEncounterControllerTest {
     void rejectsMalformedIdentifier() throws Exception {
         mockMvc.perform(get("/api/v1/encuentros/{id}", "no-es-un-uuid")
                         .header(ORGANIZATION_HEADER, TestFixtures.ORGANIZATION_ID)
-                        .header(ROLES_HEADER, "PHYSICIAN"))
+                        .header(PERMISSIONS_HEADER, "clinical.encounter.read"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
     }

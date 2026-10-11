@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.service.PlanUsageService;
 import com.medicalsys.tenencia.web.dto.PlanUsageResponse;
@@ -33,14 +32,14 @@ public class PlanUsageController {
 
     /** Consumo de las tres metricas frente a los limites del plan. */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.usage.read")
     public List<PlanUsageResponse> list() {
         return service.list(RequestContextHolder.require());
     }
 
     /** Registra un incremento relativo o un recuento absoluto de una metrica. */
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.usage.record")
     public PlanUsageResponse record(@Valid @RequestBody RecordUsageRequest request) {
         return service.record(RequestContextHolder.require(), request);
     }
