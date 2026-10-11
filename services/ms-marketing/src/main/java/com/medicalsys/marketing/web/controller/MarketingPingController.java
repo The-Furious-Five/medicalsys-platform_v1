@@ -1,5 +1,7 @@
 package com.medicalsys.marketing.web.controller;
 
+import com.medicalsys.marketing.common.security.PublicEndpoint;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.privacy.SegmentCriteriaField;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MarketingPingController {
 
     @GetMapping("/ping")
+    @PublicEndpoint
     public Map<String, Object> ping() {
         return Map.of(
                 "service", "ms-marketing",
@@ -29,6 +32,7 @@ public class MarketingPingController {
 
     /** Ejes por los que se puede segmentar. Cualquier otro se rechaza con 422. */
     @GetMapping("/criterios-permitidos")
+    @RequiresPermission("marketing.segment.read")
     public Map<String, Object> allowedCriteria() {
         List<Map<String, String>> fields = java.util.Arrays.stream(SegmentCriteriaField.values())
                 .map(field -> Map.of("field", field.jsonName(), "description", field.description()))

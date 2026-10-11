@@ -18,9 +18,13 @@
 <body>
   <h1>Enviar prueba por WhatsApp</h1>
   <p class="hint">Consola local de desarrollo. El texto libre requiere una ventana de conversación abierta; la plantilla debe estar aprobada por Meta.</p>
+  <p class="hint">El envío pasa por el gateway con el token de una sesión: exige el permiso <code>notifications.whatsapp.send</code> (RBAC-04) y la organización sale del token.</p>
   <form id="form">
-    <label>Organización
-      <input id="organization" value="10000000-0000-0000-0000-000000000001" required>
+    <label>Gateway
+      <input id="gateway" value="http://localhost:8080" required>
+    </label>
+    <label>Token de acceso
+      <input id="token" placeholder="accessToken de POST /api/v1/identity/auth/login" required autocomplete="off">
     </label>
     <label>Número en formato internacional
       <input id="destination" placeholder="+59170000000" required>
@@ -58,9 +62,10 @@
         templateParameters: template ? document.querySelector('#parameters').value.split('\n').map(v => v.trim()).filter(Boolean) : []
       };
       try {
-        const response = await fetch('/api/v1/notifications/whatsapp/send', {
+        const gateway = document.querySelector('#gateway').value.trim().replace(/\/$/, '');
+        const response = await fetch(`${gateway}/api/v1/notifications/whatsapp/send`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json', 'X-Organization-Id': document.querySelector('#organization').value.trim()},
+          headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${document.querySelector('#token').value.trim()}`},
           body: JSON.stringify(body)
         });
         const data = await response.json();

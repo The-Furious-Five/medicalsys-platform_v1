@@ -1,5 +1,7 @@
 package com.medicalsys.catalogos.specialty;
 
+import com.medicalsys.catalogos.common.security.InternalEndpoint;
+import com.medicalsys.catalogos.common.security.RequiresPermission;
 import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ public class SpecialtyController {
 
     /** Lista todas las especialidades activas. */
     @GetMapping("/api/v1/catalogs/specialties")
+    @RequiresPermission("catalogs.specialty.read")
     public ResponseEntity<List<SpecialtyDto>> listActive() {
         RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
@@ -30,6 +33,7 @@ public class SpecialtyController {
 
     /** Detalle interno para consumo de otros microservicios. */
     @GetMapping("/internal/v1/specialties/{code}")
+    @InternalEndpoint
     public ResponseEntity<SpecialtyDto> findByCode(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

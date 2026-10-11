@@ -16,17 +16,19 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Map<String, String> MESSAGES = Map.of(
-            "PLAINTEXT_REQUIRED", "El texto plano es obligatorio",
-            "CIPHERTEXT_REQUIRED", "El ciphertext es obligatorio",
-            "REQUESTING_SERVICE_REQUIRED", "requestingService es obligatorio",
-            "CORRELATION_ID_REQUIRED", "correlationId es obligatorio",
-            "ACTIVE_KEY_NOT_FOUND", "No hay una clave activa para el tenant y proposito solicitados",
-            "DECRYPT_FAILED", "No fue posible descifrar el ciphertext con la clave indicada",
-            "VALIDATION_ERROR", "La solicitud no supera las validaciones",
-            "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido",
-            "SERVICE_AUTH_REQUIRED", "Falta la cabecera X-Service-Name",
-            "SERVICE_AUTH_INVALID", "X-Service-Secret ausente o incorrecto"
+    private static final Map<String, String> MESSAGES = Map.ofEntries(
+            Map.entry("PLAINTEXT_REQUIRED", "El texto plano es obligatorio"),
+            Map.entry("CIPHERTEXT_REQUIRED", "El ciphertext es obligatorio"),
+            Map.entry("REQUESTING_SERVICE_REQUIRED", "requestingService es obligatorio"),
+            Map.entry("CORRELATION_ID_REQUIRED", "correlationId es obligatorio"),
+            Map.entry("ACTIVE_KEY_NOT_FOUND", "No hay una clave activa para el tenant y proposito solicitados"),
+            Map.entry("DECRYPT_FAILED", "No fue posible descifrar el ciphertext con la clave indicada"),
+            Map.entry("VALIDATION_ERROR", "La solicitud no supera las validaciones"),
+            Map.entry("MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido"),
+            Map.entry("SERVICE_AUTH_REQUIRED", "Falta la cabecera X-Service-Name"),
+            Map.entry("SERVICE_AUTH_INVALID", "X-Service-Secret ausente o incorrecto"),
+            Map.entry("ENDPOINT_NOT_DECLARED",
+                    "El endpoint no se declaro interno ni publico y se deniega por defecto")
     );
 
     @ExceptionHandler(ResponseStatusException.class)

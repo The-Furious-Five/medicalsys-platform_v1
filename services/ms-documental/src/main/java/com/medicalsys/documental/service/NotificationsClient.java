@@ -12,7 +12,7 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Envia el codigo OTP por WhatsApp usando el envio manual de ms-notificaciones
- * ({@code POST /api/v1/notifications/whatsapp/send}), no el pipeline de reglas automaticas: ese
+ * ({@code POST /internal/v1/notifications/whatsapp/send}), no el pipeline de reglas automaticas: ese
  * envio no depende de la ventana de 24h de la conversacion (solo aplica al proveedor Meta real, no
  * al mock de este entorno), asi que el codigo llega aunque el paciente nunca le haya escrito antes a
  * la clinica.
@@ -29,7 +29,7 @@ public class NotificationsClient {
     public void sendWhatsappText(String organizationId, String destination, String message) {
         try {
             client.post()
-                    .uri("/api/v1/notifications/whatsapp/send")
+                    .uri("/internal/v1/notifications/whatsapp/send")
                     .header("X-Organization-Id", organizationId)
                     .body(new SendRequest(destination, message))
                     .retrieve()

@@ -2,6 +2,7 @@ package com.medicalsys.agenda.web;
 
 import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.domain.AppointmentStatus;
+import com.medicalsys.agenda.security.RequiresPermission;
 import com.medicalsys.agenda.service.AppointmentService;
 import com.medicalsys.agenda.web.dto.AppointmentHistoryResponse;
 import com.medicalsys.agenda.web.dto.AppointmentResponse;
@@ -37,6 +38,7 @@ public class AppointmentController {
     }
 
     @PostMapping
+    @RequiresPermission("scheduling.appointment.create")
     public ResponseEntity<AppointmentResponse> create(@Valid @RequestBody CreateAppointmentRequest request) {
         AppointmentResponse created = appointments.create(request);
         return ResponseEntity
@@ -45,6 +47,7 @@ public class AppointmentController {
     }
 
     @GetMapping
+    @RequiresPermission("scheduling.appointment.read")
     public PageResponse<AppointmentResponse> search(
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam(required = false) UUID healthProfessionalPublicId,
@@ -60,16 +63,19 @@ public class AppointmentController {
     }
 
     @GetMapping("/{publicId}")
+    @RequiresPermission("scheduling.appointment.read")
     public AppointmentResponse get(@PathVariable UUID publicId) {
         return appointments.get(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @GetMapping("/{publicId}/history")
+    @RequiresPermission("scheduling.appointment.read")
     public List<AppointmentHistoryResponse> history(@PathVariable UUID publicId) {
         return appointments.history(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @PostMapping("/{publicId}/confirm")
+    @RequiresPermission("scheduling.appointment.confirm")
     public AppointmentResponse confirm(@PathVariable UUID publicId,
                                        @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -77,6 +83,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/check-in")
+    @RequiresPermission("scheduling.appointment.check_in")
     public AppointmentResponse checkIn(@PathVariable UUID publicId,
                                        @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -84,6 +91,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/start")
+    @RequiresPermission("scheduling.appointment.attend")
     public AppointmentResponse start(@PathVariable UUID publicId,
                                      @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -91,6 +99,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/complete")
+    @RequiresPermission("scheduling.appointment.attend")
     public AppointmentResponse complete(@PathVariable UUID publicId,
                                         @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -98,6 +107,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/no-show")
+    @RequiresPermission("scheduling.appointment.no_show")
     public AppointmentResponse noShow(@PathVariable UUID publicId,
                                       @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -105,6 +115,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/cancel")
+    @RequiresPermission("scheduling.appointment.cancel")
     public AppointmentResponse cancel(@PathVariable UUID publicId,
                                       @RequestBody(required = false) StatusChangeRequest request) {
         return appointments.changeStatus(RequestContextHolder.require().organizationId(), publicId,
@@ -112,6 +123,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/{publicId}/reschedule")
+    @RequiresPermission("scheduling.appointment.reschedule")
     public ResponseEntity<AppointmentResponse> reschedule(@PathVariable UUID publicId,
                                                           @Valid @RequestBody RescheduleAppointmentRequest request) {
         AppointmentResponse created = appointments.reschedule(RequestContextHolder.require().organizationId(),

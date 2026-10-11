@@ -1,5 +1,6 @@
 package com.medicalsys.pacientes.web.controller;
 
+import com.medicalsys.pacientes.common.security.InternalEndpoint;
 import com.medicalsys.pacientes.service.PatientService;
 import com.medicalsys.pacientes.web.dto.AccessGrantCheckResponse;
 import com.medicalsys.pacientes.web.dto.BillingPatientSummary;
@@ -28,29 +29,34 @@ public class InternalPatientController {
     }
 
     @GetMapping("/{patientId}/scheduling-summary")
+    @InternalEndpoint
     public SchedulingPatientSummary schedulingSummary(@PathVariable UUID patientId) {
         return patients.getSchedulingSummary(patientId);
     }
 
     @GetMapping("/{patientId}/billing-summary")
+    @InternalEndpoint
     public BillingPatientSummary billingSummary(@PathVariable UUID patientId) {
         return patients.getBillingSummary(patientId);
     }
 
     /** Exclusivo para Agenda al armar la notificacion de WhatsApp de una cita creada o reagendada. */
     @GetMapping("/{patientId}/notification-contact")
+    @InternalEndpoint
     public NotificationContactSummary notificationContact(@PathVariable UUID patientId) {
         return patients.getNotificationContact(patientId);
     }
 
     /** Contrato de ms-marketing: solo demografia, nunca documento ni dato clinico. */
     @GetMapping("/{patientId}/demographics")
+    @InternalEndpoint
     public PatientDemographicsResponse demographics(@PathVariable UUID patientId) {
         return patients.getDemographics(patientId);
     }
 
     /** Contrato de ms-facturacion: el cliente fiscal que se imprime en el comprobante. */
     @GetMapping("/{patientId}/fiscal")
+    @InternalEndpoint
     public FiscalCustomerResponse fiscalCustomer(@PathVariable UUID patientId) {
         return patients.getFiscalCustomer(patientId);
     }
@@ -60,6 +66,7 @@ public class InternalPatientController {
      * que no registro esa organizacion.
      */
     @GetMapping("/{patientId}/access-grants/{organizationId}")
+    @InternalEndpoint
     public AccessGrantCheckResponse accessGrant(@PathVariable UUID patientId, @PathVariable UUID organizationId) {
         return new AccessGrantCheckResponse(patients.hasAccessGrant(patientId, organizationId));
     }
@@ -70,6 +77,7 @@ public class InternalPatientController {
      * perdio su copia) sin esperar a que cada paciente se edite de nuevo.
      */
     @PostMapping("/replay")
+    @InternalEndpoint
     public Map<String, Object> replay(@RequestParam UUID organizationId) {
         int published = patients.replayPatientEvents(organizationId);
         return Map.of("organizationId", organizationId, "published", published);

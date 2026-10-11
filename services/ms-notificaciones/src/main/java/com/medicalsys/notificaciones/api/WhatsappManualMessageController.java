@@ -3,6 +3,7 @@ package com.medicalsys.notificaciones.api;
 import com.medicalsys.notificaciones.api.dto.NotificationResponse;
 import com.medicalsys.notificaciones.api.dto.SendWhatsappMessageRequest;
 import com.medicalsys.notificaciones.common.RequestOrganization;
+import com.medicalsys.notificaciones.security.RequiresPermission;
 import com.medicalsys.notificaciones.service.WhatsappManualMessageService;
 import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,6 +26,7 @@ public class WhatsappManualMessageController {
     }
 
     @PostMapping("/send")
+    @RequiresPermission("notifications.whatsapp.send")
     public Mono<NotificationResponse> send(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @Valid @RequestBody SendWhatsappMessageRequest request) {

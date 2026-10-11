@@ -3,6 +3,7 @@ package com.medicalsys.notificaciones.api;
 import com.medicalsys.notificaciones.api.dto.NotificationRuleRequest;
 import com.medicalsys.notificaciones.api.dto.NotificationRuleResponse;
 import com.medicalsys.notificaciones.common.RequestOrganization;
+import com.medicalsys.notificaciones.security.RequiresPermission;
 import com.medicalsys.notificaciones.service.NotificationRuleService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -30,6 +31,7 @@ public class NotificationRuleController {
     }
 
     @PostMapping
+    @RequiresPermission("notifications.rule.create")
     public Mono<ResponseEntity<NotificationRuleResponse>> create(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @Valid @RequestBody NotificationRuleRequest request) {
@@ -39,12 +41,14 @@ public class NotificationRuleController {
     }
 
     @GetMapping
+    @RequiresPermission("notifications.rule.read")
     public Flux<NotificationRuleResponse> list(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader) {
         return service.list(RequestOrganization.parse(organizationHeader));
     }
 
     @PutMapping("/{ruleId}")
+    @RequiresPermission("notifications.rule.update")
     public Mono<NotificationRuleResponse> update(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID ruleId,

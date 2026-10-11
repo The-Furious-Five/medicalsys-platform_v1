@@ -1,5 +1,6 @@
 package com.medicalsys.facturacion.web.controller;
 
+import com.medicalsys.facturacion.common.security.InternalEndpoint;
 import com.medicalsys.facturacion.common.tenant.RequestContextHolder;
 import com.medicalsys.facturacion.service.InvoiceService;
 import com.medicalsys.facturacion.web.dto.InvoiceSummaryResponse;
@@ -27,6 +28,7 @@ public class InternalController {
 
     /** Estado y total de una factura por su UUID publico. */
     @GetMapping("/facturas/{invoiceId}")
+    @InternalEndpoint
     public InvoiceSummaryResponse getInvoice(@PathVariable UUID invoiceId) {
         return invoices.getSummary(RequestContextHolder.require(), invoiceId);
     }

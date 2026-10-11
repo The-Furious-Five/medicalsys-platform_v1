@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos.tax;
 
+import com.medicalsys.catalogos.common.security.RequiresPermission;
 import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ public class TaxCatalogController {
     }
 
     @GetMapping
+    @RequiresPermission("catalogs.tax.read")
     public List<TaxCatalogDto> list(@RequestParam TaxCatalog.CatalogType type) {
         RequestContextHolder.require();
         return service.findActive(type);

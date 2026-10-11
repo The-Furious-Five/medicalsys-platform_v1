@@ -2,6 +2,7 @@ package com.medicalsys.tenencia.web.controller;
 
 import com.medicalsys.tenencia.common.error.ErrorCode;
 import com.medicalsys.tenencia.common.error.NotFoundException;
+import com.medicalsys.tenencia.common.security.InternalEndpoint;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.service.BranchService;
 import com.medicalsys.tenencia.service.OrganizationService;
@@ -44,12 +45,14 @@ public class InternalController {
 
     /** Prestacion facturable: codigo, descripcion y precio. Consumida por ms-facturacion. */
     @GetMapping("/prestaciones/{serviceOfferingId}")
+    @InternalEndpoint
     public BillableServiceResponse billableService(@PathVariable UUID serviceOfferingId) {
         return offerings.getBillable(RequestContextHolder.require().organizationId(), serviceOfferingId);
     }
 
     /** Prestacion agendable: duracion y recurso requerido. Consumida por ms-agenda. */
     @GetMapping("/prestaciones/{serviceOfferingId}/agendable")
+    @InternalEndpoint
     public SchedulableServiceResponse schedulableService(@PathVariable UUID serviceOfferingId) {
         return offerings.getSchedulable(RequestContextHolder.require().organizationId(), serviceOfferingId);
     }
@@ -62,6 +65,7 @@ public class InternalController {
      * para enumerar las clinicas de la plataforma.
      */
     @GetMapping("/organizaciones/{organizationId}")
+    @InternalEndpoint
     public OrganizationRef organization(@PathVariable UUID organizationId) {
         UUID contextOrganizationId = RequestContextHolder.require().organizationId();
         if (!contextOrganizationId.equals(organizationId)) {
@@ -73,6 +77,7 @@ public class InternalController {
 
     /** Existencia y estado de una sede del tenant. */
     @GetMapping("/sucursales/{branchId}")
+    @InternalEndpoint
     public BranchRef branch(@PathVariable UUID branchId) {
         return branches.getRef(RequestContextHolder.require().organizationId(), branchId);
     }

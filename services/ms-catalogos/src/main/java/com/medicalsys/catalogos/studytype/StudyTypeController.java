@@ -1,5 +1,7 @@
 package com.medicalsys.catalogos.studytype;
 
+import com.medicalsys.catalogos.common.security.InternalEndpoint;
+import com.medicalsys.catalogos.common.security.RequiresPermission;
 import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ public class StudyTypeController {
     }
 
     @GetMapping("/api/v1/catalogs/study-types")
+    @RequiresPermission("catalogs.study_type.read")
     public ResponseEntity<List<StudyTypeDto>> listActive() {
         RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
@@ -28,6 +31,7 @@ public class StudyTypeController {
 
     /** Contrato congelado con ms-historial: GET /internal/v1/tipos-estudio/{code}. */
     @GetMapping({"/internal/v1/tipos-estudio/{code}", "/internal/v1/study-types/{code}"})
+    @InternalEndpoint
     public ResponseEntity<StudyTypeDto> findByCode(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

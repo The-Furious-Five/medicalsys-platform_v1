@@ -32,6 +32,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
     public static final String USER_HEADER = "X-User-Id";
     public static final String ORGANIZATION_HEADER = "X-Organization-Id";
     public static final String ROLES_HEADER = "X-Roles";
+    public static final String PERMISSIONS_HEADER = "X-Permissions";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -54,7 +55,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
             return null;
         }
         return new RequestContext(userId, parseUuid(request.getHeader(ORGANIZATION_HEADER)),
-                parseRoles(request.getHeader(ROLES_HEADER)));
+                parseRoles(request.getHeader(ROLES_HEADER)), parsePermissions(request.getHeader(PERMISSIONS_HEADER)));
     }
 
     private UUID parseUuid(String value) {
@@ -76,6 +77,16 @@ public class TenantContextFilter extends OncePerRequestFilter {
                 .map(String::trim)
                 .filter(role -> !role.isBlank())
                 .map(role -> role.toUpperCase(Locale.ROOT))
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private Set<String> parsePermissions(String header) {
+        if (header == null || header.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(header.split(","))
+                .map(String::trim)
+                .filter(permission -> !permission.isEmpty())
                 .collect(Collectors.toUnmodifiableSet());
     }
 
