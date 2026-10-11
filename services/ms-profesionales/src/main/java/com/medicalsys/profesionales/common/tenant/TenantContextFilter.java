@@ -5,7 +5,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -25,6 +28,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
 
     public static final String ORGANIZATION_HEADER = "X-Organization-Id";
     public static final String USER_HEADER = "X-User-Id";
+    public static final String PERMISSIONS_HEADER = "X-Permissions";
 
     private static final String ORGANIZATION_MDC_KEY = "organizationId";
 
@@ -50,7 +54,8 @@ public class TenantContextFilter extends OncePerRequestFilter {
         if (organizationId == null) {
             return null;
         }
-        return new RequestContext(organizationId, parseUuid(request.getHeader(USER_HEADER)));
+        return new RequestContext(organizationId, parseUuid(request.getHeader(USER_HEADER)),
+                parsePermissions(request.getHeader(PERMISSIONS_HEADER)));
     }
 
     private UUID parseUuid(String value) {
@@ -62,6 +67,16 @@ public class TenantContextFilter extends OncePerRequestFilter {
         } catch (IllegalArgumentException ignored) {
             return null;
         }
+    }
+
+    private Set<String> parsePermissions(String header) {
+        if (header == null || header.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(header.split(","))
+                .map(String::trim)
+                .filter(permission -> !permission.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override

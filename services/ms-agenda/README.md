@@ -137,10 +137,13 @@ en el instante en que termina la atención.
 |---|---|---|
 | GET | `/internal/v1/appointments/{publicId}` | DTO mínimo para ms-historial |
 
-## Autenticación
+## Autenticación y autorización
 
-La validación del JWT y el aislamiento por organización los realiza el gateway. Este servicio recibe
-`organizationPublicId` en el contrato y propaga `X-Correlation-Id`. **No debe publicarse su puerto
+El gateway valida el JWT y propaga la identidad en `X-Organization-Id`, `X-User-Id` y
+`X-Permissions`; el servicio nunca toma la organización del cuerpo ni de la consulta. Cada endpoint
+declara el permiso que exige con `@RequiresPermission` (hoja endpoint → permiso de RBAC-01), y lo que
+no lo declara se deniega por defecto (RBAC-04): sin identidad responde `401` y sin el permiso, `403`.
+El ping es `@PublicEndpoint` y la ruta interna, `@InternalEndpoint`. **No debe publicarse su puerto
 al host en el entorno compartido**: solo el gateway habla con él.
 
 ## Variables de entorno

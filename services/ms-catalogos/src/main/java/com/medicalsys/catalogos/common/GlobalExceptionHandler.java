@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos.common;
 
+import com.medicalsys.catalogos.common.security.PermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.Map;
@@ -33,8 +34,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResponseStatus(
             ResponseStatusException ex, HttpServletRequest req) {
         String code = ex.getReason() != null ? ex.getReason() : "ERROR";
+        // Un 403 de autorizacion explica que permiso falta; el resto usa el mensaje de su codigo.
+        String message = ex instanceof PermissionDeniedException ? ex.getBody().getDetail() : messageFor(code);
         return ResponseEntity.status(ex.getStatusCode()).body(error(
-                ex.getStatusCode().value(), code, messageFor(code), req));
+                ex.getStatusCode().value(), code, message, req));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})

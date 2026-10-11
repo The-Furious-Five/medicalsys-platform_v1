@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Registra la autorizacion por permiso para las rutas del contrato. */
+/** Registra la autorizacion por permiso, que deniega por defecto (RBAC-04). */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -17,7 +17,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // Todas las rutas: un controlador nuevo fuera de /api o /internal tampoco queda abierto. /error
+        // y /actuator no son del contrato y los atiende Spring.
         registry.addInterceptor(permissionAuthorizationInterceptor)
-                .addPathPatterns("/api/**", "/internal/**");
+                .addPathPatterns("/**")
+                .excludePathPatterns("/error", "/actuator/**");
     }
 }

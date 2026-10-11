@@ -1,5 +1,6 @@
 package com.medicalsys.notificaciones.api;
 
+import com.medicalsys.notificaciones.security.PublicEndpoint;
 import com.medicalsys.notificaciones.service.WhatsappWebhookService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class WhatsappWebhookController {
     }
 
     @GetMapping(produces = MediaType.TEXT_PLAIN_VALUE)
+    @PublicEndpoint
     public String verify(
             @RequestParam(name = "hub.mode") String mode,
             @RequestParam(name = "hub.verify_token") String token,
@@ -31,6 +33,7 @@ public class WhatsappWebhookController {
     }
 
     @PostMapping
+    @PublicEndpoint
     public Mono<ResponseEntity<Void>> receive(
             @RequestHeader(name = "X-Hub-Signature-256", required = false) String signature,
             @RequestBody String payload) {

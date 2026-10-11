@@ -16,7 +16,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.method.HandlerMethod;
 
 /**
- * El permiso que el gateway propaga en X-Permissions decide el acceso; el rol ya no (RBAC-03). Cada
+ * El permiso que el gateway propaga en X-Permissions decide el acceso; el rol ya no (RBAC-03), y lo
+ * que no declara su control se deniega (RBAC-04). Cada
  * caso pasa por el TenantContextFilter real, asi que tambien prueba la lectura de los headers.
  */
 class PermissionAuthorizationInterceptorTest {
@@ -61,9 +62,20 @@ class PermissionAuthorizationInterceptorTest {
     }
 
     @Test
-    @DisplayName("un endpoint sin anotacion no se evalua aqui")
-    void ignoresEndpointsWithoutAnnotation() throws Exception {
-        assertThat(authorize(new MockHttpServletRequest(), "open")).isTrue();
+    @DisplayName("deniega por defecto un endpoint sin anotacion, aunque la identidad traiga permisos")
+    void deniesEndpointsWithoutAnnotation() {
+        assertThatThrownBy(() -> authorize(request(PERMISSION), "open"))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("se deniega por defecto");
+    }
+
+    @Test
+    @DisplayName("deja pasar lo declarado publico, y lo interno solo bajo /internal/")
+    void allowsPublicAndInternalDeclarations() throws Exception {
+        assertThat(authorize(new MockHttpServletRequest("GET", "/api/v1/prueba/ping"), "ping")).isTrue();
+        assertThat(authorize(new MockHttpServletRequest("GET", "/internal/v1/prueba"), "internal")).isTrue();
+        assertThatThrownBy(() -> authorize(new MockHttpServletRequest("GET", "/api/v1/prueba"), "internal"))
+                .isInstanceOf(ForbiddenException.class);
     }
 
     private boolean authorize(MockHttpServletRequest request, String endpoint) throws Exception {
@@ -89,6 +101,14 @@ class PermissionAuthorizationInterceptorTest {
         }
 
         public void open() {
+        }
+
+        @PublicEndpoint
+        public void ping() {
+        }
+
+        @InternalEndpoint
+        public void internal() {
         }
     }
 }

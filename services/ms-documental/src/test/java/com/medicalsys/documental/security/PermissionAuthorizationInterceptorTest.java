@@ -47,10 +47,24 @@ class PermissionAuthorizationInterceptorTest {
     }
 
     @Test
-    @DisplayName("un endpoint sin anotacion no se evalua aqui")
-    void ignoresEndpointsWithoutAnnotation() throws Exception {
-        assertThat(interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), handler("open")))
-                .isTrue();
+    @DisplayName("deniega por defecto un endpoint sin anotacion, aunque la identidad traiga permisos")
+    void deniesEndpointsWithoutAnnotation() {
+        assertThatThrownBy(() -> interceptor.preHandle(request(PERMISSION), new MockHttpServletResponse(),
+                handler("open")))
+                .isInstanceOfSatisfying(ApiException.class,
+                        error -> assertThat(error.code()).isEqualTo(ErrorCode.FORBIDDEN));
+    }
+
+    @Test
+    @DisplayName("deja pasar lo declarado publico, y lo interno solo bajo /internal/")
+    void allowsPublicAndInternalDeclarations() throws Exception {
+        assertThat(interceptor.preHandle(new MockHttpServletRequest("GET", "/api/v1/documents/ping"),
+                new MockHttpServletResponse(), handler("ping"))).isTrue();
+        assertThat(interceptor.preHandle(new MockHttpServletRequest("GET", "/internal/v1/documents/x"),
+                new MockHttpServletResponse(), handler("internal"))).isTrue();
+        assertThatThrownBy(() -> interceptor.preHandle(new MockHttpServletRequest("GET", "/api/v1/documents"),
+                new MockHttpServletResponse(), handler("internal")))
+                .isInstanceOf(ApiException.class);
     }
 
     private static HandlerMethod handler(String name) throws NoSuchMethodException {
@@ -72,6 +86,14 @@ class PermissionAuthorizationInterceptorTest {
         }
 
         public void open() {
+        }
+
+        @PublicEndpoint
+        public void ping() {
+        }
+
+        @InternalEndpoint
+        public void internal() {
         }
     }
 }

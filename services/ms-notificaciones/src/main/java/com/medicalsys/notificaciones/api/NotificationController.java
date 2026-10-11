@@ -4,6 +4,7 @@ import com.medicalsys.notificaciones.api.dto.CreateNotificationRequest;
 import com.medicalsys.notificaciones.api.dto.NotificationResponse;
 import com.medicalsys.notificaciones.common.RequestOrganization;
 import com.medicalsys.notificaciones.domain.NotificationStatus;
+import com.medicalsys.notificaciones.security.RequiresPermission;
 import com.medicalsys.notificaciones.service.NotificationService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -31,6 +32,7 @@ public class NotificationController {
     }
 
     @PostMapping
+    @RequiresPermission("notifications.notification.create")
     public Mono<ResponseEntity<NotificationResponse>> create(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @Valid @RequestBody CreateNotificationRequest request) {
@@ -41,6 +43,7 @@ public class NotificationController {
     }
 
     @GetMapping
+    @RequiresPermission("notifications.notification.read")
     public Flux<NotificationResponse> list(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @RequestParam(required = false) NotificationStatus status) {
@@ -48,6 +51,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{notificationId}")
+    @RequiresPermission("notifications.notification.read")
     public Mono<NotificationResponse> get(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID notificationId) {
@@ -55,6 +59,7 @@ public class NotificationController {
     }
 
     @PostMapping("/{notificationId}/dispatch")
+    @RequiresPermission("notifications.notification.dispatch")
     public Mono<NotificationResponse> dispatch(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID notificationId) {
@@ -62,6 +67,7 @@ public class NotificationController {
     }
 
     @PostMapping("/{notificationId}/retry")
+    @RequiresPermission("notifications.notification.retry")
     public Mono<NotificationResponse> retry(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID notificationId) {

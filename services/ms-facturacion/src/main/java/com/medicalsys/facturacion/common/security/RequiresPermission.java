@@ -11,7 +11,8 @@ import java.lang.annotation.Target;
  *
  * <p>El gateway valida el JWT y propaga sus permisos en X-Permissions; este servicio solo comprueba
  * que el permiso este entre ellos. Que rol lo tiene se decide en ms-identidad y se cambia desde su
- * API, sin redesplegar. Sin la anotacion, el endpoint solo exige identidad.
+ * API, sin redesplegar. Sin la anotacion, el endpoint se deniega por defecto (RBAC-04), salvo
+ * que se declare {@link PublicEndpoint} o {@link InternalEndpoint}.
  */
 @Documented
 @Target(ElementType.METHOD)

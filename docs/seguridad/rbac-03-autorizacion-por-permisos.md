@@ -42,6 +42,8 @@ public PatientResponse get(@PathVariable UUID patientId) { ... }
 - un `@RequiresPermission` exige un permiso distinto del que la hoja de RBAC-01 asigna a su endpoint, o el endpoint no figura en la hoja;
 - queda algún `@RequiresRole`.
 
+Desde RBAC-04 también falla si un endpoint no declara su control ([`rbac-04-denegar-por-defecto.md`](rbac-04-denegar-por-defecto.md)).
+
 Así el código y la matriz de roles y accesos (RBAC-06) no se separan.
 
 ## Evidencia: antes y después
@@ -82,10 +84,6 @@ BASE=http://localhost:8080 PA_PASSWORD=... DEMO_PASSWORD=... bash docs/seguridad
 
 Un token emitido antes del despliegue no trae `clinical.narrative.read`. Hasta que el médico vuelva a iniciar sesión (como máximo, lo que dura el token: 1 h), ve los antecedentes y resultados sin el texto descifrado. Los demás permisos ya viajaban en el token desde RBAC-01.
 
-## Pendiente para RBAC-04
+## Completado en RBAC-04
 
-`check_permissions.py` informa 54 endpoints que tienen permiso en la hoja pero todavía no exigen nada en el código:
-- ms-agenda, ms-profesionales, ms-notificaciones y ms-catalogos, que nunca tuvieron control;
-- `GET /api/v1/marketing/criterios-permitidos`.
-
-RBAC-04 los anota y hace que el interceptor deniegue por defecto todo endpoint sin `@RequiresPermission` ni `@PublicEndpoint`.
+Quedaban 54 endpoints con permiso en la hoja y sin control en el código: los de ms-agenda, ms-profesionales, ms-notificaciones y ms-catalogos, y `GET /api/v1/marketing/criterios-permitidos`. RBAC-04 los anota y hace que todo servicio deniegue por defecto lo que no declara su control ([`rbac-04-denegar-por-defecto.md`](rbac-04-denegar-por-defecto.md)).

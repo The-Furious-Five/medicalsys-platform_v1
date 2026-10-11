@@ -1,6 +1,7 @@
 package com.medicalsys.agenda.web;
 
 import com.medicalsys.agenda.config.RequestContextHolder;
+import com.medicalsys.agenda.security.RequiresPermission;
 import com.medicalsys.agenda.service.AvailabilityService;
 import com.medicalsys.agenda.service.SlotService;
 import com.medicalsys.agenda.web.dto.AvailabilityResponse;
@@ -36,11 +37,13 @@ public class AvailabilityController {
 
     @PostMapping("/availabilities")
     @ResponseStatus(HttpStatus.CREATED)
+    @RequiresPermission("scheduling.availability.create")
     public AvailabilityResponse create(@Valid @RequestBody CreateAvailabilityRequest request) {
         return availabilities.create(request);
     }
 
     @GetMapping("/availabilities")
+    @RequiresPermission("scheduling.availability.read")
     public List<AvailabilityResponse> list(
             @RequestParam UUID professionalOrganizationPublicId,
             @RequestParam(defaultValue = "true") boolean onlyActive) {
@@ -48,11 +51,13 @@ public class AvailabilityController {
     }
 
     @DeleteMapping("/availabilities/{id}")
+    @RequiresPermission("scheduling.availability.deactivate")
     public AvailabilityResponse deactivate(@PathVariable Long id) {
         return availabilities.deactivate(id);
     }
 
     @GetMapping("/availability/slots")
+    @RequiresPermission("scheduling.availability.read")
     public DaySlotsResponse freeSlots(
             @RequestParam UUID professionalOrganizationPublicId,
             @RequestParam UUID healthProfessionalPublicId,

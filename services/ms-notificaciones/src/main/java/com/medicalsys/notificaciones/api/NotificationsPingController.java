@@ -1,5 +1,6 @@
 package com.medicalsys.notificaciones.api;
 
+import com.medicalsys.notificaciones.security.PublicEndpoint;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Mono;
 public class NotificationsPingController {
 
     @GetMapping("/ping")
+    @PublicEndpoint
     public Mono<Map<String, String>> ping() {
         return Mono.just(Map.of("service", "ms-notificaciones", "status", "ok"));
     }

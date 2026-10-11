@@ -12,7 +12,7 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Envia el codigo OTP de autorizacion de acceso por WhatsApp usando el envio manual de
- * ms-notificaciones ({@code POST /api/v1/notifications/whatsapp/send}), no el pipeline de reglas
+ * ms-notificaciones ({@code POST /internal/v1/notifications/whatsapp/send}), no el pipeline de reglas
  * automaticas: ese envio no depende de la ventana de 24h de la conversacion, asi que el codigo le
  * llega al paciente aunque nunca le haya escrito antes a la clinica que pide el acceso.
  */
@@ -29,7 +29,7 @@ public class NotificationsClient {
     public void sendWhatsappText(String organizationId, String destination, String message) {
         try {
             client.post()
-                    .uri("/api/v1/notifications/whatsapp/send")
+                    .uri("/internal/v1/notifications/whatsapp/send")
                     .header("X-Organization-Id", organizationId)
                     .body(new SendRequest(destination, message))
                     .retrieve()

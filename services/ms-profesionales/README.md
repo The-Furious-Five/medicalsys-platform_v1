@@ -27,6 +27,10 @@ Ejemplo de alta:
 }
 ```
 
+## Autorización
+
+El gateway valida el JWT y propaga la identidad en `X-Organization-Id`, `X-User-Id` y `X-Permissions`. Cada endpoint declara el permiso que exige con `@RequiresPermission`, tomado de la hoja endpoint → permiso de RBAC-01; lo que no lo declara se deniega por defecto (RBAC-04). Sin identidad responde `401` y sin el permiso, `403`. El ping es `@PublicEndpoint` y la ruta que consume ms-agenda, `@InternalEndpoint`.
+
 ## Ejecutar y verificar
 
 ```powershell

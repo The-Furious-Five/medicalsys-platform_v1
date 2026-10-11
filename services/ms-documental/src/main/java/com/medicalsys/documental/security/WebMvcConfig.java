@@ -15,6 +15,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(authorizationInterceptor);
+        // Todas las rutas: un controlador nuevo fuera de /api o /internal tampoco queda abierto. /error
+        // y /actuator no son del contrato y los atiende Spring.
+        registry.addInterceptor(authorizationInterceptor).excludePathPatterns("/error", "/actuator/**");
     }
 }

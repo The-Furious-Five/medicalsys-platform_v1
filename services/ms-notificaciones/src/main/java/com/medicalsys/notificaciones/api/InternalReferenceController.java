@@ -3,6 +3,7 @@ package com.medicalsys.notificaciones.api;
 import com.medicalsys.notificaciones.api.dto.OrganizationReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PatientReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PreferenceReferenceRequest;
+import com.medicalsys.notificaciones.security.InternalEndpoint;
 import com.medicalsys.notificaciones.service.ReferenceSyncService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +24,19 @@ public class InternalReferenceController {
     }
 
     @PutMapping("/organizations")
+    @InternalEndpoint
     public Mono<ResponseEntity<Void>> organization(@Valid @RequestBody OrganizationReferenceRequest request) {
         return service.upsertOrganization(request).thenReturn(ResponseEntity.noContent().build());
     }
 
     @PutMapping("/patients")
+    @InternalEndpoint
     public Mono<ResponseEntity<Void>> patient(@Valid @RequestBody PatientReferenceRequest request) {
         return service.upsertPatient(request).thenReturn(ResponseEntity.noContent().build());
     }
 
     @PutMapping("/preferences")
+    @InternalEndpoint
     public Mono<ResponseEntity<Void>> preference(@Valid @RequestBody PreferenceReferenceRequest request) {
         return service.upsertPreference(request).thenReturn(ResponseEntity.noContent().build());
     }
