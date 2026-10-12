@@ -1,0 +1,2317 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.69.3"
+  },
+  "ReportID": "01a130b5-27bc-7f1a-b24b-e5a224bd31e7",
+  "CreatedAt": "2026-10-12T15:22:20.988994413Z",
+  "ArtifactName": "/baseline",
+  "ArtifactType": "filesystem",
+  "Results": [
+    {
+      "Target": "services/ms-agenda/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:agenda:0.0.1-SNAPSHOT::521f6daa",
+          "Name": "com.medicalsys:agenda",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/agenda@0.0.1-SNAPSHOT",
+            "UID": "93eb53302eac11b3"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-database-postgresql::66d533fb",
+          "Name": "org.flywaydb:flyway-database-postgresql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-database-postgresql",
+            "UID": "86c6f77d7553a184"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 57,
+              "EndLine": 60
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.postgresql:postgresql::29fcfa1e",
+          "Name": "org.postgresql:postgresql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.postgresql/postgresql",
+            "UID": "d620a041523175ef"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 62,
+              "EndLine": 66
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::c1829fa1",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "843843823a81309e"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 33,
+              "EndLine": 36
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::2b8103dc",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "b5767b6831674b8b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 37,
+              "EndLine": 40
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::689469f7",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "eeae973a70ddf4ad"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 41,
+              "EndLine": 44
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-kafka::a074a52b",
+          "Name": "org.springframework.boot:spring-boot-starter-kafka",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-kafka",
+            "UID": "5569cc6f08d4a255"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 53,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::28ea4383",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "429dd1f845630d52"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 45,
+              "EndLine": 48
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::53bbc6a5",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "2de5b593436bf16a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 49,
+              "EndLine": 52
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-auditoria/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:auditoria:0.0.1-SNAPSHOT::59850eff",
+          "Name": "com.medicalsys:auditoria",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/auditoria@0.0.1-SNAPSHOT",
+            "UID": "37eeff967bd8b909"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::77798236",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "ff8010bb25f8cd20"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 58,
+              "EndLine": 62
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::422bf01c",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "66bdd33057a8471"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 53,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::5a4fd123",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "d95ad6149c21c423"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 33,
+              "EndLine": 36
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::fa32f2d7",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "731922886555eefd"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 37,
+              "EndLine": 40
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::50f39703",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "ad019c48257bf43c"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 41,
+              "EndLine": 44
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::7717fcb6",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "9faf44b0159473a5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 45,
+              "EndLine": 48
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::e9eec459",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "f52732d1d8f86ed"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 49,
+              "EndLine": 52
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-catalogos/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:catalogos:0.0.1-SNAPSHOT::cf9c7063",
+          "Name": "com.medicalsys:catalogos",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/catalogos@0.0.1-SNAPSHOT",
+            "UID": "672e8dd372105843"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::d6b20967",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "b7c6298e46b8aed1"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 59,
+              "EndLine": 63
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::d186e0ca",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "129c8d8b53cb922d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 54,
+              "EndLine": 57
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::870feeec",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "4df609970d2ee9de"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::cfee74e5",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "ed7c711e9ca27239"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::9974b844",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "2642c47e6cbbb41d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 50,
+              "EndLine": 53
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::4eb8b5dc",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "4a5a903086af4d0c"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-web::a815022b",
+          "Name": "org.springframework.boot:spring-boot-starter-web",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-web",
+            "UID": "5cdbc70157f9ca55"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 49
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-criptografia/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:criptografia:0.0.1-SNAPSHOT::809188d5",
+          "Name": "com.medicalsys:criptografia",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/criptografia@0.0.1-SNAPSHOT",
+            "UID": "a9be503ed01a285d"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::779d4bb4",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "f8a5a7dcb24004b9"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 59,
+              "EndLine": 63
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::cf116c38",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "1c31e105307e5cf2"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 54,
+              "EndLine": 57
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::b0da4100",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "5770bd569bc7775b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::92718ad4",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "c814ec8db2855ca6"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::fb2d1bdb",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "5c73c1271fa78b7d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 50,
+              "EndLine": 53
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::a9e69230",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "3c9bf30c361fd3ce"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-web::b6287118",
+          "Name": "org.springframework.boot:spring-boot-starter-web",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-web",
+            "UID": "41561b1aed55ac09"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 49
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-documental/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:documental:0.0.1-SNAPSHOT::54c9e1dc",
+          "Name": "com.medicalsys:documental",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/documental@0.0.1-SNAPSHOT",
+            "UID": "e641d27487829e13"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "DependsOn": [
+            "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10::adc07a69",
+            "com.squareup.okhttp3:okhttp-jvm:5.3.2::a2b6a4f0",
+            "io.minio:minio:9.0.1::d6c01be3"
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::fe7c16cf",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "728ad1ba2646c5fe"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 81,
+              "EndLine": 85
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10::adc07a69",
+          "Name": "com.openhtmltopdf:openhtmltopdf-pdfbox",
+          "Identifier": {
+            "PURL": "pkg:maven/com.openhtmltopdf/openhtmltopdf-pdfbox@1.0.10",
+            "UID": "81024b3cf4fb0254"
+          },
+          "Version": "1.0.10",
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 75,
+              "EndLine": 79
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.squareup.okhttp3:okhttp-jvm:5.3.2::a2b6a4f0",
+          "Name": "com.squareup.okhttp3:okhttp-jvm",
+          "Identifier": {
+            "PURL": "pkg:maven/com.squareup.okhttp3/okhttp-jvm@5.3.2",
+            "UID": "1097c4fe84eeea9c"
+          },
+          "Version": "5.3.2",
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 69,
+              "EndLine": 73
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "io.minio:minio:9.0.1::d6c01be3",
+          "Name": "io.minio:minio",
+          "Identifier": {
+            "PURL": "pkg:maven/io.minio/minio@9.0.1",
+            "UID": "cc1f87bdb98eb8e8"
+          },
+          "Version": "9.0.1",
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 63,
+              "EndLine": 67
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::6ebbaeaf",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "286b07342e01d5da"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 59,
+              "EndLine": 62
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::2913c565",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "9ecbd2c495e00307"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::1da69fc3",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "bc997f07acddeadc"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::f97e26d1",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "bbaf0575fd836356"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-restclient::1196f04f",
+          "Name": "org.springframework.boot:spring-boot-starter-restclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-restclient",
+            "UID": "aa9160f7e4c3f74e"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 55,
+              "EndLine": 58
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::25aeca00",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "67eb4744ca892b05"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 49
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::c9ceb804",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "adc94b4187936410"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 50,
+              "EndLine": 53
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-facturacion/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:facturacion:0.0.1-SNAPSHOT::898f0c5c",
+          "Name": "com.medicalsys:facturacion",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/facturacion@0.0.1-SNAPSHOT",
+            "UID": "992d4f93ba270be8"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::b8d5a6dd",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "b0e38467a5c655fc"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 52,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::eca24eb8",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "8d70f1ac5e9e0721"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 47,
+              "EndLine": 50
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::7bc65655",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "3747fdc6f3853ef2"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 22,
+              "EndLine": 25
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::ede682bf",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "a649d17ca33007df"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 26,
+              "EndLine": 29
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::69d61ed0",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "c3538f73a835f1c9"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 30,
+              "EndLine": 33
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-restclient::533ff09c",
+          "Name": "org.springframework.boot:spring-boot-starter-restclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-restclient",
+            "UID": "e5c3db1302984287"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 43,
+              "EndLine": 46
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::547cf833",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "3d8fd521dc5c9a7a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::a2a6839d",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "66812b3b11bbe6c2"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-gateway/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:gateway:0.0.1-SNAPSHOT::c156e9a3",
+          "Name": "com.medicalsys:gateway",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/gateway@0.0.1-SNAPSHOT",
+            "UID": "7ab52e9d3ae5b0ee"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::1eb44c52",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "51a25d227a39fb4b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-security::3a028b97",
+          "Name": "org.springframework.boot:spring-boot-starter-security",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-security",
+            "UID": "6fe1df68976d2c1d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server::fe3dd044",
+          "Name": "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-security-oauth2-resource-server",
+            "UID": "4be16602c91e3734"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc::ba85cb7e",
+          "Name": "org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.cloud/spring-cloud-starter-gateway-server-webmvc",
+            "UID": "f97c108bc0e5239e"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 49
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-historial/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:historial:0.0.1-SNAPSHOT::60cf6cdb",
+          "Name": "com.medicalsys:historial",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/historial@0.0.1-SNAPSHOT",
+            "UID": "adc7a4421aa18930"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::2789df01",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "9e653dc47847af8b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 52,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::607b8de4",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "242bb60a27ec3b90"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 47,
+              "EndLine": 50
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::45dbe892",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "e6b17ca5abc6261b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 22,
+              "EndLine": 25
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::2a1e7459",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "f2d030a8a60e52de"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 26,
+              "EndLine": 29
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::7c9ee549",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "b4237f7660065789"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 30,
+              "EndLine": 33
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-restclient::6f167194",
+          "Name": "org.springframework.boot:spring-boot-starter-restclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-restclient",
+            "UID": "53385ca993f6b19"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 43,
+              "EndLine": 46
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::fb9d8cd5",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "8635ef49dfa7a854"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::4ed6cc06",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "7e1d4e5a542e4f3d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-identidad/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:identidad:0.0.1-SNAPSHOT::cb20d588",
+          "Name": "com.medicalsys:identidad",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/identidad@0.0.1-SNAPSHOT",
+            "UID": "83dfa8732dbf0e03"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "DependsOn": [
+            "org.bouncycastle:bcprov-jdk18on:1.78.1::616c796c"
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::c5eda39d",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "4d72b4fb5f765b49"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 63,
+              "EndLine": 67
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.bouncycastle:bcprov-jdk18on:1.78.1::616c796c",
+          "Name": "org.bouncycastle:bcprov-jdk18on",
+          "Identifier": {
+            "PURL": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78.1",
+            "UID": "3ddc9451aecf217c"
+          },
+          "Version": "1.78.1",
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 76,
+              "EndLine": 80
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::e58a9f4a",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "3ba263dd3d555a46"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 58,
+              "EndLine": 61
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::b0afbb99",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "f27fe13f2610234a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::d7453aa1",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "3c5e600897cf02bd"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-redis::972ae500",
+          "Name": "org.springframework.boot:spring-boot-starter-data-redis",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-redis",
+            "UID": "2385acc0ecec41f0"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 68,
+              "EndLine": 71
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::aac036c2",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "37011658024fcb75"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-security::12a3be9d",
+          "Name": "org.springframework.boot:spring-boot-starter-security",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-security",
+            "UID": "4fb96f89323f077c"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 46,
+              "EndLine": 49
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::65ed0b86",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "cccc338d2e8cff93"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 50,
+              "EndLine": 53
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::65e3c667",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "92ba97bf6b831b95"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 54,
+              "EndLine": 57
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.security:spring-security-oauth2-jose::f55932bb",
+          "Name": "org.springframework.security:spring-security-oauth2-jose",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.security/spring-security-oauth2-jose",
+            "UID": "ee42e2f13d242daa"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 72,
+              "EndLine": 75
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ],
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2025-14813",
+          "VendorIDs": [
+            "GHSA-574f-3g2m-x479"
+          ],
+          "PkgID": "org.bouncycastle:bcprov-jdk18on:1.78.1::616c796c",
+          "PkgName": "org.bouncycastle:bcprov-jdk18on",
+          "PkgIdentifier": {
+            "PURL": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78.1",
+            "UID": "3ddc9451aecf217c"
+          },
+          "InstalledVersion": "1.78.1",
+          "FixedVersion": "1.80.2, 1.81.1, 1.84",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-14813",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory Maven",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Amaven"
+          },
+          "Fingerprint": "sha256:f2e6bfcfe4039344cb402f1785f70846446be7ba6854e8b408399c4c20e29f1c",
+          "Title": "bouncycastle: BC-JAVA: GOSTCTR implementation unable to process more than 255 blocks correctly",
+          "Description": ": Use of a Broken or Risky Cryptographic Algorithm vulnerability in Legion of the Bouncy Castle Inc. BC-JAVA bcprov on all (core modules).\n\n This vulnerability is associated with program files G3413CTRBlockCipher.\n\n\n\nThis issue affects BC-JAVA: from 1.59 before 1.80.2, from 1.81 before 1.81.1, from 1.82 before 1.84.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-327"
+          ],
+          "VendorSeverity": {
+            "amazon": 3,
+            "ghsa": 4,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V40Vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:H/SI:H/SA:N/RE:M/U:Red",
+              "V3Score": 7.5,
+              "V40Score": 9.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:11720",
+            "https://access.redhat.com/errata/RHSA-2026:11721",
+            "https://access.redhat.com/errata/RHSA-2026:13631",
+            "https://access.redhat.com/errata/RHSA-2026:14272",
+            "https://access.redhat.com/errata/RHSA-2026:14276",
+            "https://access.redhat.com/errata/RHSA-2026:17668",
+            "https://access.redhat.com/errata/RHSA-2026:18054",
+            "https://access.redhat.com/errata/RHSA-2026:18055",
+            "https://access.redhat.com/errata/RHSA-2026:18059",
+            "https://access.redhat.com/errata/RHSA-2026:21772",
+            "https://access.redhat.com/errata/RHSA-2026:24977",
+            "https://access.redhat.com/errata/RHSA-2026:53644",
+            "https://access.redhat.com/errata/RHSA-2026:53645",
+            "https://access.redhat.com/errata/RHSA-2026:53646",
+            "https://access.redhat.com/errata/RHSA-2026:53806",
+            "https://access.redhat.com/errata/RHSA-2026:60239",
+            "https://access.redhat.com/errata/RHSA-2026:60246",
+            "https://access.redhat.com/errata/RHSA-2026:60247",
+            "https://access.redhat.com/errata/RHSA-2026:60248",
+            "https://access.redhat.com/errata/RHSA-2026:60249",
+            "https://access.redhat.com/errata/RHSA-2026:60250",
+            "https://access.redhat.com/errata/RHSA-2026:60251",
+            "https://access.redhat.com/errata/RHSA-2026:60252",
+            "https://access.redhat.com/errata/RHSA-2026:60254",
+            "https://access.redhat.com/errata/RHSA-2026:60256",
+            "https://access.redhat.com/errata/RHSA-2026:60259",
+            "https://access.redhat.com/errata/RHSA-2026:66488",
+            "https://access.redhat.com/security/cve/CVE-2025-14813",
+            "https://advisory.echohq.com/cve/CVE-2025-14813",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2458640",
+            "https://github.com/bcgit/bc-java",
+            "https://github.com/bcgit/bc-java/commit/701686cb0184cd9ae103c801b3581fdf95c6d4f3",
+            "https://github.com/bcgit/bc-java/commit/b42574345414e4b7c8051b16fa1fafe01c29871f",
+            "https://github.com/bcgit/bc-java/wiki/CVE%E2%80%902025%E2%80%9014813",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-14813",
+            "https://security.access.redhat.com/data/csaf/v2/vex/2025/cve-2025-14813.json",
+            "https://www.cve.org/CVERecord?id=CVE-2025-14813"
+          ],
+          "PublishedDate": "2026-04-15T10:16:38.243Z",
+          "LastModifiedDate": "2026-10-07T09:10:00.16Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-8763",
+          "VendorIDs": [
+            "GHSA-9pwp-9qqc-pr26"
+          ],
+          "PkgID": "org.bouncycastle:bcprov-jdk18on:1.78.1::616c796c",
+          "PkgName": "org.bouncycastle:bcprov-jdk18on",
+          "PkgIdentifier": {
+            "PURL": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78.1",
+            "UID": "3ddc9451aecf217c"
+          },
+          "InstalledVersion": "1.78.1",
+          "FixedVersion": "1.85",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-8763",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory Maven",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Amaven"
+          },
+          "Fingerprint": "sha256:0aff0177782adb58f71f5f34005575a67a2277098412a1316c38e9f5618adaa2",
+          "Title": "org.bouncycastle/bcprov-jdk15on: org.bouncycastle/bcpkix-jdk15on: Bouncy Castle for Java: Name Constraints bypass via trailing dot in rfc822Name and URI",
+          "Description": "In Bouncy Castle for Java before 1.85, Name Constraints bypass via trailing dot in rfc822Name and URI. This issue also affects Bouncy Castle for Java LTS before 2.73.12, and Bouncy Castle for Java FIPS (BC-FJA) before bc-fips 1.0.2.7 (1.0.X series), 2.0.2 (2.0.X series) and 2.1.3 (2.1.X series).",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-295"
+          ],
+          "VendorSeverity": {
+            "amazon": 3,
+            "ghsa": 4,
+            "nvd": 4,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N/U:Amber",
+              "V3Score": 9.1,
+              "V40Score": 9.3
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 9.1
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-8763",
+            "https://advisory.echohq.com/cve/CVE-2026-8763",
+            "https://github.com/advisories/GHSA-9pwp-9qqc-pr26",
+            "https://github.com/bcgit/bc-java",
+            "https://github.com/bcgit/bc-java/commit/2c28b253a44681fbbc562561eab6ad383d2ae558",
+            "https://github.com/bcgit/bc-java/releases/tag/r1rv85v2",
+            "https://github.com/bcgit/bc-java/wiki/CVE%E2%80%902026%E2%80%908763",
+            "https://github.com/bcgit/bc-java/wiki/CVE-2026-8763",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-8763",
+            "https://www.cve.org/CVERecord?id=CVE-2026-8763"
+          ],
+          "PublishedDate": "2026-08-03T01:16:45.807Z",
+          "LastModifiedDate": "2026-09-02T14:28:48.94Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-13506",
+          "VendorIDs": [
+            "GHSA-qp49-qgx5-5m26"
+          ],
+          "PkgID": "org.bouncycastle:bcprov-jdk18on:1.78.1::616c796c",
+          "PkgName": "org.bouncycastle:bcprov-jdk18on",
+          "PkgIdentifier": {
+            "PURL": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78.1",
+            "UID": "3ddc9451aecf217c"
+          },
+          "InstalledVersion": "1.78.1",
+          "FixedVersion": "1.85",
+          "Status": "fixed",
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-13506",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory Maven",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Amaven"
+          },
+          "Fingerprint": "sha256:feee991aae84af983b2337d593cc8306daa5aa7845e357a54b7528220bece2f0",
+          "Title": "bouncycastle: Bouncy Castle for Java: Denial of Service via lazy ASN.1 sequence processing",
+          "Description": "In Bouncy Castle for Java before 1.85, Lazy ASN.1 sequence forcing resets nesting-depth guard. This issue also affects Bouncy Castle for Java LTS before 2.73.12, and Bouncy Castle for Java FIPS (BC-FJA) before bc-fips 1.0.2.7 (1.0.X series), 2.0.2 (2.0.X series) and 2.1.3 (2.1.X series).",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-674"
+          ],
+          "VendorSeverity": {
+            "amazon": 3,
+            "ghsa": 3,
+            "nvd": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N/U:Amber",
+              "V3Score": 7.5,
+              "V40Score": 8.7
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2026-13506",
+            "https://advisory.echohq.com/cve/CVE-2026-13506",
+            "https://github.com/advisories/GHSA-qp49-qgx5-5m26",
+            "https://github.com/bcgit/bc-java",
+            "https://github.com/bcgit/bc-java/commit/77454da9b3dcaaa2991412d1c3c1a6e1a338ff84",
+            "https://github.com/bcgit/bc-java/wiki/CVE-2026-13506",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-13506",
+            "https://www.cve.org/CVERecord?id=CVE-2026-13506"
+          ],
+          "PublishedDate": "2026-08-03T04:16:39.957Z",
+          "LastModifiedDate": "2026-08-28T16:41:22.84Z"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-marketing/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:marketing:0.0.1-SNAPSHOT::bd9cdbc9",
+          "Name": "com.medicalsys:marketing",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/marketing@0.0.1-SNAPSHOT",
+            "UID": "2045ba5ad0981bbb"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::5c4e46e4",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "6141535e0a7e03da"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 59,
+              "EndLine": 63
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::76b5cb4a",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "fa2d623133cdf6c5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 54,
+              "EndLine": 57
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::b19173bc",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "73cd4c78e9d337d4"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 22,
+              "EndLine": 25
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::ebc3038f",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "d34273fe4f089ba6"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 26,
+              "EndLine": 29
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::25a3c286",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "abfa8cee4a5ffb36"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 30,
+              "EndLine": 33
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-kafka::b3ebdaef",
+          "Name": "org.springframework.boot:spring-boot-starter-kafka",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-kafka",
+            "UID": "75b23ca68a4564e4"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-restclient::a13ef83a",
+          "Name": "org.springframework.boot:spring-boot-starter-restclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-restclient",
+            "UID": "4163d2ed0e2857ab"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 50,
+              "EndLine": 53
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::9e6ae573",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "cbdb3543aa23f313"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::4f518ccb",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "dbcf6e1126f5b8c6"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-notificaciones/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:notificaciones:0.0.1-SNAPSHOT::7b1d97fb",
+          "Name": "com.medicalsys:notificaciones",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/notificaciones@0.0.1-SNAPSHOT",
+            "UID": "35eecbd50bfc0579"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::82b1124e",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "c4b64d83d0fa38fd"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 70,
+              "EndLine": 74
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "io.asyncer:r2dbc-mysql::be89d242",
+          "Name": "io.asyncer:r2dbc-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/io.asyncer/r2dbc-mysql",
+            "UID": "eaf40d9e5fe7a8d8"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 75,
+              "EndLine": 79
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::1524b26c",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "c1a11d28a9d58be9"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 61,
+              "EndLine": 64
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::41bf9e5a",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "6c71ee4c2169769a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 33,
+              "EndLine": 36
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-r2dbc::f22f7451",
+          "Name": "org.springframework.boot:spring-boot-starter-data-r2dbc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-r2dbc",
+            "UID": "306c91e4e03f1567"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 37,
+              "EndLine": 40
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::84d5fbc3",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "1b7712143a3e2461"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 41,
+              "EndLine": 44
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-kafka::c583c4ae",
+          "Name": "org.springframework.boot:spring-boot-starter-kafka",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-kafka",
+            "UID": "684d11da67a4cf05"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 45,
+              "EndLine": 48
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::725411ef",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "9c9b4990546aee65"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 49,
+              "EndLine": 52
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webclient::cb701c78",
+          "Name": "org.springframework.boot:spring-boot-starter-webclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webclient",
+            "UID": "ae81d135a25caa9a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 57,
+              "EndLine": 60
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webflux::e8551275",
+          "Name": "org.springframework.boot:spring-boot-starter-webflux",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webflux",
+            "UID": "2e80e5eb992ab20c"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 53,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework:spring-jdbc::d095f0b9",
+          "Name": "org.springframework:spring-jdbc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework/spring-jdbc",
+            "UID": "cbee1397143c4ad5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 65,
+              "EndLine": 68
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-pacientes/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:pacientes:0.0.1-SNAPSHOT::4c969338",
+          "Name": "com.medicalsys:pacientes",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/pacientes@0.0.1-SNAPSHOT",
+            "UID": "9ecfdb3314eab1de"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::e7bfa391",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "e8fbddd7edb1623b"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 70,
+              "EndLine": 74
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::41338f5a",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "188b50b056179dc5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 65,
+              "EndLine": 68
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::46da917d",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "f59bc59fda48f3d4"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 33,
+              "EndLine": 36
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::ebf55989",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "19193c277449f2c1"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 37,
+              "EndLine": 40
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::6f23cdba",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "e6da7a2d47c46bdf"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 41,
+              "EndLine": 44
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-kafka::aa1827b1",
+          "Name": "org.springframework.boot:spring-boot-starter-kafka",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-kafka",
+            "UID": "2824a2833f28dfbe"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 61,
+              "EndLine": 64
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-restclient::249674e1",
+          "Name": "org.springframework.boot:spring-boot-starter-restclient",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-restclient",
+            "UID": "18a81e5482fa9a72"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 57,
+              "EndLine": 60
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::67b995c9",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "3367010c07cafd6"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 45,
+              "EndLine": 48
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::38be3cb6",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "4dd10b66bd76b870"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 49,
+              "EndLine": 52
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-profesionales/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:profesionales:0.0.1-SNAPSHOT::c767c4df",
+          "Name": "com.medicalsys:profesionales",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/profesionales@0.0.1-SNAPSHOT",
+            "UID": "1f5a1435971dbdb0"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::6bdca536",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "4a4441af05716acc"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 58,
+              "EndLine": 62
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::8b94ffbd",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "c9adbaf296316e83"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 53,
+              "EndLine": 56
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::caa7d489",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "da6f5b4823b51091"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 33,
+              "EndLine": 36
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::e52b4264",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "6490b4b9f25228f8"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 37,
+              "EndLine": 40
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::f12bb490",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "eb76a8e7d0382520"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 41,
+              "EndLine": 44
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::5daaf5a6",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "db995aabf7f8816d"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 45,
+              "EndLine": 48
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::dec31802",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "71f65336ac330e7a"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 49,
+              "EndLine": 52
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    },
+    {
+      "Target": "services/ms-tenencia/pom.xml",
+      "Class": "lang-pkgs",
+      "Type": "pom",
+      "Packages": [
+        {
+          "ID": "com.medicalsys:tenencia:0.0.1-SNAPSHOT::cc2eedf8",
+          "Name": "com.medicalsys:tenencia",
+          "Identifier": {
+            "PURL": "pkg:maven/com.medicalsys/tenencia@0.0.1-SNAPSHOT",
+            "UID": "f9c8ab2534317228"
+          },
+          "Version": "0.0.1-SNAPSHOT",
+          "Relationship": "root",
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "com.mysql:mysql-connector-j::90b8adae",
+          "Name": "com.mysql:mysql-connector-j",
+          "Identifier": {
+            "PURL": "pkg:maven/com.mysql/mysql-connector-j",
+            "UID": "2516040ac829c0f5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 47,
+              "EndLine": 51
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.flywaydb:flyway-mysql::65b8d5a7",
+          "Name": "org.flywaydb:flyway-mysql",
+          "Identifier": {
+            "PURL": "pkg:maven/org.flywaydb/flyway-mysql",
+            "UID": "62a9599f75693cf2"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 42,
+              "EndLine": 45
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-actuator::eeb0b591",
+          "Name": "org.springframework.boot:spring-boot-starter-actuator",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-actuator",
+            "UID": "a2f6b55c2cb0fb92"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 22,
+              "EndLine": 25
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-data-jpa::dabd434f",
+          "Name": "org.springframework.boot:spring-boot-starter-data-jpa",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-data-jpa",
+            "UID": "fcf65ce676dfaed5"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 26,
+              "EndLine": 29
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-flyway::92160ca3",
+          "Name": "org.springframework.boot:spring-boot-starter-flyway",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-flyway",
+            "UID": "e3bfb14c0398772e"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 30,
+              "EndLine": 33
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-validation::14285b05",
+          "Name": "org.springframework.boot:spring-boot-starter-validation",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-validation",
+            "UID": "1879d70a88720ca"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 34,
+              "EndLine": 37
+            }
+          ],
+          "AnalyzedBy": "pom"
+        },
+        {
+          "ID": "org.springframework.boot:spring-boot-starter-webmvc::1ebf1f5b",
+          "Name": "org.springframework.boot:spring-boot-starter-webmvc",
+          "Identifier": {
+            "PURL": "pkg:maven/org.springframework.boot/spring-boot-starter-webmvc",
+            "UID": "ab324cc7b0161564"
+          },
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 38,
+              "EndLine": 41
+            }
+          ],
+          "AnalyzedBy": "pom"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,8 @@ Backend del MVP de MedicalSys: doce microservicios Spring Boot detrás de un gat
 base de datos por servicio. Todo el entorno local se levanta con Docker Compose.
 
 El frontend vive en un repositorio aparte (`medicalsys_frontend`) y consume **únicamente** el
-gateway, en `http://localhost:8080`.
+gateway, en `http://localhost:8080`. Compose solo publica el gateway; microservicios y dependencias
+de datos permanecen en la red Docker `medicalsys-interna`.
 
 ## Servicios
 
@@ -22,9 +23,9 @@ gateway, en `http://localhost:8080`.
 | `ms-documental`    | 8089   | `documents_db`       | Documentos en MinIO con verificación SHA-256              |
 | `ms-facturacion`   | 8090   | `billing_db`         | Emisión de comprobantes contra un SIN simulado            |
 | `ms-marketing`     | 8092   | `marketing_db`       | Campañas, segmentación, cupones y fidelización            |
+| `ms-notificaciones`| 8091   | `notifications_db`   | Notificaciones y webhook de WhatsApp                     |
 
-`ms-notificaciones` existe como esqueleto de Spring Boot sin endpoints; no está en Compose ni
-publicado en el gateway.
+`ms-notificaciones` expone el webhook detrás del gateway.
 
 ## Levantar el entorno
 
@@ -61,7 +62,8 @@ campañas y cupones.
 Ningún dato corresponde a una persona real: los CI no son cédulas emitidas, los correos usan el
 TLD reservado `.invalid` y todo comprobante lleva la leyenda de que no tiene validez fiscal.
 
-Cada siembra se puede desactivar por variable de entorno:
+Las cuentas demo de identidad están desactivadas por defecto. Activa `IDENTITY_DEMO_USERS_ENABLED=true`
+solo para un entorno de demostración controlado. Cada siembra adicional se puede desactivar por variable:
 
 | Variable                       | Servicio           | Efecto                                      |
 | ------------------------------ | ------------------ | ------------------------------------------- |
@@ -100,6 +102,12 @@ documento. La frontera de privacidad está escrita como tipo, no como convenció
 `ms-marketing` no tiene credenciales ni ruta de red hacia `medical_records_db`: no existe
 configuración con la que pueda segmentar por un dato clínico.
 
+### Exposición de puertos
+
+No publiques puertos de los microservicios ni de PostgreSQL, Redis, Kafka o MinIO. El frontend
+debe usar el gateway publicado en `8080`; los servicios se comunican por nombre dentro de
+`medicalsys-interna`. CORS se limita con `GATEWAY_ALLOWED_ORIGINS` a una lista de orígenes exactos.
+
 ## Pruebas
 
 ```bash
@@ -116,3 +124,4 @@ Varias suites usan Testcontainers y se saltan solas si Docker no está disponibl
 - `docs/CORRECCIONES_POST_DEMO.md` — revisión técnica por microservicio.
 - `docs/contracts` y `docs/demo` — contratos y guion de la demostración.
 - `services/<servicio>/README.md` y `services/<servicio>/docs/` — detalle de cada servicio.
+- `docs/seguridad/` — procedimientos, política, OWASP Top 10 y reportes de escaneo.

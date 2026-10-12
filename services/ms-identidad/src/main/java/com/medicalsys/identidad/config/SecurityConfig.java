@@ -75,7 +75,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**", "/error").permitAll()
                         .requestMatchers("/api/v1/identity/ping").permitAll()
                         .requestMatchers("/api/v1/identity/auth/login").permitAll()
-                        .requestMatchers("/internal/v1/**").permitAll()
+                        .requestMatchers("/internal/v1/**").denyAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/roles").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/users/*/roles/*").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/users/**").hasAuthority("identity.user.read")

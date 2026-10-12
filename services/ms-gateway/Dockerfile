@@ -23,6 +23,7 @@ RUN --mount=type=cache,target=/root/.m2,sharing=locked \
 
 
 FROM eclipse-temurin:21-jre-jammy
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

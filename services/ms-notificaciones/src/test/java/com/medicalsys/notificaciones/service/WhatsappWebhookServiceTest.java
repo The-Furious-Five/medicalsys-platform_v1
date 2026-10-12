@@ -42,6 +42,7 @@ class WhatsappWebhookServiceTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 7, 20, 0);
     private static final String PATIENT_ID = "20000000-0000-0000-0000-000000000001";
     private static final String ORGANIZATION_ID = "10000000-0000-0000-0000-000000000001";
+    private static final String APP_SECRET = "test-app-secret";
 
     @Mock NotificationRepository notifications;
     @Mock ReferenceSyncService references;
@@ -50,7 +51,7 @@ class WhatsappWebhookServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = createService("");
+        service = createService(APP_SECRET);
     }
 
     @Test
@@ -74,7 +75,7 @@ class WhatsappWebhookServiceTest {
 
     @Test
     void rejectsMalformedJson() {
-        StepVerifier.create(service.handle("not-json", null))
+        StepVerifier.create(service.handle("not-json", hmac("not-json", APP_SECRET)))
                 .expectErrorSatisfies(error -> assertEquals("INVALID_WEBHOOK_PAYLOAD",
                         assertInstanceOf(ApiException.class, error).code()))
                 .verify();
@@ -84,6 +85,15 @@ class WhatsappWebhookServiceTest {
     void requiresSignatureWhenAppSecretIsConfigured() {
         WhatsappWebhookService signed = createService("secret");
         StepVerifier.create(signed.handle("{}", null))
+                .expectErrorSatisfies(error -> assertEquals("INVALID_WEBHOOK_SIGNATURE",
+                        assertInstanceOf(ApiException.class, error).code()))
+                .verify();
+    }
+
+    @Test
+    void requiresSignatureWhenAppSecretIsMissing() {
+        WhatsappWebhookService withoutSecret = createService("");
+        StepVerifier.create(withoutSecret.handle("{}", null))
                 .expectErrorSatisfies(error -> assertEquals("INVALID_WEBHOOK_SIGNATURE",
                         assertInstanceOf(ApiException.class, error).code()))
                 .verify();
@@ -112,7 +122,7 @@ class WhatsappWebhookServiceTest {
         when(notifications.save(any(Notification.class))).thenAnswer(call -> Mono.just(call.getArgument(0)));
         when(store.insertStatusEvent(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
-        StepVerifier.create(service.handle(statusPayload("delivered", "wamid-1", null), null)).verifyComplete();
+        StepVerifier.create(handleSigned(statusPayload("delivered", "wamid-1", null))).verifyComplete();
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notifications).save(captor.capture());
@@ -127,7 +137,7 @@ class WhatsappWebhookServiceTest {
         when(notifications.findByProviderMessageId("wamid-1")).thenReturn(Mono.just(original));
         when(notifications.save(any(Notification.class))).thenAnswer(call -> Mono.just(call.getArgument(0)));
         when(store.insertStatusEvent(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
-        StepVerifier.create(service.handle(statusPayload("read", "wamid-1", null), null)).verifyComplete();
+        StepVerifier.create(handleSigned(statusPayload("read", "wamid-1", null))).verifyComplete();
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notifications).save(captor.capture());
         assertEquals(NotificationStatus.READ, captor.getValue().status());
@@ -140,7 +150,7 @@ class WhatsappWebhookServiceTest {
         when(notifications.findByProviderMessageId("wamid-1")).thenReturn(Mono.just(original));
         when(notifications.save(any(Notification.class))).thenAnswer(call -> Mono.just(call.getArgument(0)));
         when(store.insertStatusEvent(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
-        StepVerifier.create(service.handle(statusPayload("failed", "wamid-1", "131047"), null)).verifyComplete();
+        StepVerifier.create(handleSigned(statusPayload("failed", "wamid-1", "131047"))).verifyComplete();
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notifications).save(captor.capture());
         assertEquals(NotificationStatus.FAILED, captor.getValue().status());
@@ -150,11 +160,11 @@ class WhatsappWebhookServiceTest {
 
     @Test
     void ignoresUnknownStatusAndUnknownProviderMessage() {
-        StepVerifier.create(service.handle(statusPayload("mystery", "wamid-1", null), null)).verifyComplete();
+        StepVerifier.create(handleSigned(statusPayload("mystery", "wamid-1", null))).verifyComplete();
         verify(notifications, never()).findByProviderMessageId(any());
 
         when(notifications.findByProviderMessageId("wamid-2")).thenReturn(Mono.empty());
-        StepVerifier.create(service.handle(statusPayload("sent", "wamid-2", null), null)).verifyComplete();
+        StepVerifier.create(handleSigned(statusPayload("sent", "wamid-2", null))).verifyComplete();
         verify(notifications, never()).save(any());
         verify(store, never()).insertStatusEvent(any(), any(), any(), any(), any());
     }
@@ -166,7 +176,7 @@ class WhatsappWebhookServiceTest {
         when(store.insertIncoming(any(), any(), any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         when(store.openConversation(any(), any(), any(), any())).thenReturn(Mono.empty());
 
-        StepVerifier.create(service.handle(messagePayload("¿Cuándo es mi cita?"), null)).verifyComplete();
+        StepVerifier.create(handleSigned(messagePayload("¿Cuándo es mi cita?"))).verifyComplete();
 
         verify(store).insertIncoming("incoming-1", "+59170000000", "¿Cuándo es mi cita?", "QUESTION",
                 LocalDateTime.of(2023, 11, 14, 22, 13, 20), ORGANIZATION_ID, PATIENT_ID);
@@ -179,7 +189,7 @@ class WhatsappWebhookServiceTest {
     void storesUnknownPhoneWithoutOpeningConversation() {
         when(references.findPatientByWhatsapp("+59170000000")).thenReturn(Mono.empty());
         when(store.insertIncoming(any(), any(), any(), any(), any(), any(), any())).thenReturn(Mono.empty());
-        StepVerifier.create(service.handle(messagePayload("Hola"), null)).verifyComplete();
+        StepVerifier.create(handleSigned(messagePayload("Hola"))).verifyComplete();
         verify(store).insertIncoming("incoming-1", "+59170000000", "Hola", "OTHER",
                 LocalDateTime.of(2023, 11, 14, 22, 13, 20), null, null);
         verify(store, never()).openConversation(any(), any(), any(), any());
@@ -193,7 +203,7 @@ class WhatsappWebhookServiceTest {
         when(store.openConversation(any(), any(), any(), any())).thenReturn(Mono.empty());
         when(references.upsertPreference(any())).thenReturn(Mono.empty());
 
-        StepVerifier.create(service.handle(messagePayload("STOP"), null)).verifyComplete();
+        StepVerifier.create(handleSigned(messagePayload("STOP"))).verifyComplete();
 
         ArgumentCaptor<PreferenceReferenceRequest> captor = ArgumentCaptor.forClass(PreferenceReferenceRequest.class);
         verify(references).upsertPreference(captor.capture());
@@ -207,7 +217,7 @@ class WhatsappWebhookServiceTest {
     @Test
     void ignoresIncomingMessageMissingIdOrSource() {
         String payload = "{\"entry\":[{\"changes\":[{\"value\":{\"messages\":[{\"from\":\"59170000000\"}]}}]}]}";
-        StepVerifier.create(service.handle(payload, null)).verifyComplete();
+        StepVerifier.create(handleSigned(payload)).verifyComplete();
         verify(references, never()).findPatientByWhatsapp(any());
         verify(store, never()).insertIncoming(any(), any(), any(), any(), any(), any(), any());
     }
@@ -218,10 +228,18 @@ class WhatsappWebhookServiceTest {
                 "verify-token", secret, clock);
     }
 
-    private String hmac(String payload, String secret) throws Exception {
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-        return "sha256=" + HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+    private Mono<Void> handleSigned(String payload) {
+        return service.handle(payload, hmac(payload, APP_SECRET));
+    }
+
+    private String hmac(String payload, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return "sha256=" + HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception exception) {
+            throw new IllegalStateException("No se pudo generar la firma de prueba", exception);
+        }
     }
 
     private String statusPayload(String status, String id, String errorCode) {

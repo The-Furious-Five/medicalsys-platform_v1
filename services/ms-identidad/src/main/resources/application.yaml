@@ -35,7 +35,7 @@ management:
 
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
   health:
     redis:
@@ -51,7 +51,7 @@ medicalsys:
       max-failed-attempts: ${IDENTITY_MAX_FAILED_ATTEMPTS:5}
       lock-duration: ${IDENTITY_LOCK_DURATION:PT15M}
     demo-users:
-      enabled: ${IDENTITY_DEMO_USERS_ENABLED:true}
+      enabled: ${IDENTITY_DEMO_USERS_ENABLED:false}
       # Debe coincidir con el public_id de la organización DEMO sembrada por ms-tenencia.
       organization-public-id: ${IDENTITY_DEMO_ORGANIZATION:00000000-0000-4000-8000-0000000000a1}
       password: ${IDENTITY_DEMO_PASSWORD:Demo1234!}
