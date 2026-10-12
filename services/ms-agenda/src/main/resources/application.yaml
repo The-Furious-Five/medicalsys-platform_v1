@@ -37,7 +37,7 @@ management:
 
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 medicalsys:
   scheduling:

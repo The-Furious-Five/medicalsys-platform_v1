@@ -37,26 +37,38 @@ public class WhatsappWebhookService {
     private final WhatsappWebhookStore store;
     private final String verifyToken;
     private final String appSecret;
+    private final String provider;
     private final Clock clock;
 
     @Autowired
     public WhatsappWebhookService(ObjectMapper objectMapper, NotificationRepository notifications,
             ReferenceSyncService references, WhatsappWebhookStore store,
             @Value("${medicalsys.notifications.whatsapp.verify-token:local-verify-token}") String verifyToken,
-            @Value("${medicalsys.notifications.whatsapp.app-secret:}") String appSecret) {
-        this(objectMapper, notifications, references, store, verifyToken, appSecret, Clock.systemUTC());
+            @Value("${medicalsys.notifications.whatsapp.app-secret:}") String appSecret,
+            @Value("${medicalsys.notifications.provider:mock}") String provider) {
+        this(objectMapper, notifications, references, store, verifyToken, appSecret, provider, Clock.systemUTC());
     }
 
     WhatsappWebhookService(ObjectMapper objectMapper, NotificationRepository notifications,
             ReferenceSyncService references, WhatsappWebhookStore store, String verifyToken,
             String appSecret, Clock clock) {
+        this(objectMapper, notifications, references, store, verifyToken, appSecret, "mock", clock);
+    }
+
+    WhatsappWebhookService(ObjectMapper objectMapper, NotificationRepository notifications,
+            ReferenceSyncService references, WhatsappWebhookStore store, String verifyToken,
+            String appSecret, String provider, Clock clock) {
         this.objectMapper = objectMapper;
         this.notifications = notifications;
         this.references = references;
         this.store = store;
         this.verifyToken = verifyToken;
         this.appSecret = appSecret;
+        this.provider = provider;
         this.clock = clock;
+        if ("meta".equalsIgnoreCase(provider) && (appSecret == null || appSecret.isBlank())) {
+            throw new IllegalStateException("WHATSAPP_APP_SECRET es obligatorio cuando NOTIFICATION_PROVIDER=meta");
+        }
     }
 
     public String verify(String mode, String token, String challenge) {
@@ -147,7 +159,8 @@ public class WhatsappWebhookService {
 
     private void verifySignature(String payload, String signature) {
         if (appSecret == null || appSecret.isBlank()) {
-            return;
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_WEBHOOK_SIGNATURE",
+                    "El webhook no tiene un secreto configurado para validar la firma");
         }
         if (signature == null || !signature.startsWith("sha256=")) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_WEBHOOK_SIGNATURE",

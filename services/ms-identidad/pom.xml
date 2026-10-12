@@ -28,7 +28,10 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
-		<bouncycastle.version>1.78.1</bouncycastle.version>
+		<tomcat.version>11.0.25</tomcat.version>
+		<jackson-bom.version>3.1.7</jackson-bom.version>
+		<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+		<bouncycastle.version>1.85</bouncycastle.version>
 	</properties>
 	<dependencies>
 		<dependency>
