@@ -2,6 +2,8 @@ package com.medicalsys.notificaciones.provider;
 
 import com.medicalsys.notificaciones.domain.Notification;
 import com.medicalsys.notificaciones.repository.ConversationWindowStore;
+import io.netty.channel.ChannelOption;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,9 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 import tools.jackson.databind.JsonNode;
 
 @Component
@@ -30,7 +34,14 @@ public class MetaWhatsappProvider implements NotificationProvider, WhatsappMessa
             @Value("${medicalsys.notifications.whatsapp.api-version}") String apiVersion,
             @Value("${medicalsys.notifications.whatsapp.phone-number-id}") String phoneNumberId,
             @Value("${medicalsys.notifications.whatsapp.access-token}") String accessToken) {
-        this.webClient = builder.baseUrl(graphBaseUrl).build();
+        // Sin timeout, una resolucion DNS o conexion colgada hacia Meta se queda esperando para
+        // siempre y arrastra con ella cualquier otra solicitud que dependa del mismo Mono en curso.
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                .responseTimeout(Duration.ofSeconds(10));
+        this.webClient = builder.baseUrl(graphBaseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
         this.conversations = conversations;
         this.apiVersion = apiVersion;
         this.phoneNumberId = phoneNumberId;
