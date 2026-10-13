@@ -1,0 +1,38 @@
+{
+  "realm": "medicalsys",
+  "displayName": "MedicalSys",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "clients": [
+    {
+      "clientId": "ms-identidad",
+      "name": "ms-identidad",
+      "description": "Cliente confidencial de ms-identidad: valida credenciales (Direct Access Grants) y administra usuarios con su service account (manage-users).",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "frontchannelLogout": false
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-ms-identidad",
+      "enabled": true,
+      "serviceAccountClientId": "ms-identidad",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-users"]
+      }
+    }
+  ]
+}
