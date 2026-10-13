@@ -131,7 +131,7 @@ El `organizationId` que envía el cliente nunca se usa como fuente de verdad: sa
 | `IDENTITY_LOCK_DURATION` | no | `PT15M` | Duración del bloqueo |
 | `IDENTITY_DEMO_USERS_ENABLED` | no | `true` | Crea las cuentas de demostración al arrancar |
 | `IDENTITY_DEMO_ORGANIZATION` | no | `11111111-…-111111111111` | Organización de la demo |
-| `IDENTITY_DEMO_PASSWORD` | no | `Demo1234!` | Contraseña de las cuentas de demostración |
+| `IDENTITY_DEMO_PASSWORD` | no | `SanGabriel.Demo26!` | Contraseña de las cuentas de demostración |
 
 ## Cuentas de demostración
 

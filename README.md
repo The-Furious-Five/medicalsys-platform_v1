@@ -38,12 +38,13 @@ El primer arranque tarda varios minutos porque cada servicio se compila dentro d
 Compose espera a que cada dependencia responda `/actuator/health` antes de arrancar a quien la
 consume, así que cuando `docker compose ps` muestre todo `healthy` el sistema está listo.
 
-Comprobación rápida:
+Comprobación rápida (con `IDENTITY_DEMO_USERS_ENABLED=true` en `.env`; la contraseña demo
+cumple la política de Keycloak de IAM-02):
 
 ```bash
 curl -s localhost:8080/api/v1/identity/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@medicalsys.demo","password":"Demo1234!"}'
+  -d '{"email":"admin@medicalsys.demo","password":"SanGabriel.Demo26!"}'
 ```
 
 Para empezar de cero —por ejemplo tras cambiar una migración— hay que borrar los volúmenes:

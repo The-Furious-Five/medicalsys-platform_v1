@@ -24,7 +24,7 @@ set -u
 set -o pipefail
 
 GATEWAY_BASE_URL="${GATEWAY_BASE_URL:-http://localhost:18080}"
-DEMO_PASSWORD="${DEMO_PASSWORD:-Demo1234!}"
+DEMO_PASSWORD="${DEMO_PASSWORD:-SanGabriel.Demo26!}"
 
 PASS=0
 FAIL=0

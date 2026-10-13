@@ -54,7 +54,7 @@ medicalsys:
       enabled: ${IDENTITY_DEMO_USERS_ENABLED:false}
       # Debe coincidir con el public_id de la organización DEMO sembrada por ms-tenencia.
       organization-public-id: ${IDENTITY_DEMO_ORGANIZATION:00000000-0000-4000-8000-0000000000a1}
-      password: ${IDENTITY_DEMO_PASSWORD:Demo1234!}
+      password: ${IDENTITY_DEMO_PASSWORD:SanGabriel.Demo26!}
     platform-admin:
       enabled: ${PLATFORM_ADMIN_SEED_ENABLED:false}
       public-id: ${PLATFORM_ADMIN_PUBLIC_ID:00000000-0000-4000-8000-000000000900}

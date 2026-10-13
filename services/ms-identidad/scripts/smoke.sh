@@ -17,11 +17,11 @@ check "ping" 200 "$(code $B/api/v1/identity/ping)"
 check "health" 200 "$(code $B/actuator/health)"
 
 TOKEN=$(curl -s -X POST $B/api/v1/identity/auth/login -H "$JSON" \
-  -d '{"email":"admin@medicalsys.demo","password":"Demo1234!"}' | field accessToken)
+  -d '{"email":"admin@medicalsys.demo","password":"SanGabriel.Demo26!"}' | field accessToken)
 AUTH="Authorization: Bearer $TOKEN"
 
 check "login con credenciales malas" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"admin@medicalsys.demo","password":"NoEsLaClave1"}')"
-check "login con email inexistente" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"nadie@medicalsys.demo","password":"Demo1234!"}')"
+check "login con email inexistente" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"nadie@medicalsys.demo","password":"SanGabriel.Demo26!"}')"
 check "login con cuerpo invalido" 400 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"no-es-email","password":"x"}')"
 
 check "auth/me con token" 200 "$(code $B/api/v1/identity/auth/me -H "$AUTH")"

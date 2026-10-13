@@ -141,7 +141,7 @@ All calls go through the gateway at `${GATEWAY_BASE_URL}` (default
 use before running). Demo accounts and password come from
 `ms-identidad`'s `DemoUserSeeder`: `admin@medicalsys.demo`,
 `recepcion@medicalsys.demo`, `doctor@medicalsys.demo`, all with password
-`Demo1234!` unless `IDENTITY_DEMO_PASSWORD` was overridden.
+`SanGabriel.Demo26!` unless `IDENTITY_DEMO_PASSWORD` was overridden.
 
 | # | Step | Endpoint | Expected |
 |---|------|----------|----------|

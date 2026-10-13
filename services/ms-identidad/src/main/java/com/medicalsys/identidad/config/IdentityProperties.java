@@ -87,7 +87,7 @@ public class IdentityProperties {
     public static class DemoUsers {
         private boolean enabled = true;
         private UUID organizationPublicId;
-        private String password = "Demo1234!";
+        private String password = "SanGabriel.Demo26!";
 
         public boolean isEnabled() {
             return enabled;
