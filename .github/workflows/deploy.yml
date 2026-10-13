@@ -1,0 +1,179 @@
+name: CI/CD - Deploy al VPS
+
+# Push a main: pruebas -> imagenes en GHCR -> despliegue en el VPS por SSH.
+# Tambien se puede lanzar a mano desde la pestana Actions (Run workflow).
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "etica docs/**"
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: "Saltar las pruebas (solo para emergencias)"
+        type: boolean
+        default: false
+
+# Un despliegue a la vez; uno nuevo espera a que termine el anterior en vez de cortarlo a la mitad.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Pruebas ${{ matrix.service }}
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ms-identidad, ms-tenencia, ms-catalogos, ms-criptografia, ms-pacientes,
+                  ms-profesionales, ms-agenda, ms-historial, ms-documental, ms-facturacion,
+                  ms-marketing, ms-auditoria, ms-notificaciones, ms-gateway]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: services/${{ matrix.service }}/pom.xml
+
+      # Algunas pruebas usan Testcontainers (MySQL); el runner ya trae Docker.
+      - name: mvn test
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp test
+
+  build:
+    name: Imagen ${{ matrix.service }}
+    needs: test
+    # Corre tambien cuando las pruebas se saltaron a proposito.
+    if: ${{ !cancelled() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        service: [ms-identidad, ms-tenencia, ms-catalogos, ms-criptografia, ms-pacientes,
+                  ms-profesionales, ms-agenda, ms-historial, ms-documental, ms-facturacion,
+                  ms-marketing, ms-auditoria, ms-notificaciones, ms-gateway]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nombre del registro
+        id: registry
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/medicalsys" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.registry.outputs.prefix }}/${{ matrix.service }}:${{ github.sha }}
+            ${{ steps.registry.outputs.prefix }}/${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    name: Desplegar en el VPS
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || '/opt/medicalsys' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            # Sin VPS_KNOWN_HOSTS se confia en la huella del primer contacto. Mejor cargar el secreto.
+            ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          cat > ~/.ssh/config <<EOF
+          Host vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $VPS_PORT
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            ServerAliveInterval 30
+          EOF
+
+      - name: Copiar compose e infra
+        run: |
+          ssh vps "mkdir -p '$DEPLOY_PATH' && rm -rf '$DEPLOY_PATH/infra'"
+          tar czf - compose.yaml compose.prod.yaml infra | ssh vps "tar xzf - -C '$DEPLOY_PATH'"
+
+      - name: Escribir .env de produccion
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          if [ -z "$ENV_FILE" ]; then echo "Falta el secreto ENV_FILE" >&2; exit 1; fi
+          {
+            printf '%s\n' "$ENV_FILE"
+            echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/medicalsys"
+            echo "IMAGE_TAG=${GITHUB_SHA}"
+          } | ssh vps "umask 077 && cat > '$DEPLOY_PATH/.env'"
+
+      - name: Descargar imagenes y levantar
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # El token del job solo vive mientras dura el job; se usa para el pull y se cierra la sesion.
+          printf '%s' "$GHCR_TOKEN" | ssh vps "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh vps "cd '$DEPLOY_PATH' && \
+            docker compose -f compose.yaml -f compose.prod.yaml pull --quiet && \
+            docker compose -f compose.yaml -f compose.prod.yaml up -d --no-build --remove-orphans"
+          ssh vps "docker logout ghcr.io >/dev/null; docker image prune -f >/dev/null"
+
+      - name: Esperar a que el gateway este sano
+        run: |
+          ssh vps "cd '$DEPLOY_PATH' && for i in \$(seq 1 90); do
+              status=\$(docker inspect --format '{{.State.Health.Status}}' \
+                \$(docker compose -f compose.yaml -f compose.prod.yaml ps -q ms-gateway) 2>/dev/null || true)
+              echo \"intento \$i: gateway=\$status\"
+              [ \"\$status\" = healthy ] && exit 0
+              sleep 10
+            done
+            docker compose -f compose.yaml -f compose.prod.yaml ps
+            exit 1"
+
+      - name: Estado final
+        if: always()
+        run: ssh vps "cd '$DEPLOY_PATH' && docker compose -f compose.yaml -f compose.prod.yaml ps --format 'table {{.Service}}\t{{.Status}}'" || true

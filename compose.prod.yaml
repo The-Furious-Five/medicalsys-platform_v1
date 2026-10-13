@@ -1,0 +1,75 @@
+# Ajustes de produccion (VPS). Se combina con compose.yaml:
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --no-build
+#
+# - Las imagenes de los microservicios no se construyen en el VPS: las publica el workflow
+#   .github/workflows/deploy.yml en GHCR y aqui se descargan por etiqueta (commit).
+# - Solo el gateway publica puerto hacia afuera. El resto queda en la red interna de Compose
+#   (evita saltarse el gateway llamando directo a un microservicio). Keycloak escucha solo en
+#   127.0.0.1 del VPS: la consola se abre con un tunel SSH.
+# - `!reset` / `!override` requieren Docker Compose 2.24.4 o superior en el VPS.
+
+x-prod-java: &prod-java
+  restart: unless-stopped
+  ports: !reset []
+
+x-prod-infra: &prod-infra
+  restart: unless-stopped
+  ports: !reset []
+
+services:
+  mysql: *prod-infra
+  postgres: *prod-infra
+  redis: *prod-infra
+  minio: *prod-infra
+  kafka: *prod-infra
+
+  keycloak:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:${KEYCLOAK_HOST_PORT:-18080}:8080"
+
+  ms-identidad:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-identidad:${IMAGE_TAG}
+  ms-tenencia:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-tenencia:${IMAGE_TAG}
+  ms-catalogos:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-catalogos:${IMAGE_TAG}
+  ms-criptografia:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-criptografia:${IMAGE_TAG}
+  ms-pacientes:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-pacientes:${IMAGE_TAG}
+  ms-profesionales:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-profesionales:${IMAGE_TAG}
+  ms-agenda:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-agenda:${IMAGE_TAG}
+  ms-historial:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-historial:${IMAGE_TAG}
+  ms-documental:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-documental:${IMAGE_TAG}
+  ms-facturacion:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-facturacion:${IMAGE_TAG}
+  ms-marketing:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-marketing:${IMAGE_TAG}
+  ms-auditoria:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-auditoria:${IMAGE_TAG}
+  ms-notificaciones:
+    <<: *prod-java
+    image: ${IMAGE_REGISTRY}/ms-notificaciones:${IMAGE_TAG}
+
+  # Unico punto de entrada publico.
+  ms-gateway:
+    restart: unless-stopped
+    image: ${IMAGE_REGISTRY}/ms-gateway:${IMAGE_TAG}
