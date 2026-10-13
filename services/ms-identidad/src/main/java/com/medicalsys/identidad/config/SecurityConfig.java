@@ -75,15 +75,19 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**", "/error").permitAll()
                         .requestMatchers("/api/v1/identity/ping").permitAll()
                         .requestMatchers("/api/v1/identity/auth/login").permitAll()
+                        // IAM-05: sin sesion para la contrasena temporal o vencida; la actual la valida
+                        // Keycloak, que cuenta los fallos para el bloqueo al 3er intento.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/change-password").permitAll()
                         .requestMatchers("/internal/v1/**").permitAll()
                         // Autoservicio de la propia sesion: lo necesita cualquier cuenta, incluido PATIENT.
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/auth/me").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/logout",
-                                "/api/v1/identity/auth/change-password").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/logout").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/roles").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/users/*/roles/*").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/users/**").hasAuthority("identity.user.read")
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users").hasAuthority("identity.user.create")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/unlock").hasAuthority("identity.user.unlock")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/reset-password").hasAuthority("identity.user.reset")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*/status").hasAuthority("identity.user.change_status")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*").hasAuthority("identity.user.update")
                         // Una operacion nueva sobre cuentas no queda abierta por omision: necesita su propio permiso.

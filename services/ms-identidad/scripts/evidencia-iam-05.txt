@@ -1,0 +1,24 @@
+# IAM-05 · salida de services/ms-identidad/scripts/desbloqueo-reinicio.sh
+# 2026-10-13T02:47:53Z · rama feature/sins-55, Keycloak 26.4.7, entorno local de prueba
+
+Cuenta MS-26-00015 (iam05.prueba.1791859673@medicalsys.demo)
+Primer ingreso, cambio de la temporal: HTTP 200  contraseña actualizada
+
+== 1. Tres intentos fallidos bloquean la cuenta
+   Intento 1: HTTP 401  - · Correo o contrasena incorrectos
+   Intento 2: HTTP 401  - · Correo o contrasena incorrectos
+   Intento 3: HTTP 423  ACCOUNT_LOCKED · La cuenta esta bloqueada por intentos fallidos. Solicita el desbloqueo a un administrador.
+   Contraseña correcta: HTTP 423  ACCOUNT_LOCKED · La cuenta esta bloqueada por intentos fallidos. Solicita el desbloqueo a un administrador.
+
+== 2. El administrador desbloquea desde la app (identity.user.unlock)
+   HTTP 200  cuenta desbloqueada
+   Login: HTTP 200  acceso concedido
+
+== 3. Reinicio con contraseña temporal (identity.user.reset)
+   Temporal emitida para MS-26-00015 (19 caracteres, se muestra una sola vez)
+   Login con la temporal: HTTP 403  PASSWORD_CHANGE_REQUIRED · Debes cambiar tu contrasena antes de iniciar sesion.
+
+== 4. Cambio forzado: reutilizar la contraseña anterior se rechaza
+   Reutilizar la anterior: HTTP 400  PASSWORD_POLICY_VIOLATION · No puedes reutilizar ninguna de tus últimas 5 contraseñas.
+   Una nueva:              HTTP 200  contraseña actualizada
+   Login con la nueva:     HTTP 200  acceso concedido

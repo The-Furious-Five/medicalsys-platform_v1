@@ -36,9 +36,14 @@ admin_token="$(curl -sS -X POST "$B/auth/login" -H "$JSON" \
 [ -n "$admin_token" ] || { echo "No se pudo iniciar sesión como $ADMIN_EMAIL" >&2; exit 1; }
 AUTH="Authorization: Bearer $admin_token"
 
-user_id="$(curl -sS -X POST "$B/users" -H "$AUTH" -H "$JSON" \
-  -d "$(jq -n --arg e "$EMAIL" --arg p "$PASSWORD" '{email: $e, fullName: "Prueba IAM-03", password: $p,
-        activateImmediately: true, roles: [{role: "RECEPTIONIST"}]}')" | jq -r '.publicId')"
+# Desde IAM-04 el alta entrega una contraseña temporal; el primer ingreso la cambia sin sesión (IAM-05).
+created="$(curl -sS -X POST "$B/users" -H "$AUTH" -H "$JSON" \
+  -d "$(jq -n --arg e "$EMAIL" '{email: $e, fullName: "Prueba IAM-03", activateImmediately: true,
+        roles: [{role: "RECEPTIONIST"}]}')")"
+user_id="$(jq -r .publicId <<<"$created")"
+curl -sS -o /dev/null -X POST "$B/auth/change-password" -H "$JSON" \
+  -d "$(jq -n --arg e "$EMAIL" --arg c "$(jq -r .temporaryPassword <<<"$created")" --arg p "$PASSWORD" \
+        '{email: $e, currentPassword: $c, newPassword: $p}')"
 trap 'curl -sS -o /dev/null -X PATCH "$B/users/$user_id/status" -H "$AUTH" -H "$JSON" -d "{\"status\":\"INACTIVE\"}"' EXIT
 echo "Cuenta de prueba: $EMAIL"
 

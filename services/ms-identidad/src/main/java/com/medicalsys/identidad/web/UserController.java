@@ -6,6 +6,7 @@ import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
 import com.medicalsys.identidad.web.dto.PageResponse;
 import com.medicalsys.identidad.web.dto.RoleAssignmentRequest;
+import com.medicalsys.identidad.web.dto.TemporaryPasswordResponse;
 import com.medicalsys.identidad.web.dto.UpdateUserRequest;
 import com.medicalsys.identidad.web.dto.UserResponse;
 import jakarta.validation.Valid;
@@ -70,6 +71,18 @@ public class UserController {
     public UserResponse changeStatus(Authentication authentication, @PathVariable UUID publicId,
                                      @Valid @RequestBody ChangeStatusRequest request) {
         return userService.changeStatus(publicId, request, Actors.publicId(authentication));
+    }
+
+    /** IAM-05: levanta el bloqueo al 3er intento (permiso identity.user.unlock). */
+    @PostMapping("/{publicId}/unlock")
+    public UserResponse unlock(Authentication authentication, @PathVariable UUID publicId) {
+        return userService.unlock(publicId, Actors.publicId(authentication));
+    }
+
+    /** IAM-05: contraseña temporal de un solo uso (permiso identity.user.reset). */
+    @PostMapping("/{publicId}/reset-password")
+    public TemporaryPasswordResponse resetPassword(Authentication authentication, @PathVariable UUID publicId) {
+        return userService.resetPassword(publicId, Actors.publicId(authentication));
     }
 
     @PostMapping("/{publicId}/roles")

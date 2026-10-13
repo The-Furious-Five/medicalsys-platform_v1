@@ -16,6 +16,7 @@ import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
 import com.medicalsys.identidad.web.dto.PageResponse;
 import com.medicalsys.identidad.web.dto.RoleAssignmentRequest;
+import com.medicalsys.identidad.web.dto.TemporaryPasswordResponse;
 import com.medicalsys.identidad.web.dto.UpdateUserRequest;
 import com.medicalsys.identidad.web.dto.UserResponse;
 import java.time.Instant;
@@ -23,6 +24,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +38,7 @@ import org.springframework.util.StringUtils;
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private static final String ASSIGN_PERMISSION = "identity.role.assign";
 
     private final UserAccountRepository users;
@@ -47,11 +51,12 @@ public class UserService {
     private final KeycloakAccountLinker linker;
     private final UserCodeGenerator userCodes;
     private final TemporaryPasswordGenerator temporaryPasswords;
+    private final AccountAccessService accountAccess;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
                        IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance,
                        KeycloakClient keycloak, KeycloakAccountLinker linker, UserCodeGenerator userCodes,
-                       TemporaryPasswordGenerator temporaryPasswords) {
+                       TemporaryPasswordGenerator temporaryPasswords, AccountAccessService accountAccess) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
@@ -62,6 +67,7 @@ public class UserService {
         this.linker = linker;
         this.userCodes = userCodes;
         this.temporaryPasswords = temporaryPasswords;
+        this.accountAccess = accountAccess;
     }
 
     /**
@@ -253,10 +259,92 @@ public class UserService {
             case DISABLED -> throw ApiException.forbidden("La cuenta esta inactiva");
             case INVALID_CREDENTIALS -> throw ApiException.unauthorized("La contrasena actual no coincide");
         }
+        applyNewPassword(user, keycloakUserId, request);
+    }
+
+    /**
+     * IAM-05: cambio sin sesión, para el primer ingreso con contraseña temporal y para la contraseña
+     * vencida. Keycloak valida la actual (y cuenta los fallos para el bloqueo al 3er intento) y aplica
+     * la política completa a la nueva, incluido el histórico.
+     */
+    @Transactional
+    public void changePasswordWithoutSession(ChangePasswordRequest request) {
+        UserAccount user = users.findByEmailIgnoreCase(request.email().trim())
+                .orElseThrow(() -> ApiException.unauthorized("Correo o contrasena incorrectos"));
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw ApiException.forbidden("La cuenta esta inactiva");
+        }
+        String keycloakUserId = keycloakUserId(user);
+        switch (keycloak.checkPassword(user.getEmail(), request.currentPassword())) {
+            case VALID, PASSWORD_CHANGE_REQUIRED -> { }
+            case DISABLED -> throw ApiException.forbidden("La cuenta esta inactiva");
+            case INVALID_CREDENTIALS -> {
+                if (keycloak.isLockedOut(keycloakUserId)) {
+                    accountAccess.registerLockout(user.getId());
+                    throw ApiException.accountLocked();
+                }
+                throw ApiException.unauthorized("Correo o contrasena incorrectos");
+            }
+        }
+        applyNewPassword(user, keycloakUserId, request);
+    }
+
+    /** IAM-05: levanta el bloqueo al 3er intento. Antes se verifica la identidad fuera del sistema. */
+    @Transactional
+    public UserResponse unlock(UUID publicId, UUID actorPublicId) {
+        UserAccount user = require(publicId);
+        governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw ApiException.conflict("La cuenta esta dada de baja: reactivala en lugar de desbloquearla");
+        }
+        keycloak.unlock(keycloakUserId(user));
+        user.setLockedUntil(null);
+        if (user.getStatus() == UserStatus.LOCKED) {
+            user.setStatus(UserStatus.ACTIVE);
+        }
+        log.info("Cuenta {} desbloqueada por {}", user.getUserCode(), actorPublicId);
+        return mapper.toUserResponse(user);
+    }
+
+    /**
+     * IAM-05: contraseña temporal de un solo uso; el usuario la cambia en su próximo ingreso. El
+     * administrador nunca conoce la definitiva. Si la cuenta ya no existe en Keycloak (por ejemplo, se
+     * recreó su base), se vuelve a crear con la temporal.
+     */
+    @Transactional
+    public TemporaryPasswordResponse resetPassword(UUID publicId, UUID actorPublicId) {
+        UserAccount user = require(publicId);
+        governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw ApiException.conflict("La cuenta esta dada de baja: reactivala antes de reiniciar la contrasena");
+        }
+        String temporaryPassword = temporaryPasswords.generate();
+        if (user.isLinkedToIdentityProvider() && keycloak.userExists(user.getKeycloakUserId())) {
+            keycloak.setPassword(user.getKeycloakUserId(), temporaryPassword, true);
+        } else {
+            String[] names = KeycloakAccountLinker.splitName(user.getFullName());
+            String keycloakUserId = keycloak.findUserIdByEmail(user.getEmail()).orElse(null);
+            if (keycloakUserId == null) {
+                keycloakUserId = keycloak.createUserWithPassword(new KeycloakClient.NewUser(
+                        user.getPublicId().toString(), user.getEmail(), names[0], names[1], true), temporaryPassword, true);
+            } else {
+                keycloak.setPassword(keycloakUserId, temporaryPassword, true);
+            }
+            user.setKeycloakUserId(keycloakUserId);
+            user.setPasswordHash(null);
+        }
+        user.setPasswordUpdatedAt(Instant.now());
+        sessionStore.closeAll(user.getPublicId());
+        log.info("Contrasena temporal emitida para la cuenta {} por {}", user.getUserCode(), actorPublicId);
+        return new TemporaryPasswordResponse(user.getPublicId(), user.getUserCode(), temporaryPassword);
+    }
+
+    private void applyNewPassword(UserAccount user, String keycloakUserId, ChangePasswordRequest request) {
         if (request.currentPassword().equals(request.newPassword())) {
             throw ApiException.badRequest("La nueva contrasena debe ser distinta de la actual");
         }
         try {
+            // temporary = false tambien quita UPDATE_PASSWORD: el usuario ya puede entrar.
             keycloak.setPassword(keycloakUserId, request.newPassword(), false);
         } catch (PasswordPolicyException ex) {
             throw ApiException.passwordPolicy(ex.getMessage());

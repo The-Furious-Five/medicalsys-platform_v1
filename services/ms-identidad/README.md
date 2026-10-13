@@ -43,6 +43,7 @@ Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2
 | GET | `/api/v1/identity/ping` | Prueba de vida del servicio |
 | GET | `/actuator/health` | Salud, incluye MySQL y Redis |
 | POST | `/api/v1/identity/auth/login` | Devuelve el JWT y el perfil del usuario |
+| POST | `/api/v1/identity/auth/change-password` | Sin sesión: primer ingreso con temporal o contraseña vencida (`email`, `currentPassword`, `newPassword`) |
 
 ### Autenticados (cabecera `Authorization: Bearer <token>`)
 
@@ -50,7 +51,7 @@ Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2
 |---|---|---|
 | GET | `/api/v1/identity/auth/me` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/logout` | solo estar autenticado |
-| POST | `/api/v1/identity/auth/change-password` | solo estar autenticado |
+| POST | `/api/v1/identity/auth/change-password` | con sesión: solo estar autenticado (sin sesión, ver arriba) |
 | GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions`, `/role-incompatibilities` | `identity.role.read` |
 | POST | `/api/v1/identity/roles` | `identity.role.manage` |
 | PATCH | `/api/v1/identity/roles/{code}` | `identity.role.manage` |
@@ -63,6 +64,8 @@ Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2
 | POST | `/api/v1/identity/users` | `identity.user.create` |
 | PATCH | `/api/v1/identity/users/{publicId}` | `identity.user.update` |
 | PATCH | `/api/v1/identity/users/{publicId}/status` | `identity.user.change_status` |
+| POST | `/api/v1/identity/users/{publicId}/unlock` | `identity.user.unlock` |
+| POST | `/api/v1/identity/users/{publicId}/reset-password` | `identity.user.reset` |
 | POST | `/api/v1/identity/users/{publicId}/roles` | `identity.role.assign` |
 | DELETE | `/api/v1/identity/users/{publicId}/roles/{role}` | `identity.role.assign` |
 
@@ -180,6 +183,20 @@ alta se deshace allí.
 
 Comprobación: `scripts/abm-keycloak.sh` compara MedicalSys y Keycloak en cada paso (salida de referencia
 en `scripts/evidencia-iam-04.txt`).
+
+## Desbloqueo, reinicio y cambio de contraseña (IAM-05)
+
+| Operación | Quién | Qué hace |
+|---|---|---|
+| `POST /users/{id}/unlock` | `identity.user.unlock` | Levanta el bloqueo al 3er intento en Keycloak (borra los intentos y vuelve a habilitar al usuario); `LOCKED` pasa a `ACTIVE`. Antes, el administrador verifica la identidad por otro canal |
+| `POST /users/{id}/reset-password` | `identity.user.reset` | Emite una contraseña temporal (`TemporaryPasswordResponse`, se muestra una sola vez), exige cambiarla y cierra las sesiones. Si la cuenta ya no existía en Keycloak, la vuelve a crear |
+| `POST /auth/change-password` sin sesión | El titular | Para la temporal o la vencida: `{email, currentPassword, newPassword}`. Keycloak valida la actual (los fallos cuentan para el bloqueo) y aplica la política a la nueva, incluido el histórico de 5 |
+
+Una cuenta dada de baja (`INACTIVE`) no se desbloquea ni se reinicia (`409`): primero se reactiva.
+
+Demostración: `scripts/desbloqueo-reinicio.sh` recorre el criterio de aceptación (salida de referencia en
+`scripts/evidencia-iam-05.txt`): 3 intentos bloquean, se desbloquea desde la app, reinicio, cambio
+forzado y reutilizar una contraseña anterior se rechaza.
 
 ## Variables de entorno
 
