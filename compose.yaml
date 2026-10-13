@@ -25,8 +25,6 @@ services:
       - --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-medicalsys-root-local}
-    ports:
-      - "${MYSQL_HOST_PORT:-13306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -112,8 +110,6 @@ services:
       POSTGRES_DB: scheduling_db
       POSTGRES_USER: scheduling_user
       POSTGRES_PASSWORD: ${AGENDA_DB_PASSWORD}
-    ports:
-      - "${POSTGRES_HOST_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -148,8 +144,6 @@ services:
   redis:
     image: redis:7.4-alpine
     command: redis-server --appendonly yes
-    ports:
-      - "${REDIS_HOST_PORT:-16379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -166,9 +160,6 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "${MINIO_API_HOST_PORT:-19000}:9000"
-      - "${MINIO_CONSOLE_HOST_PORT:-19001}:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -217,8 +208,6 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
       KAFKA_NUM_PARTITIONS: "6"
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-    ports:
-      - "${KAFKA_HOST_PORT:-19092}:19092"
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
@@ -255,6 +244,7 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
       JWT_SECRET: ${JWT_SECRET}
+      IDENTITY_DEMO_USERS_ENABLED: ${IDENTITY_DEMO_USERS_ENABLED:-false}
       IDENTITY_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
       PLATFORM_ADMIN_SEED_ENABLED: ${PLATFORM_ADMIN_SEED_ENABLED:-false}
       PLATFORM_ADMIN_PUBLIC_ID: ${PLATFORM_ADMIN_PUBLIC_ID:-00000000-0000-4000-8000-000000000900}
@@ -267,8 +257,6 @@ services:
       KEYCLOAK_REALM: medicalsys
       KEYCLOAK_CLIENT_ID: ms-identidad
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-medicalsys-identity-secret-local}
-    ports:
-      - "${IDENTITY_HOST_PORT:-8081}:8081"
     depends_on:
       keycloak:
         condition: service_healthy
@@ -289,8 +277,6 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/tenancy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: tenancy_user
       DB_PASSWORD: ${TENENCIA_DB_PASSWORD:-tenencia-local}
-    ports:
-      - "${TENANCY_HOST_PORT:-8082}:8082"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -307,8 +293,6 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/catalogs_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: catalogs_user
       DB_PASSWORD: ${CATALOGOS_DB_PASSWORD:-catalogos-local}
-    ports:
-      - "${CATALOGS_HOST_PORT:-8083}:8083"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -327,8 +311,6 @@ services:
       DB_PASSWORD: ${CRIPTOGRAFIA_DB_PASSWORD:-criptografia-local}
       DEMO_MASTER_KEY: ${DEMO_MASTER_KEY}
       CRYPTO_SERVICE_SHARED_SECRET: ${CRYPTO_SERVICE_SHARED_SECRET}
-    ports:
-      - "${CRYPTOGRAPHY_HOST_PORT:-8084}:8084"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -348,8 +330,6 @@ services:
       FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       AUDIT_SERVICE_URL: http://ms-auditoria:8091
-    ports:
-      - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -374,8 +354,6 @@ services:
       DB_USER: professionals_user
       DB_PASSWORD: ${PROFESIONALES_DB_PASSWORD:-profesionales-local}
       FLYWAY_LOCATIONS: ${PROFESIONALES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
-    ports:
-      - "${PROFESSIONALS_HOST_PORT:-8086}:8086"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -399,8 +377,6 @@ services:
       SCHEDULING_VALIDATION_ENABLED: ${SCHEDULING_VALIDATION_ENABLED:-true}
       PATIENTS_BASE_URL: http://ms-pacientes:8085
       PROFESSIONALS_BASE_URL: http://ms-profesionales:8086
-    ports:
-      - "${SCHEDULING_HOST_PORT:-8087}:8087"
     depends_on:
       ms-pacientes:
         condition: service_healthy
@@ -433,8 +409,6 @@ services:
       DEMO_MASTER_KEY: ${DEMO_MASTER_KEY}
       CRYPTO_SERVICE_SHARED_SECRET: ${CRYPTO_SERVICE_SHARED_SECRET}
       MEDICAL_RECORDS_DEMO_SEED: ${MEDICAL_RECORDS_DEMO_SEED:-true}
-    ports:
-      - "${MEDICAL_RECORDS_HOST_PORT:-8088}:8088"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -460,8 +434,6 @@ services:
       DOCUMENT_MAX_SIZE_BYTES: ${DOCUMENT_MAX_SIZE_BYTES:-104857600}
       PATIENTS_SERVICE_URL: http://ms-pacientes:8085
       NOTIFICATIONS_SERVICE_URL: http://ms-notificaciones:8091
-    ports:
-      - "${DOCUMENTS_HOST_PORT:-8089}:8089"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -489,8 +461,6 @@ services:
       TENANCY_BASE_URL: http://ms-tenencia:8082
       BILLING_DEMO_NIT: ${BILLING_DEMO_NIT:-1023847026}
       BILLING_DEMO_LEGAL_NAME: ${BILLING_DEMO_LEGAL_NAME:-POLICLINICO SAN GABRIEL S.R.L.}
-    ports:
-      - "${BILLING_HOST_PORT:-8090}:8090"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -521,8 +491,6 @@ services:
       MARKETING_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MARKETING_OUTBOX_MODE: ${MARKETING_OUTBOX_MODE:-KAFKA}
-    ports:
-      - "${MARKETING_HOST_PORT:-8092}:8092"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -546,8 +514,6 @@ services:
       DB_USER: audit_user
       DB_PASSWORD: ${AUDITORIA_DB_PASSWORD:-auditoria-local}
       AUDIT_DEMO_SEED: ${AUDITORIA_DEMO_SEED:-false}
-    ports:
-      - "${AUDIT_HOST_PORT:-8093}:8091"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -578,8 +544,6 @@ services:
       WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-local-verify-token}
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
-    ports:
-      - "${NOTIFICATIONS_HOST_PORT:-8091}:8091"
     depends_on:
       mysql-init:
         condition: service_completed_successfully
@@ -608,7 +572,9 @@ services:
       MARKETING_SERVICE_URL: http://ms-marketing:8092
       AUDIT_SERVICE_URL: http://ms-auditoria:8091
       JWT_SECRET: ${JWT_SECRET}
-      ALLOWED_ORIGINS: ${GATEWAY_ALLOWED_ORIGINS:-*}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      ALLOWED_ORIGINS: ${GATEWAY_ALLOWED_ORIGINS:-http://localhost:4200}
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
     # El gateway solo enruta, pero arrancar antes que sus destinos hace que las primeras
@@ -643,3 +609,7 @@ volumes:
   redis_data:
   minio_data:
   kafka_data:
+
+networks:
+  default:
+    name: medicalsys-interna

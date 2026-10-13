@@ -66,7 +66,7 @@ management:
     health:
       probes:
         enabled: true
-      show-details: always
+      show-details: when-authorized
       group:
         readiness:
           include: readinessState,db

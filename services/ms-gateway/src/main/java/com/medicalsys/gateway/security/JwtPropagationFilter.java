@@ -21,6 +21,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -54,9 +56,11 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
     static final String CORRELATION_HEADER = "X-Correlation-Id";
 
     private final JwtDecoder jwtDecoder;
+    private final StringRedisTemplate redis;
 
-    public JwtPropagationFilter(JwtDecoder jwtDecoder) {
+    public JwtPropagationFilter(JwtDecoder jwtDecoder, StringRedisTemplate redis) {
         this.jwtDecoder = jwtDecoder;
+        this.redis = redis;
     }
 
     @Override
@@ -83,6 +87,20 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            try {
+                if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:" + jwt.getId()))) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"title\":\"Sesion revocada\",\"detail\":\"La sesion ya no esta activa\"}");
+                    return;
+                }
+            } catch (RedisConnectionFailureException ex) {
+                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"title\":\"Servicio no disponible\",\"detail\":\"No se pudo verificar la sesion\"}");
+                return;
+            }
+
             overrides.put(USER_HEADER, jwt.getSubject());
             String organizationId = jwt.getClaimAsString("organizationId");
             if (organizationId != null && !organizationId.isBlank()) {
@@ -98,6 +116,12 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             }
         }
 
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+        response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        response.setHeader("Server", "");
         chain.doFilter(new TenantHeaderRequestWrapper(request, overrides), response);
     }
 

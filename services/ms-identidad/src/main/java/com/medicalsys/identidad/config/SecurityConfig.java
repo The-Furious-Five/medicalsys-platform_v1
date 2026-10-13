@@ -75,7 +75,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**", "/error").permitAll()
                         .requestMatchers("/api/v1/identity/ping").permitAll()
                         .requestMatchers("/api/v1/identity/auth/login").permitAll()
-                        .requestMatchers("/internal/v1/**").permitAll()
+                        .requestMatchers("/internal/v1/**").denyAll()
                         // Autoservicio de la propia sesion: lo necesita cualquier cuenta, incluido PATIENT.
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/logout",
