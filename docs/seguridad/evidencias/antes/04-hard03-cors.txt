@@ -1,0 +1,17 @@
+# HARD-03 (SINS-14) CORS del gateway — OWASP A05
+# Fase: antes — 2026-10-12T23:32:06Z
+
+## Preflight desde un origen no autorizado
+$ curl -X OPTIONS http://localhost:8080/api/v1/patients/search -H Origin: https://malicioso.example -H Access-Control-Request-Method: GET -H Access-Control-Request-Headers: authorization
+HTTP/1.1 200 
+Access-Control-Allow-Headers: authorization
+Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+Access-Control-Allow-Origin: *
+
+## Preflight desde el frontend autorizado
+$ curl -X OPTIONS http://localhost:8080/api/v1/patients/search -H Origin: http://localhost:4200 -H Access-Control-Request-Method: GET -H Access-Control-Request-Headers: authorization
+HTTP/1.1 200 
+Access-Control-Allow-Headers: authorization
+Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+Access-Control-Allow-Origin: *
+

@@ -1,0 +1,32 @@
+# HARD-02 (SINS-13) Revocacion de sesion en el gateway — OWASP A07
+# Fase: antes — 2026-10-12T23:32:03Z
+
+## Inicio de sesion (doctor@medicalsys.demo)
+$ curl -X POST http://localhost:8080/api/v1/identity/auth/login -d '{"email":"doctor@medicalsys.demo","password":"***"}'
+HTTP 200 — token emitido (3624 caracteres, no se guarda)
+
+## Historial con el token, sesion abierta
+$ curl http://localhost:8080/api/v1/encuentros -H Authorization: Bearer <TOKEN>
+HTTP/1.1 200 
+{"content":[{"id":"658cc155-3799-4393-a51b-4af5583cf3aa","medicalRecordId":"d2584002-d4da-4ab2-8798-e7730621295d","patientId":"10000000-0000-4000-8000-000000000001","professionalId":"50000000-0000-4000-8000-000000000001","type":"FOLLOW_UP_CONSULTATION","status":"DRAFT","startsAt":"2026-10-12T21:29:1
+
+## Pacientes con el token, sesion abierta
+$ curl http://localhost:8080/api/v1/patients/search?q=a -H Authorization: Bearer <TOKEN>
+HTTP/1.1 200 
+{"content":[{"patientId":"10000000-0000-4000-8000-000000000001","userAccountId":"20000000-0000-4000-8000-000000000001","documentType":"CI","documentNumber":"4829173","documentComplement":"","issuedDepartment":"LA_PAZ","givenNames":"Maria Elena","paternalSurname":"Quispe","maternalSurname":"Mamani","
+
+## Cierre de sesion
+$ curl -X POST http://localhost:8080/api/v1/identity/auth/logout -H Authorization: Bearer <TOKEN>
+HTTP/1.1 200 
+{"status":"session-closed"}
+
+## Historial con EL MISMO token, sesion cerrada
+$ curl http://localhost:8080/api/v1/encuentros -H Authorization: Bearer <TOKEN>
+HTTP/1.1 200 
+{"content":[{"id":"658cc155-3799-4393-a51b-4af5583cf3aa","medicalRecordId":"d2584002-d4da-4ab2-8798-e7730621295d","patientId":"10000000-0000-4000-8000-000000000001","professionalId":"50000000-0000-4000-8000-000000000001","type":"FOLLOW_UP_CONSULTATION","status":"DRAFT","startsAt":"2026-10-12T21:29:1
+
+## Pacientes con EL MISMO token, sesion cerrada
+$ curl http://localhost:8080/api/v1/patients/search?q=a -H Authorization: Bearer <TOKEN>
+HTTP/1.1 200 
+{"content":[{"patientId":"10000000-0000-4000-8000-000000000001","userAccountId":"20000000-0000-4000-8000-000000000001","documentType":"CI","documentNumber":"4829173","documentComplement":"","issuedDepartment":"LA_PAZ","givenNames":"Maria Elena","paternalSurname":"Quispe","maternalSurname":"Mamani","
+

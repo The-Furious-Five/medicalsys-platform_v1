@@ -27,6 +27,22 @@ curl http://localhost:8091/actuator/health
 El servicio utiliza el puerto interno `8091` y la base `notifications_db`. Las credenciales se
 reciben por variables de entorno; nunca deben escribirse tokens de WhatsApp dentro del código.
 
+## Autorización
+
+El gateway valida el JWT y propaga la identidad en `X-Organization-Id`, `X-User-Id` y
+`X-Permissions`. Como el servicio es reactivo, `PermissionAuthorizationWebFilter` resuelve el
+controlador y aplica la misma regla que el resto: cada endpoint declara su permiso con
+`@RequiresPermission` y lo que no lo declara se deniega por defecto (RBAC-04). Sin identidad
+responde `401` y sin el permiso, `403`.
+
+- Los webhooks de WhatsApp y el ping son `@PublicEndpoint`; el `POST` del webhook se verifica con la
+  firma de Meta.
+- La consola manual (`POST /api/v1/notifications/whatsapp/send` y `whatsapp-test.html`) exige
+  `notifications.whatsapp.send`; la página pide el token de una sesión y envía por el gateway.
+- El OTP de consentimientos (ms-documental) y de acceso a fichas (ms-pacientes) usa
+  `POST /internal/v1/notifications/whatsapp/send`, que el gateway no publica. Depende del mismo
+  flag `WHATSAPP_MANUAL_SEND_ENABLED` que la consola.
+
 ## Envío simulado
 
 `NOTIFICATION_PROVIDER=mock` activa el adaptador local. El endpoint `dispatch` genera un

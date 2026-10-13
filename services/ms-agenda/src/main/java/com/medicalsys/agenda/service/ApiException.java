@@ -22,6 +22,10 @@ public class ApiException extends RuntimeException {
         return new ApiException(HttpStatus.UNAUTHORIZED, "Identidad requerida", detail);
     }
 
+    public static ApiException forbidden(String detail) {
+        return new ApiException(HttpStatus.FORBIDDEN, "Acceso denegado", detail);
+    }
+
     public static ApiException conflict(String detail) {
         return new ApiException(HttpStatus.CONFLICT, "Conflicto de agenda", detail);
     }

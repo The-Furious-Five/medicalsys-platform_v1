@@ -1,5 +1,6 @@
 package com.medicalsys.auditoria.web.controller;
 
+import com.medicalsys.auditoria.common.security.InternalEndpoint;
 import com.medicalsys.auditoria.service.AuditEventService;
 import com.medicalsys.auditoria.web.dto.AuditEventReceipt;
 import com.medicalsys.auditoria.web.dto.RecordAuditEventRequest;
@@ -46,6 +47,7 @@ public class InternalAuditEventController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @InternalEndpoint
     public AuditEventReceipt record(@Valid @RequestBody RecordAuditEventRequest request) {
         return auditEvents.record(request);
     }
@@ -53,6 +55,7 @@ public class InternalAuditEventController {
     /** Descarga de eventos acumulados por un productor mientras la bitacora estuvo inaccesible. */
     @PostMapping("/batch")
     @ResponseStatus(HttpStatus.CREATED)
+    @InternalEndpoint
     public List<AuditEventReceipt> recordAll(
             @RequestBody @NotEmpty @Size(max = MAX_BATCH_SIZE) List<@Valid RecordAuditEventRequest> requests) {
         return auditEvents.recordAll(requests);

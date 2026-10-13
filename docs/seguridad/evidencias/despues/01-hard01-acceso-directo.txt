@@ -1,0 +1,16 @@
+# HARD-01 (SINS-12) Acceso directo saltandose el gateway — OWASP A01
+# Fase: despues — 2026-10-12T23:44:21Z
+
+## Puertos publicados en el host
+$ docker compose ps --format '{{.Service}} {{.Ports}}'
+ms-gateway 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+## Directo a ms-historial :8088 con X-Roles/X-Permissions inventados, sin token
+$ curl http://localhost:8088/api/v1/encuentros -H X-Organization-Id: 00000000-0000-4000-8000-0000000000a1 -H X-User-Id: 00000000-0000-4000-8000-000000000903 -H X-Roles: PHYSICIAN -H X-Permissions: clinical.encounter.read
+SIN RESPUESTA (curl exit 7): curl: (7) Failed to connect to localhost port 8088 after 2243 ms: Could not connect to server
+
+## Las mismas cabeceras por el gateway, sin token (el gateway las descarta)
+$ curl http://localhost:8080/api/v1/encuentros -H X-Organization-Id: 00000000-0000-4000-8000-0000000000a1 -H X-User-Id: 00000000-0000-4000-8000-000000000903 -H X-Roles: PHYSICIAN -H X-Permissions: clinical.encounter.read
+HTTP/1.1 401 
+{"timestamp":"2026-10-12T23:44:24.401898781Z","status":401,"code":"UNAUTHENTICATED","message":"La solicitud no incluye una identidad valida propagada por el gateway","correlationId":"3105cfc9-e552-4dc0-9ece-c313f68bd9e1","path":"/api/v1/encuentros"}
+

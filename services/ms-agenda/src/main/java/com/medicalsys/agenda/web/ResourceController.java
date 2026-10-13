@@ -3,6 +3,7 @@ package com.medicalsys.agenda.web;
 import com.medicalsys.agenda.config.RequestContextHolder;
 import com.medicalsys.agenda.domain.ResourceStatus;
 import com.medicalsys.agenda.domain.ResourceType;
+import com.medicalsys.agenda.security.RequiresPermission;
 import com.medicalsys.agenda.service.PhysicalResourceService;
 import com.medicalsys.agenda.web.dto.ChangeResourceStatusRequest;
 import com.medicalsys.agenda.web.dto.CreateResourceRequest;
@@ -35,6 +36,7 @@ public class ResourceController {
     }
 
     @PostMapping
+    @RequiresPermission("scheduling.resource.create")
     public ResponseEntity<ResourceResponse> create(@Valid @RequestBody CreateResourceRequest request) {
         ResourceResponse created = resources.create(request);
         return ResponseEntity
@@ -43,6 +45,7 @@ public class ResourceController {
     }
 
     @GetMapping
+    @RequiresPermission("scheduling.resource.read")
     public PageResponse<ResourceResponse> search(
             @RequestParam(required = false) UUID branchPublicId,
             @RequestParam(required = false) ResourceType type,
@@ -55,16 +58,19 @@ public class ResourceController {
     }
 
     @GetMapping("/{publicId}")
+    @RequiresPermission("scheduling.resource.read")
     public ResourceResponse get(@PathVariable UUID publicId) {
         return resources.get(RequestContextHolder.require().organizationId(), publicId);
     }
 
     @PatchMapping("/{publicId}")
+    @RequiresPermission("scheduling.resource.update")
     public ResourceResponse update(@PathVariable UUID publicId, @Valid @RequestBody UpdateResourceRequest request) {
         return resources.update(RequestContextHolder.require().organizationId(), publicId, request);
     }
 
     @PatchMapping("/{publicId}/status")
+    @RequiresPermission("scheduling.resource.change_status")
     public ResourceResponse changeStatus(@PathVariable UUID publicId,
                                          @Valid @RequestBody ChangeResourceStatusRequest request) {
         return resources.changeStatus(RequestContextHolder.require().organizationId(), publicId, request);

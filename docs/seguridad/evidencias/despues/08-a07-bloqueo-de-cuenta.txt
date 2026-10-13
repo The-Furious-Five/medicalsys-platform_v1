@@ -1,0 +1,30 @@
+# HARD-02 / A07 Bloqueo de cuenta por intentos fallidos (control existente en ms-identidad)
+# Fase: despues — 2026-10-12T23:53:01Z
+# Configuracion: IDENTITY_MAX_FAILED_ATTEMPTS=5, IDENTITY_LOCK_DURATION=PT15M (valores por defecto)
+
+## Intento 1 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 000 — curl agoto sus 10 s de espera (el equipo estaba ejecutando el escaneo); el servicio si proceso y conto el intento
+
+## Intento 2 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 401
+{'title': 'Credenciales invalidas', 'detail': 'Correo o contrasena incorrectos'}
+
+## Intento 3 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 401
+{'title': 'Credenciales invalidas', 'detail': 'Correo o contrasena incorrectos'}
+
+## Intento 4 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 401
+{'title': 'Credenciales invalidas', 'detail': 'Correo o contrasena incorrectos'}
+
+## Intento 5 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 401
+{'title': 'Credenciales invalidas', 'detail': 'Correo o contrasena incorrectos'}
+
+## Intento 6 con contrasena incorrecta (caja@medicalsys.demo)
+HTTP 423
+{'title': 'Cuenta bloqueada', 'detail': 'La cuenta esta bloqueada hasta 2026-10-13T00:08:15Z'}
+
+## Intento 7 con la contrasena CORRECTA, cuenta bloqueada
+HTTP 423
+{"detail":"La cuenta esta bloqueada hasta 2026-10-13T00:08:15Z","instance":"/api/v1/identity/auth/login","status":423,"title":"Cuenta bloqueada","service":"ms-i

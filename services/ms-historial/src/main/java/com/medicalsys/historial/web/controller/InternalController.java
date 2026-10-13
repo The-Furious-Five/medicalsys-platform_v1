@@ -1,5 +1,6 @@
 package com.medicalsys.historial.web.controller;
 
+import com.medicalsys.historial.common.security.InternalEndpoint;
 import com.medicalsys.historial.common.tenant.RequestContextHolder;
 import com.medicalsys.historial.service.ClinicalEncounterService;
 import com.medicalsys.historial.service.MedicalRecordService;
@@ -37,30 +38,35 @@ public class InternalController {
 
     /** Expediente por su UUID publico. */
     @GetMapping("/expedientes/{recordId}")
+    @InternalEndpoint
     public MedicalRecordSummaryResponse getRecord(@PathVariable UUID recordId) {
         return medicalRecords.getSummaryByPublicId(RequestContextHolder.require(), recordId);
     }
 
     /** Expediente de un paciente; lo consume ms-documental para vincular archivos. */
     @GetMapping("/expedientes")
+    @InternalEndpoint
     public MedicalRecordSummaryResponse getRecordByPatient(@RequestParam UUID patientId) {
         return medicalRecords.getSummaryByPatient(RequestContextHolder.require(), patientId);
     }
 
     /** Encuentro por su UUID publico, sin narrativa. */
     @GetMapping("/encuentros/{encounterId}")
+    @InternalEndpoint
     public EncounterSummaryResponse getEncounter(@PathVariable UUID encounterId) {
         return encounters.getSummary(RequestContextHolder.require(), encounterId);
     }
 
     /** Encuentro asociado a una cita; lo consume ms-agenda para cerrar el circulo. */
     @GetMapping("/encuentros")
+    @InternalEndpoint
     public EncounterSummaryResponse getEncounterByAppointment(@RequestParam UUID appointmentId) {
         return encounters.getSummaryByAppointment(RequestContextHolder.require(), appointmentId);
     }
 
     /** Orden de estudio por su orderId; la consumen ms-agenda y ms-documental. */
     @GetMapping("/ordenes-estudio/{orderId}")
+    @InternalEndpoint
     public StudyOrderSummaryResponse getStudyOrder(@PathVariable UUID orderId) {
         return studyOrders.getSummary(RequestContextHolder.require(), orderId);
     }

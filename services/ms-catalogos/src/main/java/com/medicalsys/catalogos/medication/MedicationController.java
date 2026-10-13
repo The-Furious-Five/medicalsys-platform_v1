@@ -1,5 +1,7 @@
 package com.medicalsys.catalogos.medication;
 
+import com.medicalsys.catalogos.common.security.InternalEndpoint;
+import com.medicalsys.catalogos.common.security.RequiresPermission;
 import com.medicalsys.catalogos.common.tenant.RequestContextHolder;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -24,18 +26,21 @@ public class MedicationController {
     }
 
     @GetMapping("/api/v1/catalogs/medications")
+    @RequiresPermission("catalogs.medication.read")
     public ResponseEntity<List<MedicationDto>> listActive() {
         RequestContextHolder.require();
         return ResponseEntity.ok(service.findAllActive());
     }
 
     @GetMapping("/api/v1/catalogs/medications/{code}")
+    @RequiresPermission("catalogs.medication.read")
     public ResponseEntity<MedicationDto> findByCode(@PathVariable String code) {
         RequestContextHolder.require();
         return ResponseEntity.ok(service.findByCode(code));
     }
 
     @GetMapping({"/internal/v1/medicamentos/{code}", "/internal/v1/medications/{code}"})
+    @InternalEndpoint
     public ResponseEntity<MedicationDto> findByCodeInternal(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

@@ -1,0 +1,19 @@
+# Smoke test a traves del gateway — fase despues — 2026-10-12T23:45:27Z
+$ bash docs/seguridad/evidencias/smoke-test.sh
+OK    login admin@medicalsys.demo
+OK    200  ms-identidad  /api/v1/identity/auth/me
+OK    200  ms-tenencia  /api/v1/tenancy/sucursales
+OK    200  ms-catalogos  /api/v1/catalogs/cie10?q=a
+OK    200  ms-pacientes  /api/v1/patients/search?q=a
+OK    200  ms-profesionales  /api/v1/professionals
+OK    200  ms-agenda  /api/v1/scheduling/appointments
+OK    200  ms-historial  /api/v1/expedientes
+OK    200  ms-documental  /api/v1/documents
+OK    200  ms-facturacion  /api/v1/facturas
+OK    200  ms-marketing  /api/v1/campanas
+OK    200  ms-auditoria  /api/v1/audit/events
+OK    200  ms-notificaciones  /api/v1/notifications
+OK    401  ms-criptografia  /api/v1/cryptography/ping
+
+SMOKE TEST: PASA (13 servicios detras del gateway)
+exit=0

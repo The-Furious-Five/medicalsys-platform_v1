@@ -2,6 +2,7 @@ package com.medicalsys.marketing.web.controller;
 
 import com.medicalsys.marketing.common.error.ErrorCode;
 import com.medicalsys.marketing.common.error.NotFoundException;
+import com.medicalsys.marketing.common.security.InternalEndpoint;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.domain.enums.OutboxStatus;
 import com.medicalsys.marketing.domain.enums.RecipientStatus;
@@ -79,6 +80,7 @@ public class InternalController {
      * por la misma comprobacion sin depender de que alguien la duplique aqui.
      */
     @PostMapping("/eventos")
+    @InternalEndpoint
     public EventAcceptedResponse ingest(@Valid @RequestBody IncomingEventRequest request) {
         return events.apply(request);
     }
@@ -91,6 +93,7 @@ public class InternalController {
      * es el servicio de menor criticidad del sistema y su caida no debe impedir facturar.
      */
     @PostMapping("/promociones/validar")
+    @InternalEndpoint
     public CouponValidationResponse validateCoupon(@Valid @RequestBody ValidateCouponRequest request) {
         return promotions.validate(RequestContextHolder.require(), request);
     }
@@ -103,6 +106,7 @@ public class InternalController {
      * contacto en un canal que otros servicios pueden leer.
      */
     @GetMapping("/campanas/{campaignId}/destinatarios")
+    @InternalEndpoint
     public PageResponse<CampaignRecipientResponse> recipients(@PathVariable UUID campaignId,
             @PageableDefault(size = 200) Pageable pageable) {
         return PageResponse.of(campaigns.listRecipients(RequestContextHolder.require(), campaignId,
@@ -117,6 +121,7 @@ public class InternalController {
      * los tome.
      */
     @GetMapping("/eventos/salientes")
+    @InternalEndpoint
     public List<OutboxEventResponse> pendingOutbox(
             @RequestParam(required = false, defaultValue = "PENDING") OutboxStatus estado,
             @RequestParam(required = false, defaultValue = "100") int limite) {
@@ -128,6 +133,7 @@ public class InternalController {
 
     /** Eventos salientes de una campana concreta; util para la demostracion y para depurar. */
     @GetMapping("/campanas/{campaignId}/eventos")
+    @InternalEndpoint
     public List<OutboxEventResponse> outboxOfCampaign(@PathVariable UUID campaignId) {
         // Se comprueba la pertenencia al tenant antes de exponer el evento.
         campaigns.require(RequestContextHolder.require().organizationId(), campaignId);
@@ -139,6 +145,7 @@ public class InternalController {
     /** Marca un evento como publicado, para el relay externo del modo RETAIN. */
     @PostMapping("/eventos/salientes/{eventId}/publicado")
     @Transactional
+    @InternalEndpoint
     public OutboxEventResponse markPublished(@PathVariable UUID eventId) {
         OutboxEvent event = outbox.findByEventPublicId(eventId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.RESOURCE_NOT_FOUND,

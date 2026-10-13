@@ -2,6 +2,7 @@ package com.medicalsys.notificaciones.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -97,6 +98,12 @@ class WhatsappWebhookServiceTest {
                 .expectErrorSatisfies(error -> assertEquals("INVALID_WEBHOOK_SIGNATURE",
                         assertInstanceOf(ApiException.class, error).code()))
                 .verify();
+    }
+
+    @Test
+    void refusesToStartWithMetaProviderAndNoAppSecret() {
+        assertThrows(IllegalStateException.class, () -> new WhatsappWebhookService(JsonMapper.builder().build(),
+                notifications, references, store, "verify-token", "", "meta", Clock.systemUTC()));
     }
 
     @Test

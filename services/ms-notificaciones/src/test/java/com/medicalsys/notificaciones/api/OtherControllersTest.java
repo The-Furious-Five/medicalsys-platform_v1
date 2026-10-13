@@ -12,12 +12,14 @@ import com.medicalsys.notificaciones.api.dto.NotificationRuleResponse;
 import com.medicalsys.notificaciones.api.dto.OrganizationReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PatientReferenceRequest;
 import com.medicalsys.notificaciones.api.dto.PreferenceReferenceRequest;
+import com.medicalsys.notificaciones.api.dto.SendWhatsappMessageRequest;
 import com.medicalsys.notificaciones.domain.NotificationCategory;
 import com.medicalsys.notificaciones.domain.NotificationChannel;
 import com.medicalsys.notificaciones.domain.TemplateApprovalStatus;
 import com.medicalsys.notificaciones.service.MessageTemplateService;
 import com.medicalsys.notificaciones.service.NotificationRuleService;
 import com.medicalsys.notificaciones.service.ReferenceSyncService;
+import com.medicalsys.notificaciones.service.WhatsappManualMessageService;
 import com.medicalsys.notificaciones.service.WhatsappWebhookService;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +42,7 @@ class OtherControllersTest {
     @Mock NotificationRuleService ruleService;
     @Mock ReferenceSyncService referenceService;
     @Mock WhatsappWebhookService webhookService;
+    @Mock WhatsappManualMessageService manualService;
 
     @Test
     void templateControllerCreatesWithLocation() {
@@ -131,6 +134,17 @@ class OtherControllersTest {
         StepVerifier.create(controller.receive("signature", "{}"))
                 .assertNext(response -> assertEquals(200, response.getStatusCode().value())).verifyComplete();
         verify(webhookService).handle("{}", "signature");
+    }
+
+    @Test
+    void internalWhatsappSendDelegatesWithTheCallerOrganization() {
+        // El OTP de consentimientos y de acceso a la ficha llega por /internal desde RBAC-04.
+        InternalWhatsappController controller = new InternalWhatsappController(manualService);
+        SendWhatsappMessageRequest request = new SendWhatsappMessageRequest("+59170000000", "Codigo 123456",
+                null, null, List.of());
+        when(manualService.send(ORGANIZATION_ID, request)).thenReturn(Mono.empty());
+        StepVerifier.create(controller.send(ORGANIZATION_ID.toString(), request)).verifyComplete();
+        verify(manualService).send(ORGANIZATION_ID, request);
     }
 
     private MessageTemplateRequest templateRequest() {

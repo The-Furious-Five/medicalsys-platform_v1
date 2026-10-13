@@ -1,0 +1,25 @@
+# HARD-01 (SINS-12) Acceso directo saltandose el gateway — OWASP A01
+# Fase: antes — 2026-10-12T23:32:02Z
+
+## Puertos publicados en el host
+$ docker compose -p medicalsys-antes ps --format '{{.Service}} {{.Ports}}'
+kafka 0.0.0.0:19092->19092/tcp, [::]:19092->19092/tcp
+ms-auditoria 0.0.0.0:8093->8091/tcp, [::]:8093->8091/tcp
+ms-catalogos 0.0.0.0:8083->8083/tcp, [::]:8083->8083/tcp
+ms-gateway 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+ms-historial 0.0.0.0:8088->8088/tcp, [::]:8088->8088/tcp
+ms-identidad 0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+ms-notificaciones 0.0.0.0:8091->8091/tcp, [::]:8091->8091/tcp
+ms-pacientes 0.0.0.0:8085->8085/tcp, [::]:8085->8085/tcp
+redis 0.0.0.0:16379->6379/tcp, [::]:16379->6379/tcp
+
+## Directo a ms-historial :8088 con X-Roles/X-Permissions inventados, sin token
+$ curl http://localhost:8088/api/v1/encuentros -H X-Organization-Id: 00000000-0000-4000-8000-0000000000a1 -H X-User-Id: 00000000-0000-4000-8000-000000000903 -H X-Roles: PHYSICIAN -H X-Permissions: clinical.encounter.read
+HTTP/1.1 200 
+{"content":[{"id":"658cc155-3799-4393-a51b-4af5583cf3aa","medicalRecordId":"d2584002-d4da-4ab2-8798-e7730621295d","patientId":"10000000-0000-4000-8000-000000000001","professionalId":"50000000-0000-4000-8000-000000000001","type":"FOLLOW_UP_CONSULTATION","status":"DRAFT","startsAt":"2026-10-12T21:29:1
+
+## Las mismas cabeceras por el gateway, sin token (el gateway las descarta)
+$ curl http://localhost:8080/api/v1/encuentros -H X-Organization-Id: 00000000-0000-4000-8000-0000000000a1 -H X-User-Id: 00000000-0000-4000-8000-000000000903 -H X-Roles: PHYSICIAN -H X-Permissions: clinical.encounter.read
+HTTP/1.1 401 
+{"timestamp":"2026-10-12T23:32:03.267802593Z","status":401,"code":"UNAUTHENTICATED","message":"La solicitud no incluye una identidad valida propagada por el gateway","correlationId":"c70082aa-0c8f-4f08-bf8e-094d677c4dbd","path":"/api/v1/encuentros"}
+

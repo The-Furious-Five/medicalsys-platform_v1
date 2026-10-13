@@ -1,5 +1,6 @@
 package com.medicalsys.agenda.web;
 
+import com.medicalsys.agenda.security.InternalEndpoint;
 import com.medicalsys.agenda.service.AppointmentService;
 import com.medicalsys.agenda.service.SchedulingMapper;
 import com.medicalsys.agenda.web.dto.InternalAppointmentResponse;
@@ -28,6 +29,7 @@ public class InternalAppointmentController {
 
     @GetMapping("/{publicId}")
     @Transactional(readOnly = true)
+    @InternalEndpoint
     public InternalAppointmentResponse get(@PathVariable UUID publicId) {
         return mapper.toInternalResponse(appointments.require(publicId));
     }

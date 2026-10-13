@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -60,6 +61,23 @@ class JwtPropagationFilterTest {
         });
 
         assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getHeader("X-Content-Type-Options")).isEqualTo("nosniff");
+        assertThat(response.getHeader("Cross-Origin-Resource-Policy")).isEqualTo("same-origin");
+    }
+
+    @Test
+    @DisplayName("si Redis no responde, falla cerrado con 503 en vez de dejar pasar el token")
+    void failsClosedWhenRedisIsUnavailable() throws Exception {
+        when(redis.hasKey("identity:session:test-jti")).thenThrow(new QueryTimeoutException("timeout"));
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> {
+            throw new AssertionError("La peticion no debe llegar al servicio");
+        });
+
+        assertThat(response.getStatus()).isEqualTo(503);
     }
 
     @Test
