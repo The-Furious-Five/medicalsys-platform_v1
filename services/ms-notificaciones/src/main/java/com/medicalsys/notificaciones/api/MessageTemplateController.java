@@ -3,6 +3,7 @@ package com.medicalsys.notificaciones.api;
 import com.medicalsys.notificaciones.api.dto.MessageTemplateRequest;
 import com.medicalsys.notificaciones.api.dto.MessageTemplateResponse;
 import com.medicalsys.notificaciones.common.RequestOrganization;
+import com.medicalsys.notificaciones.security.RequiresPermission;
 import com.medicalsys.notificaciones.service.MessageTemplateService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -30,6 +31,7 @@ public class MessageTemplateController {
     }
 
     @PostMapping
+    @RequiresPermission("notifications.template.create")
     public Mono<ResponseEntity<MessageTemplateResponse>> create(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @Valid @RequestBody MessageTemplateRequest request) {
@@ -39,12 +41,14 @@ public class MessageTemplateController {
     }
 
     @GetMapping
+    @RequiresPermission("notifications.template.read")
     public Flux<MessageTemplateResponse> list(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader) {
         return service.list(RequestOrganization.parse(organizationHeader));
     }
 
     @GetMapping("/{templateId}")
+    @RequiresPermission("notifications.template.read")
     public Mono<MessageTemplateResponse> get(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID templateId) {
@@ -52,6 +56,7 @@ public class MessageTemplateController {
     }
 
     @PutMapping("/{templateId}")
+    @RequiresPermission("notifications.template.update")
     public Mono<MessageTemplateResponse> update(
             @RequestHeader(RequestOrganization.HEADER) String organizationHeader,
             @PathVariable UUID templateId,

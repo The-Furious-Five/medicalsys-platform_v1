@@ -1,12 +1,12 @@
 package com.medicalsys.identidad.web.dto;
 
-import com.medicalsys.identidad.domain.RoleCode;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/** {@code active} indica si la asignacion da acceso hoy: vigente por fechas y con el rol activo. */
 public record RoleAssignmentResponse(
         Long id,
-        RoleCode role,
+        String role,
         UUID organizationPublicId,
         UUID branchPublicId,
         LocalDate validFrom,

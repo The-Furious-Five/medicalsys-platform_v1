@@ -7,14 +7,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private final RoleAuthorizationInterceptor authorizationInterceptor;
+    private final PermissionAuthorizationInterceptor authorizationInterceptor;
 
-    public WebMvcConfig(RoleAuthorizationInterceptor authorizationInterceptor) {
+    public WebMvcConfig(PermissionAuthorizationInterceptor authorizationInterceptor) {
         this.authorizationInterceptor = authorizationInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(authorizationInterceptor);
+        // Todas las rutas: un controlador nuevo fuera de /api o /internal tampoco queda abierto. /error
+        // y /actuator no son del contrato y los atiende Spring.
+        registry.addInterceptor(authorizationInterceptor).excludePathPatterns("/error", "/actuator/**");
     }
 }

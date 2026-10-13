@@ -1,23 +1,26 @@
 package com.medicalsys.historial.config;
 
-import com.medicalsys.historial.common.security.RoleAuthorizationInterceptor;
+import com.medicalsys.historial.common.security.PermissionAuthorizationInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Registra la autorizacion por rol para las rutas del contrato. */
+/** Registra la autorizacion por permiso, que deniega por defecto (RBAC-04). */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final RoleAuthorizationInterceptor roleAuthorizationInterceptor;
+    private final PermissionAuthorizationInterceptor permissionAuthorizationInterceptor;
 
-    public WebConfig(RoleAuthorizationInterceptor roleAuthorizationInterceptor) {
-        this.roleAuthorizationInterceptor = roleAuthorizationInterceptor;
+    public WebConfig(PermissionAuthorizationInterceptor permissionAuthorizationInterceptor) {
+        this.permissionAuthorizationInterceptor = permissionAuthorizationInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(roleAuthorizationInterceptor)
-                .addPathPatterns("/api/**", "/internal/**");
+        // Todas las rutas: un controlador nuevo fuera de /api o /internal tampoco queda abierto. /error
+        // y /actuator no son del contrato y los atiende Spring.
+        registry.addInterceptor(permissionAuthorizationInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/error", "/actuator/**");
     }
 }

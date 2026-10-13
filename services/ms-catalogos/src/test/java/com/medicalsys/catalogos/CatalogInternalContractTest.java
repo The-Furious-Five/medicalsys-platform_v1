@@ -1,5 +1,6 @@
 package com.medicalsys.catalogos;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -24,6 +25,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,6 +34,9 @@ class CatalogInternalContractTest {
 
     private static final String CORRELATION = "11111111-2222-4333-8444-555555555555";
     private static final String AUTHENTICATED_USER = "99999999-8888-4777-8666-555555555555";
+    /** Los permisos de lectura de los cinco catalogos, como los propaga el gateway en X-Permissions. */
+    private static final String CATALOG_READ = "catalogs.icd10.read,catalogs.medication.read,"
+            + "catalogs.specialty.read,catalogs.study_type.read,catalogs.tax.read";
 
     @Autowired
     private MockMvc mockMvc;
@@ -129,24 +134,24 @@ class CatalogInternalContractTest {
     @Test
     @DisplayName("La API publica lista especialidades, estudios y medicamentos activos a personal autenticado")
     void publicListsOnlyActiveEntries() throws Exception {
-        mockMvc.perform(get("/api/v1/catalogs/specialties").header("X-User-Id", AUTHENTICATED_USER))
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/specialties")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
-        mockMvc.perform(get("/api/v1/catalogs/study-types").header("X-User-Id", AUTHENTICATED_USER))
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/study-types")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
-        mockMvc.perform(get("/api/v1/catalogs/medications").header("X-User-Id", AUTHENTICATED_USER))
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/medications")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
-        mockMvc.perform(get("/api/v1/catalogs/cie10").header("X-User-Id", AUTHENTICATED_USER).param("q", "J00"))
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/cie10")).param("q", "J00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("J00"));
-        mockMvc.perform(get("/api/v1/catalogs/tax").header("X-User-Id", AUTHENTICATED_USER)
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/tax"))
                         .param("type", "PRODUCT_SERVICE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].code").value("CONSULTA"));
-        mockMvc.perform(get("/api/v1/catalogs/tax").header("X-User-Id", AUTHENTICATED_USER)
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/tax"))
                         .param("type", "UNIT_OF_MEASURE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("58"));
@@ -171,11 +176,31 @@ class CatalogInternalContractTest {
     }
 
     @Test
+    @DisplayName("RBAC-04: con identidad pero sin el permiso del catalogo responde 403 y nombra el permiso")
+    void authenticatedWithoutPermissionIsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/catalogs/cie10").param("q", "J00")
+                        .header("X-User-Id", AUTHENTICATED_USER)
+                        .header("X-Permissions", "catalogs.medication.read"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value(containsString("catalogs.icd10.read")));
+        mockMvc.perform(get("/api/v1/catalogs/medications")
+                        .header("X-User-Id", AUTHENTICATED_USER)
+                        .header("X-Permissions", "catalogs.medication.read"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Las rutas internas siguen abiertas a servicio-a-servicio, sin identidad de usuario")
     void internalRoutesDoNotRequireUserIdentity() throws Exception {
         mockMvc.perform(get("/internal/v1/cie10/{code}", "J00")).andExpect(status().isOk());
         mockMvc.perform(get("/internal/v1/tipos-estudio/{code}", "X_RAY")).andExpect(status().isOk());
         mockMvc.perform(get("/internal/v1/medicamentos/{code}", "PARACETAMOL_500")).andExpect(status().isOk());
         mockMvc.perform(get("/internal/v1/specialties/{code}", "MEDICINA_GENERAL")).andExpect(status().isOk());
+    }
+
+    /** Personal autenticado, con los permisos que el gateway propaga para leer los catalogos. */
+    private static MockHttpServletRequestBuilder asStaff(MockHttpServletRequestBuilder request) {
+        return request.header("X-User-Id", AUTHENTICATED_USER).header("X-Permissions", CATALOG_READ);
     }
 }

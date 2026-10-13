@@ -3,8 +3,7 @@ package com.medicalsys.documental.api;
 import com.medicalsys.documental.api.dto.ConsentTemplateResponse;
 import com.medicalsys.documental.api.dto.CreateConsentTemplateRequest;
 import com.medicalsys.documental.security.RequestIdentity;
-import com.medicalsys.documental.security.RequiresRole;
-import com.medicalsys.documental.security.Role;
+import com.medicalsys.documental.security.RequiresPermission;
 import com.medicalsys.documental.service.ConsentTemplateService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -33,7 +32,7 @@ public class ConsentTemplateController {
     }
 
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.consent_template.create")
     public ResponseEntity<ConsentTemplateResponse> create(@Valid @RequestBody CreateConsentTemplateRequest request,
             HttpServletRequest servletRequest) {
         RequestIdentity identity = RequestIdentity.from(servletRequest);
@@ -43,19 +42,19 @@ public class ConsentTemplateController {
     }
 
     @GetMapping
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.consent_template.read")
     public List<ConsentTemplateResponse> list(HttpServletRequest servletRequest) {
         return service.list(RequestIdentity.from(servletRequest).organizationId());
     }
 
     @GetMapping("/{templateId}")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.consent_template.read")
     public ConsentTemplateResponse get(@PathVariable UUID templateId, HttpServletRequest servletRequest) {
         return service.get(templateId, RequestIdentity.from(servletRequest).organizationId());
     }
 
     @PostMapping("/{templateId}/publicacion")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("documents.consent_template.publish")
     public ConsentTemplateResponse publish(@PathVariable UUID templateId, HttpServletRequest servletRequest) {
         return service.publish(templateId, RequestIdentity.from(servletRequest).organizationId());
     }

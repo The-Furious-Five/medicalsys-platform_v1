@@ -1,7 +1,6 @@
 package com.medicalsys.tenencia.web.controller;
 
-import com.medicalsys.tenencia.common.security.RequiresRole;
-import com.medicalsys.tenencia.common.security.Role;
+import com.medicalsys.tenencia.common.security.RequiresPermission;
 import com.medicalsys.tenencia.common.tenant.RequestContextHolder;
 import com.medicalsys.tenencia.domain.enums.BranchStatus;
 import com.medicalsys.tenencia.service.BranchService;
@@ -44,7 +43,7 @@ public class BranchController {
     }
 
     @PostMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.branch.create")
     public ResponseEntity<BranchResponse> create(@Valid @RequestBody CreateBranchRequest request) {
         BranchResponse branch = service.create(RequestContextHolder.require(), request);
         return ResponseEntity.created(URI.create("/api/v1/tenancy/sucursales/" + branch.id())).body(branch);
@@ -52,27 +51,27 @@ public class BranchController {
 
     /** Lista las sedes del tenant; con {@code status} devuelve solo las de ese estado. */
     @GetMapping
-    @RequiresRole({Role.ADMINISTRATOR, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.branch.read")
     public PageResponse<BranchResponse> list(@RequestParam(required = false) BranchStatus status,
             @PageableDefault(size = 20, sort = "code", direction = Sort.Direction.ASC) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), status, pageable));
     }
 
     @GetMapping("/{branchId}")
-    @RequiresRole({Role.ADMINISTRATOR, Role.RECEPTIONIST, Role.BILLING_CLERK, Role.PHYSICIAN, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.branch.read")
     public BranchResponse get(@PathVariable UUID branchId) {
         return service.get(RequestContextHolder.require(), branchId);
     }
 
     @PutMapping("/{branchId}")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.branch.update")
     public BranchResponse update(@PathVariable UUID branchId, @Valid @RequestBody UpdateBranchRequest request) {
         return service.update(RequestContextHolder.require(), branchId, request);
     }
 
     /** Da de alta o de baja la sede; la baja es logica y libera cuota del plan. */
     @PatchMapping("/{branchId}/estado")
-    @RequiresRole({Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    @RequiresPermission("tenancy.branch.change_status")
     public BranchResponse changeStatus(@PathVariable UUID branchId,
             @Valid @RequestBody ChangeBranchStatusRequest request) {
         return service.changeStatus(RequestContextHolder.require(), branchId, request);

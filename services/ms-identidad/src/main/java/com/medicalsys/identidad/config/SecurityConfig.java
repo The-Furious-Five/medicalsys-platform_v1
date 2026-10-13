@@ -76,11 +76,32 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/identity/ping").permitAll()
                         .requestMatchers("/api/v1/identity/auth/login").permitAll()
                         .requestMatchers("/internal/v1/**").permitAll()
+                        // Autoservicio de la propia sesion: lo necesita cualquier cuenta, incluido PATIENT.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/identity/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/logout",
+                                "/api/v1/identity/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/roles").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/users/*/roles/*").hasAuthority("identity.role.assign")
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity/users/**").hasAuthority("identity.user.read")
-                        .requestMatchers("/api/v1/identity/users/**").hasAuthority("identity.user.write")
-                        .anyRequest().authenticated())
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/users").hasAuthority("identity.user.create")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*/status").hasAuthority("identity.user.change_status")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*").hasAuthority("identity.user.update")
+                        // Una operacion nueva sobre cuentas no queda abierta por omision: necesita su propio permiso.
+                        .requestMatchers("/api/v1/identity/users/**").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/identity/roles/**", "/api/v1/identity/permissions",
+                                "/api/v1/identity/role-incompatibilities").hasAuthority("identity.role.read")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/roles",
+                                "/api/v1/identity/role-incompatibilities").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/roles/*").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/identity/roles/*/permissions",
+                                "/api/v1/identity/roles/*/assignable-roles").hasAuthority("identity.role.manage")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/identity/roles/*",
+                                "/api/v1/identity/role-incompatibilities/*/*").hasAuthority("identity.role.manage")
+                        // Igual que con las cuentas: una operacion nueva sobre roles necesita su propio permiso.
+                        .requestMatchers("/api/v1/identity/roles/**", "/api/v1/identity/role-incompatibilities/**")
+                                .denyAll()
+                        // Denegar por defecto (RBAC-04): lo que no figura arriba no se atiende, ni siquiera con sesion.
+                        .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> problemWriter.write(

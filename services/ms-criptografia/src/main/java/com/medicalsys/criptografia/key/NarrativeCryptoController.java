@@ -1,6 +1,7 @@
 package com.medicalsys.criptografia.key;
 
 import com.medicalsys.criptografia.common.CorrelationIdFilter;
+import com.medicalsys.criptografia.common.InternalEndpoint;
 import com.medicalsys.criptografia.common.ServiceAuthInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -35,6 +36,7 @@ public class NarrativeCryptoController {
     }
 
     @PostMapping("/internal/v1/cifrado")
+    @InternalEndpoint
     public ResponseEntity<EncryptResponse> encrypt(@Valid @RequestBody EncryptRequest request,
             HttpServletRequest servletRequest) {
         CipherPayload payload = service.encryptForOrganization(
@@ -46,6 +48,7 @@ public class NarrativeCryptoController {
     }
 
     @PostMapping("/internal/v1/descifrado")
+    @InternalEndpoint
     public ResponseEntity<DecryptResponse> decrypt(@Valid @RequestBody DecryptRequest request,
             HttpServletRequest servletRequest) {
         String plaintext = service.decryptByKeyPublicId(

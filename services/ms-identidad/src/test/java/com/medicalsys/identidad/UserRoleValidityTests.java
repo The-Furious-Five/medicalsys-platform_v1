@@ -2,9 +2,13 @@ package com.medicalsys.identidad;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.medicalsys.identidad.domain.Permission;
+import com.medicalsys.identidad.domain.PermissionModule;
 import com.medicalsys.identidad.domain.Role;
+import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
+import com.medicalsys.identidad.service.IdentityMapper;
 import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,5 +46,23 @@ class UserRoleValidityTests {
 
         assertThat(assignment.getValidFrom()).isEqualTo(LocalDate.now());
         assertThat(assignment.isActiveOn(LocalDate.now())).isTrue();
+    }
+
+    @Test
+    @DisplayName("un rol desactivado no aporta roles ni permisos al token aunque la asignacion siga vigente")
+    void deactivatedRoleGrantsNothing() {
+        Role auditor = Role.custom("AUDITOR", "Auditor", null, RoleScope.ORGANIZATION);
+        auditor.getPermissions().add(new Permission("audit.log.read", PermissionModule.AUDIT, "Leer", true));
+        user.getRoleAssignments().add(new UserRole(user, auditor, null, null, LocalDate.of(2020, 1, 1), null, null));
+        IdentityMapper mapper = new IdentityMapper();
+
+        assertThat(mapper.activeRoleCodes(user)).containsExactly("AUDITOR");
+        assertThat(mapper.activePermissionCodes(user)).containsExactly("audit.log.read");
+
+        auditor.setActive(false);
+
+        assertThat(mapper.activeRoleCodes(user)).isEmpty();
+        assertThat(mapper.activePermissionCodes(user)).isEmpty();
+        assertThat(mapper.toRoleAssignment(user.getRoleAssignments().getFirst()).active()).isFalse();
     }
 }

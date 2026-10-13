@@ -1,5 +1,8 @@
 server:
   port: ${SERVER_PORT:8086}
+  # El JWT lleva el claim permissions del catalogo granular (RBAC-01): el de un administrador
+  # supera los 7 KB y los 8 KB por defecto de Tomcat no dejan margen para el resto de cabeceras.
+  max-http-request-header-size: 32KB
 
 spring:
   application:

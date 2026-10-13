@@ -13,7 +13,7 @@ import com.medicalsys.documental.api.dto.DocumentPageResponse;
 import com.medicalsys.documental.api.dto.DocumentResponse;
 import com.medicalsys.documental.common.CorrelationIdFilter;
 import com.medicalsys.documental.exception.GlobalExceptionHandler;
-import com.medicalsys.documental.security.RoleAuthorizationInterceptor;
+import com.medicalsys.documental.security.PermissionAuthorizationInterceptor;
 import com.medicalsys.documental.service.DocumentService;
 import java.time.Instant;
 import java.util.List;
@@ -48,7 +48,7 @@ class DocumentsControllerTest {
                         new InternalDocumentsController(service),
                         new DocumentsPingController())
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .addInterceptors(new RoleAuthorizationInterceptor())
+                .addInterceptors(new PermissionAuthorizationInterceptor())
                 .addFilters(new CorrelationIdFilter())
                 .build();
     }
@@ -76,7 +76,7 @@ class DocumentsControllerTest {
                         .file(metadata)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "RECEPTIONIST"))
+                        .header("X-Permissions", "documents.document.upload"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/documents/" + DOCUMENT_ID))
                 .andExpect(header().exists("X-Correlation-Id"))
@@ -96,7 +96,7 @@ class DocumentsControllerTest {
         mvc.perform(get("/api/v1/documents/" + DOCUMENT_ID)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PATIENT"))
+                        .header("X-Permissions", "marketing.advertisement.view"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
@@ -113,7 +113,7 @@ class DocumentsControllerTest {
                         .file(metadata)
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PHYSICIAN"))
+                        .header("X-Permissions", "documents.document.upload"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.details[0].field").value("type"));
@@ -127,7 +127,7 @@ class DocumentsControllerTest {
         mvc.perform(get("/api/v1/documents")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PHYSICIAN"))
+                        .header("X-Permissions", "documents.document.read"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.totalElements").value(0));

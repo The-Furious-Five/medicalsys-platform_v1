@@ -1,6 +1,7 @@
 package com.medicalsys.documental.api;
 
 import com.medicalsys.documental.api.dto.InternalDocumentSummary;
+import com.medicalsys.documental.security.InternalEndpoint;
 import com.medicalsys.documental.service.DocumentService;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ public class InternalDocumentsController {
     }
 
     @GetMapping("/{documentId}")
+    @InternalEndpoint
     public InternalDocumentSummary get(@PathVariable UUID documentId,
             @RequestHeader("X-Organization-Id") UUID organizationId) {
         return service.internalSummary(documentId, organizationId);

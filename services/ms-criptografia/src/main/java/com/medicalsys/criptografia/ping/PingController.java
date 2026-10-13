@@ -1,5 +1,6 @@
 package com.medicalsys.criptografia.ping;
 
+import com.medicalsys.criptografia.common.PublicEndpoint;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +16,7 @@ import java.util.Map;
 public class PingController {
 
     @GetMapping("/api/v1/cryptography/ping")
+    @PublicEndpoint
     public ResponseEntity<Map<String, String>> ping() {
         return ResponseEntity.ok(Map.of(
                 "service", "ms-criptografia",

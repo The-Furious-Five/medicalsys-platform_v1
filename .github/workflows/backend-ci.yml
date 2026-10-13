@@ -1,0 +1,130 @@
+# Calidad del backend en cada pull request y push a develop/main. Solo se construyen los servicios que
+# cambiaron (scripts/ci/changed_services.py): el repo es privado y los minutos son limitados.
+name: CI backend
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cambios:
+    name: Servicios afectados
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: detect
+        run: |
+          python3 scripts/ci/changed_services.py \
+            "${{ github.event.pull_request.base.sha || github.event.before }}" "${{ github.sha }}" \
+            ${{ github.event_name == 'workflow_dispatch' && '--all' || '' }}
+
+  repositorio:
+    name: Migraciones, permisos y compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Nombres, versiones unicas y migraciones aplicadas sin modificar
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -n "$base" ] && [ "$base" != "0000000000000000000000000000000000000000" ]; then
+            python3 scripts/ci/check_migrations.py --base "$base"
+          else
+            python3 scripts/ci/check_migrations.py
+          fi
+      - name: Cada endpoint exige el permiso que dice la matriz (RBAC-01/RBAC-03)
+        run: python3 scripts/ci/check_permissions.py
+      - name: compose.yaml valido y sin variables faltantes en .env.example
+        run: |
+          docker compose --env-file .env.example -f compose.yaml config -q 2>&1 | tee compose.log
+          ! grep -q "is not set" compose.log
+
+  migraciones:
+    name: Migraciones desde cero
+    needs: cambios
+    if: needs.cambios.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -uroot -pci" --health-interval=5s --health-retries=30
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+        ports: ['5432:5432']
+        options: --health-cmd="pg_isready -U postgres" --health-interval=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Aplicar migraciones de los servicios afectados (MySQL 8.4 / Postgres 17, driver de produccion)
+        run: bash scripts/ci/apply_migrations.sh $(echo '${{ needs.cambios.outputs.services }}' | python3 -c 'import json,sys;print(" ".join(json.load(sys.stdin)))')
+
+  servicio:
+    name: ${{ matrix.service }}
+    needs: cambios
+    if: needs.cambios.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.cambios.outputs.services) }}
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: services/${{ matrix.service }}/pom.xml
+      - name: Compilar, probar y umbrales de cobertura (mvn verify)
+        run: ./mvnw -B -ntp verify
+      # Las pruebas con MySQL real se omiten solas si no detectan Docker; en CI eso seria un falso verde.
+      - name: Ninguna prueba omitida
+        run: |
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          skipped = [f for f in glob.glob('target/*-reports/TEST-*.xml') if int(ET.parse(f).getroot().get('skipped', 0))]
+          if skipped:
+              print('Pruebas omitidas en CI (¿Docker no disponible?):', *skipped, sep='\n  ')
+              sys.exit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: reportes-${{ matrix.service }}
+          path: services/${{ matrix.service }}/target/*-reports/
+
+  resultado:
+    name: CI backend
+    needs: [cambios, repositorio, migraciones, servicio]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Todos los trabajos en verde u omitidos por no haber cambios
+        run: |
+          echo '${{ toJSON(needs) }}' | python3 -c 'import json,sys;bad={k:v["result"] for k,v in json.load(sys.stdin).items() if v["result"] not in ("success","skipped")};print(bad or "ok");sys.exit(1 if bad else 0)'

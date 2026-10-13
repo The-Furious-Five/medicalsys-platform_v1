@@ -1,7 +1,6 @@
 package com.medicalsys.marketing.web.controller;
 
-import com.medicalsys.marketing.common.security.RequiresRole;
-import com.medicalsys.marketing.common.security.Role;
+import com.medicalsys.marketing.common.security.RequiresPermission;
 import com.medicalsys.marketing.common.tenant.RequestContextHolder;
 import com.medicalsys.marketing.service.PatientActivityService;
 import com.medicalsys.marketing.web.dto.OptOutRequest;
@@ -42,22 +41,21 @@ public class PatientActivityController {
 
     /** Lista la actividad comercial registrada por el tenant. */
     @GetMapping("/actividad")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.patient_activity.read")
     public PageResponse<PatientActivityResponse> list(@PageableDefault(size = 20) Pageable pageable) {
         return PageResponse.of(service.list(RequestContextHolder.require(), pageable));
     }
 
     /** Proyeccion comercial de un paciente concreto. */
     @GetMapping("/{patientId}/actividad")
-    @RequiresRole({Role.MARKETING_MANAGER, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN, Role.RECEPTIONIST})
+    @RequiresPermission("marketing.patient_activity.read")
     public PatientActivityResponse get(@PathVariable UUID patientId) {
         return service.get(RequestContextHolder.require(), patientId);
     }
 
     /** Registra o revoca la exclusion comercial del paciente. */
     @PutMapping("/{patientId}/opt-out")
-    @RequiresRole({Role.PATIENT, Role.RECEPTIONIST, Role.MARKETING_MANAGER, Role.ADMINISTRATOR,
-            Role.PLATFORM_ADMIN})
+    @RequiresPermission("marketing.opt_out.update")
     public ResponseEntity<PatientActivityResponse> setOptOut(@PathVariable UUID patientId,
             @Valid @RequestBody OptOutRequest request) {
         return ResponseEntity.ok(service.setOptOut(RequestContextHolder.require(), patientId,

@@ -1,5 +1,6 @@
 package com.medicalsys.criptografia.key;
 
+import com.medicalsys.criptografia.common.InternalEndpoint;
 import com.medicalsys.criptografia.common.ServiceAuthInterceptor;
 import com.medicalsys.criptografia.common.UuidBinary;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public class EncryptionKeyController {
     }
 
     @PostMapping("/encrypt")
+    @InternalEndpoint
     public ResponseEntity<Map<String, String>> encrypt(@Valid @RequestBody EncryptRequest req,
             HttpServletRequest servletRequest) {
         String ciphertext = service.encrypt(
@@ -45,6 +47,7 @@ public class EncryptionKeyController {
     }
 
     @PostMapping("/decrypt")
+    @InternalEndpoint
     public ResponseEntity<Map<String, String>> decrypt(@Valid @RequestBody DecryptRequest req,
             HttpServletRequest servletRequest) {
         String plaintext = service.decrypt(
@@ -58,6 +61,7 @@ public class EncryptionKeyController {
     }
 
     @GetMapping("/keys/active")
+    @InternalEndpoint
     public ResponseEntity<EncryptionKeyDto> findActiveKey(
             @RequestParam String purpose,
             @RequestParam(required = false) String organizationId) {

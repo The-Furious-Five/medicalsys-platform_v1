@@ -11,5 +11,8 @@ public enum PermissionModule {
     CLINICAL,
     DOCUMENT_MANAGEMENT,
     BILLING,
-    ADMINISTRATION
+    ADMINISTRATION,
+    NOTIFICATIONS,
+    AUDIT,
+    MARKETING
 }

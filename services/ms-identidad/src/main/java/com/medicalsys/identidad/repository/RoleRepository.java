@@ -1,7 +1,8 @@
 package com.medicalsys.identidad.repository;
 
 import com.medicalsys.identidad.domain.Role;
-import com.medicalsys.identidad.domain.RoleCode;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -9,5 +10,9 @@ import org.springframework.data.jpa.repository.EntityGraph;
 public interface RoleRepository extends JpaRepository<Role, Short> {
 
     @EntityGraph(attributePaths = "permissions")
-    Optional<Role> findByCode(RoleCode code);
+    Optional<Role> findByCode(String code);
+
+    boolean existsByCode(String code);
+
+    List<Role> findAllByCodeIn(Collection<String> codes);
 }

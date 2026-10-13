@@ -14,8 +14,12 @@ class ApiExceptionHandler {
     }
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> status(ResponseStatusException ex) {
-        String code = ex.getStatusCode().isSameCodeAs(HttpStatus.NOT_FOUND)
-                ? "PROFESSIONAL_NOT_FOUND" : "INVALID_PROFESSIONAL_REQUEST";
+        String code = switch (ex.getStatusCode().value()) {
+            case 401 -> "UNAUTHENTICATED";
+            case 403 -> "FORBIDDEN";
+            case 404 -> "PROFESSIONAL_NOT_FOUND";
+            default -> "INVALID_PROFESSIONAL_REQUEST";
+        };
         return ResponseEntity.status(ex.getStatusCode()).body(new ApiError(code, ex.getReason()));
     }
 }

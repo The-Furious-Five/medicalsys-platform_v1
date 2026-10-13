@@ -4,7 +4,7 @@ B=${1:-http://localhost:8087}
 pass=0; fail=0
 check() { if [ "$2" = "$3" ]; then echo "  OK   $1 ($3)"; pass=$((pass+1));
           else echo "  FALLA $1: esperado $2, obtenido $3"; fail=$((fail+1)); cat /tmp/abody.json 2>/dev/null | head -3; fi }
-code() { curl -s -o /tmp/abody.json -w '%{http_code}' "$@"; }
+code() { curl -s "${ID[@]}" -o /tmp/abody.json -w '%{http_code}' "$@"; }
 jq_() { python -c "import json,sys;d=json.load(sys.stdin);print(d$1)"; }
 J='Content-Type: application/json'
 
@@ -16,6 +16,9 @@ PAT=55555555-5555-5555-5555-555555555555
 SVC=66666666-6666-6666-6666-666666666666
 USR=77777777-7777-7777-7777-777777777777
 PAT2=88888888-8888-8888-8888-888888888888
+# Identidad que propagaria el gateway: el servicio deniega lo que el token no permite (RBAC-04).
+PERMS=scheduling.appointment.attend,scheduling.appointment.cancel,scheduling.appointment.check_in,scheduling.appointment.confirm,scheduling.appointment.create,scheduling.appointment.no_show,scheduling.appointment.read,scheduling.appointment.reschedule,scheduling.availability.create,scheduling.availability.deactivate,scheduling.availability.read,scheduling.block.create,scheduling.block.delete,scheduling.block.read,scheduling.reservation.cancel,scheduling.reservation.create,scheduling.reservation.mark_in_use,scheduling.reservation.read,scheduling.reservation.release,scheduling.resource.change_status,scheduling.resource.create,scheduling.resource.read,scheduling.resource.update
+ID=(-H "X-Organization-Id: $ORG" -H "X-User-Id: $USR" -H "X-Permissions: $PERMS")
 
 echo "== ms-agenda =="
 check "ping" 200 "$(code $B/api/v1/scheduling/ping)"
@@ -23,7 +26,7 @@ check "health" 200 "$(code $B/actuator/health)"
 
 # ---------------------------------------------------------------- recursos
 CODE="C$RANDOM"
-R=$(curl -s -X POST $B/api/v1/scheduling/resources -H "$J" -d "{
+R=$(curl -s "${ID[@]}" -X POST $B/api/v1/scheduling/resources -H "$J" -d "{
   \"organizationPublicId\":\"$ORG\",\"branchPublicId\":\"$BRANCH\",\"code\":\"$CODE\",
   \"name\":\"Consultorio de prueba\",\"type\":\"OFFICE\",\"floor\":\"1\",
   \"peopleCapacity\":2,\"preparationMinutes\":10,\"requiresSterilization\":false,
@@ -67,7 +70,7 @@ check "huecos de fecha pasada" 400 "$(code "$B/api/v1/scheduling/availability/sl
 
 # ----------------------------------------------------------------------- citas
 S1="${TOMORROW}T09:00:00-04:00"; E1="${TOMORROW}T09:30:00-04:00"
-A=$(curl -s -X POST $B/api/v1/scheduling/appointments -H "$J" -d "{
+A=$(curl -s "${ID[@]}" -X POST $B/api/v1/scheduling/appointments -H "$J" -d "{
   \"organizationPublicId\":\"$ORG\",\"branchPublicId\":\"$BRANCH\",\"patientPublicId\":\"$PAT\",
   \"healthProfessionalPublicId\":\"$PROF\",\"serviceOfferingPublicId\":\"$SVC\",
   \"startsAt\":\"$S1\",\"endsAt\":\"$E1\",\"modality\":\"IN_PERSON\",\"channelOrigin\":\"RECEPTION\",

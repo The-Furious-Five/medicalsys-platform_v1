@@ -1,0 +1,279 @@
+servicio,metodo,ruta,tipo_acceso,permiso,modulo,sensible,roles_iniciales,control_actual,origen_asignacion
+ms-identidad,POST,/api/v1/identity/users/{publicId}/roles,PERMISO,identity.role.assign,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.assign,replica control vigente
+ms-identidad,DELETE,/api/v1/identity/users/{publicId}/roles/{role},PERMISO,identity.role.assign,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.assign,replica control vigente
+ms-identidad,POST,/api/v1/identity/role-incompatibilities,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,DELETE,/api/v1/identity/role-incompatibilities/{roleA}/{roleB},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,POST,/api/v1/identity/roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,DELETE,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PATCH,/api/v1/identity/roles/{code},PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PUT,/api/v1/identity/roles/{code}/assignable-roles,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,PUT,/api/v1/identity/roles/{code}/permissions,PERMISO,identity.role.manage,IDENTITY,si,PLATFORM_ADMIN,authority identity.role.manage,propuesta nueva
+ms-identidad,GET,/api/v1/identity/permissions,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/role-incompatibilities,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/roles,PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,GET,/api/v1/identity/roles/{code},PERMISO,identity.role.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.role.read,propuesta nueva
+ms-identidad,PATCH,/api/v1/identity/users/{publicId}/status,PERMISO,identity.user.change_status,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.change_status,replica control vigente
+ms-identidad,POST,/api/v1/identity/users,PERMISO,identity.user.create,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.create,replica control vigente
+ms-identidad,GET,/api/v1/identity/users,PERMISO,identity.user.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.read,replica control vigente
+ms-identidad,GET,/api/v1/identity/users/{publicId},PERMISO,identity.user.read,IDENTITY,no,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.read,replica control vigente
+ms-identidad,POST,/api/v1/identity/users/{publicId}/reset-password,PERMISO,identity.user.reset,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,No existe (lo crea IAM-05),propuesta nueva
+ms-identidad,POST,/api/v1/identity/users/{publicId}/unlock,PERMISO,identity.user.unlock,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,No existe (lo crea IAM-05),propuesta nueva
+ms-identidad,PATCH,/api/v1/identity/users/{publicId},PERMISO,identity.user.update,IDENTITY,si,PLATFORM_ADMIN ADMINISTRATOR,authority identity.user.update,replica control vigente
+ms-identidad,POST,/api/v1/identity/auth/change-password,AUTENTICADO,,,,,Solo autenticado,
+ms-identidad,POST,/api/v1/identity/auth/login,PUBLICO,,,,,Publico,
+ms-identidad,POST,/api/v1/identity/auth/logout,AUTENTICADO,,,,,Solo autenticado,
+ms-identidad,GET,/api/v1/identity/auth/me,AUTENTICADO,,,,,Solo autenticado,
+ms-identidad,GET,/api/v1/identity/ping,PUBLICO,,,,,Publico,
+ms-identidad,GET,/internal/v1/users/{publicId},INTERNO,,,,,Fuera del gateway,
+ms-tenencia,PATCH,/api/v1/tenancy/sucursales/{branchId}/estado,PERMISO,tenancy.branch.change_status,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.branch.change_status,replica control vigente
+ms-tenencia,POST,/api/v1/tenancy/sucursales,PERMISO,tenancy.branch.create,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.branch.create,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/sucursales,PERMISO,tenancy.branch.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission tenancy.branch.read,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/sucursales/{branchId},PERMISO,tenancy.branch.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission tenancy.branch.read,replica control vigente
+ms-tenencia,PUT,/api/v1/tenancy/sucursales/{branchId},PERMISO,tenancy.branch.update,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.branch.update,replica control vigente
+ms-tenencia,PATCH,/api/v1/tenancy/organizacion/estado,PERMISO,tenancy.organization.change_status,TENANCY,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.organization.change_status,replica control vigente
+ms-tenencia,POST,/api/v1/tenancy/organizacion,PERMISO,tenancy.organization.create,TENANCY,si,PLATFORM_ADMIN,@RequiresPermission tenancy.organization.create,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/organizacion,PERMISO,tenancy.organization.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission tenancy.organization.read,replica control vigente
+ms-tenencia,PUT,/api/v1/tenancy/organizacion,PERMISO,tenancy.organization.update,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.organization.update,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/planes,PERMISO,tenancy.plan.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR BILLING_CLERK,@RequiresPermission tenancy.plan.read,replica control vigente
+ms-tenencia,PATCH,/api/v1/tenancy/prestaciones/{serviceOfferingId}/vigencia,PERMISO,tenancy.service_offering.change_status,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.service_offering.change_status,replica control vigente
+ms-tenencia,POST,/api/v1/tenancy/prestaciones,PERMISO,tenancy.service_offering.create,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.service_offering.create,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/prestaciones,PERMISO,tenancy.service_offering.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission tenancy.service_offering.read,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/prestaciones/{serviceOfferingId},PERMISO,tenancy.service_offering.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission tenancy.service_offering.read,replica control vigente
+ms-tenencia,PUT,/api/v1/tenancy/prestaciones/{serviceOfferingId},PERMISO,tenancy.service_offering.update,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.service_offering.update,replica control vigente
+ms-tenencia,PATCH,/api/v1/tenancy/suscripcion/estado,PERMISO,tenancy.subscription.change_status,TENANCY,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.subscription.change_status,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/suscripcion,PERMISO,tenancy.subscription.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR BILLING_CLERK,@RequiresPermission tenancy.subscription.read,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/suscripcion/historial,PERMISO,tenancy.subscription.read_history,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.subscription.read_history,replica control vigente
+ms-tenencia,POST,/api/v1/tenancy/suscripcion,PERMISO,tenancy.subscription.subscribe,TENANCY,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.subscription.subscribe,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/consumo,PERMISO,tenancy.usage.read,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.usage.read,replica control vigente
+ms-tenencia,POST,/api/v1/tenancy/consumo,PERMISO,tenancy.usage.record,TENANCY,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission tenancy.usage.record,replica control vigente
+ms-tenencia,GET,/api/v1/tenancy/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-tenencia,GET,/internal/v1/organizaciones/{organizationId},INTERNO,,,,,@InternalEndpoint,
+ms-tenencia,GET,/internal/v1/prestaciones/{serviceOfferingId},INTERNO,,,,,@InternalEndpoint,
+ms-tenencia,GET,/internal/v1/prestaciones/{serviceOfferingId}/agendable,INTERNO,,,,,@InternalEndpoint,
+ms-tenencia,GET,/internal/v1/sucursales/{branchId},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/api/v1/catalogs/cie10,PERMISO,catalogs.icd10.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.icd10.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/cie10/{code},PERMISO,catalogs.icd10.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.icd10.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/medications,PERMISO,catalogs.medication.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.medication.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/medications/{code},PERMISO,catalogs.medication.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.medication.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/specialties,PERMISO,catalogs.specialty.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.specialty.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/study-types,PERMISO,catalogs.study_type.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.study_type.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/tax,PERMISO,catalogs.tax.read,CATALOGS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST BILLING_CLERK,@RequiresPermission catalogs.tax.read,regla del frontend
+ms-catalogos,GET,/api/v1/catalogs/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-catalogos,GET,/internal/v1/cie10/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/icd10/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/medicamentos/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/medications/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/specialties/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/study-types/{code},INTERNO,,,,,@InternalEndpoint,
+ms-catalogos,GET,/internal/v1/tipos-estudio/{code},INTERNO,,,,,@InternalEndpoint,
+ms-criptografia,GET,/api/v1/cryptography/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-criptografia,POST,/internal/v1/cifrado,INTERNO,,,,,@InternalEndpoint,
+ms-criptografia,POST,/internal/v1/crypto/decrypt,INTERNO,,,,,@InternalEndpoint,
+ms-criptografia,POST,/internal/v1/crypto/encrypt,INTERNO,,,,,@InternalEndpoint,
+ms-criptografia,GET,/internal/v1/crypto/keys/active,INTERNO,,,,,@InternalEndpoint,
+ms-criptografia,POST,/internal/v1/descifrado,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,POST,/api/v1/patients/{patientId}/acceso/solicitudes/{grantId}/confirmacion,PERMISO,patients.access_grant.confirm,PATIENTS,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.access_grant.confirm,replica control vigente
+ms-pacientes,GET,/api/v1/patients/{patientId}/acceso/solicitudes,PERMISO,patients.access_grant.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.access_grant.read,replica control vigente
+ms-pacientes,POST,/api/v1/patients/{patientId}/acceso/solicitudes,PERMISO,patients.access_grant.request,PATIENTS,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.access_grant.request,replica control vigente
+ms-pacientes,POST,/api/v1/patients/{patientId}/acceso/solicitudes/{grantId}/revocacion,PERMISO,patients.access_grant.revoke,PATIENTS,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.access_grant.revoke,replica control vigente
+ms-pacientes,POST,/api/v1/patients/{survivingPatientId}/merges,PERMISO,patients.merge.create,PATIENTS,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission patients.merge.create,replica control vigente
+ms-pacientes,GET,/api/v1/patients/{survivingPatientId}/merges,PERMISO,patients.merge.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission patients.merge.read,replica control vigente
+ms-pacientes,GET,/api/v1/patients/{patientId}/notification-preferences,PERMISO,patients.notification_preference.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.notification_preference.read,replica control vigente
+ms-pacientes,PUT,/api/v1/patients/{patientId}/notification-preferences/{channel}/{category},PERMISO,patients.notification_preference.update,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission patients.notification_preference.update,replica control vigente
+ms-pacientes,POST,/api/v1/patients,PERMISO,patients.patient.create,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission patients.patient.create,replica control vigente
+ms-pacientes,GET,/api/v1/patients,PERMISO,patients.patient.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.patient.read,replica control vigente
+ms-pacientes,GET,/api/v1/patients/search,PERMISO,patients.patient.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.patient.read,replica control vigente
+ms-pacientes,GET,/api/v1/patients/{patientId},PERMISO,patients.patient.read,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission patients.patient.read,replica control vigente
+ms-pacientes,PUT,/api/v1/patients/{patientId},PERMISO,patients.patient.update,PATIENTS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission patients.patient.update,replica control vigente
+ms-pacientes,GET,/api/v1/patients/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-pacientes,POST,/internal/v1/patients/replay,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/access-grants/{organizationId},INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/billing-summary,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/demographics,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/fiscal,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/notification-contact,INTERNO,,,,,@InternalEndpoint,
+ms-pacientes,GET,/internal/v1/patients/{patientId}/scheduling-summary,INTERNO,,,,,@InternalEndpoint,
+ms-profesionales,PATCH,/api/v1/professionals/{id}/organizations/{linkId},PERMISO,professionals.affiliation.change_status,PROFESSIONALS,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission professionals.affiliation.change_status,regla del frontend
+ms-profesionales,POST,/api/v1/professionals,PERMISO,professionals.professional.create,PROFESSIONALS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission professionals.professional.create,regla del frontend
+ms-profesionales,GET,/api/v1/professionals,PERMISO,professionals.professional.read,PROFESSIONALS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission professionals.professional.read,regla del frontend
+ms-profesionales,GET,/api/v1/professionals/{id},PERMISO,professionals.professional.read,PROFESSIONALS,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission professionals.professional.read,regla del frontend
+ms-profesionales,PATCH,/api/v1/professionals/{id},PERMISO,professionals.professional.update,PROFESSIONALS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission professionals.professional.update,regla del frontend
+ms-profesionales,GET,/api/v1/professionals/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-profesionales,GET,/internal/v1/professionals/{id},INTERNO,,,,,@InternalEndpoint,
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/complete,PERMISO,scheduling.appointment.attend,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.attend,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/start,PERMISO,scheduling.appointment.attend,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.attend,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/cancel,PERMISO,scheduling.appointment.cancel,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.cancel,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/check-in,PERMISO,scheduling.appointment.check_in,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.check_in,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/confirm,PERMISO,scheduling.appointment.confirm,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.confirm,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments,PERMISO,scheduling.appointment.create,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.create,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/no-show,PERMISO,scheduling.appointment.no_show,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.no_show,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/appointments,PERMISO,scheduling.appointment.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.read,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/appointments/{publicId},PERMISO,scheduling.appointment.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.read,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/appointments/{publicId}/history,PERMISO,scheduling.appointment.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.read,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/appointments/{publicId}/reschedule,PERMISO,scheduling.appointment.reschedule,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.appointment.reschedule,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/availabilities,PERMISO,scheduling.availability.create,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission scheduling.availability.create,regla del frontend
+ms-agenda,DELETE,/api/v1/scheduling/availabilities/{id},PERMISO,scheduling.availability.deactivate,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission scheduling.availability.deactivate,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/availabilities,PERMISO,scheduling.availability.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.availability.read,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/availability/slots,PERMISO,scheduling.availability.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.availability.read,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/blocks,PERMISO,scheduling.block.create,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission scheduling.block.create,regla del frontend
+ms-agenda,DELETE,/api/v1/scheduling/blocks/{id},PERMISO,scheduling.block.delete,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission scheduling.block.delete,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/blocks,PERMISO,scheduling.block.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.block.read,regla del frontend
+ms-agenda,DELETE,/api/v1/scheduling/reservations/{id},PERMISO,scheduling.reservation.cancel,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.reservation.cancel,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/reservations,PERMISO,scheduling.reservation.create,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.reservation.create,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/reservations/{id}/in-use,PERMISO,scheduling.reservation.mark_in_use,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.reservation.mark_in_use,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/reservations,PERMISO,scheduling.reservation.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.reservation.read,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/reservations/{id}/release,PERMISO,scheduling.reservation.release,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.reservation.release,regla del frontend
+ms-agenda,PATCH,/api/v1/scheduling/resources/{publicId}/status,PERMISO,scheduling.resource.change_status,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission scheduling.resource.change_status,regla del frontend
+ms-agenda,POST,/api/v1/scheduling/resources,PERMISO,scheduling.resource.create,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission scheduling.resource.create,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/resources,PERMISO,scheduling.resource.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.resource.read,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/resources/{publicId},PERMISO,scheduling.resource.read,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission scheduling.resource.read,regla del frontend
+ms-agenda,PATCH,/api/v1/scheduling/resources/{publicId},PERMISO,scheduling.resource.update,SCHEDULING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission scheduling.resource.update,regla del frontend
+ms-agenda,GET,/api/v1/scheduling/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-agenda,GET,/internal/v1/appointments/{publicId},INTERNO,,,,,@InternalEndpoint,
+ms-historial,POST,/api/v1/encuentros/{encounterId}/addendums,PERMISO,clinical.addendum.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.addendum.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/addendums,PERMISO,clinical.addendum.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.addendum.read,replica control vigente
+ms-historial,POST,/api/v1/expedientes/{recordId}/alergias,PERMISO,clinical.allergy.create,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.allergy.create,replica control vigente
+ms-historial,GET,/api/v1/expedientes/{recordId}/alergias,PERMISO,clinical.allergy.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.allergy.read,replica control vigente
+ms-historial,PATCH,/api/v1/alergias/{allergyId},PERMISO,clinical.allergy.update,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.allergy.update,replica control vigente
+ms-historial,POST,/api/v1/expedientes/{recordId}/antecedentes,PERMISO,clinical.background.create,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.background.create,replica control vigente
+ms-historial,DELETE,/api/v1/antecedentes/{backgroundId},PERMISO,clinical.background.deactivate,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.background.deactivate,replica control vigente
+ms-historial,GET,/api/v1/expedientes/{recordId}/antecedentes,PERMISO,clinical.background.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.background.read,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/diagnosticos,PERMISO,clinical.diagnosis.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.diagnosis.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/diagnosticos,PERMISO,clinical.diagnosis.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.diagnosis.read,replica control vigente
+ms-historial,PATCH,/api/v1/diagnosticos/{diagnosisId},PERMISO,clinical.diagnosis.update,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.diagnosis.update,replica control vigente
+ms-historial,POST,/api/v1/encuentros,PERMISO,clinical.encounter.open,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.encounter.open,replica control vigente
+ms-historial,GET,/api/v1/encuentros,PERMISO,clinical.encounter.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.encounter.read,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId},PERMISO,clinical.encounter.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.encounter.read,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/firma,PERMISO,clinical.encounter.sign,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.encounter.sign,replica control vigente
+ms-historial,PUT,/api/v1/encuentros/{encounterId}/notas,PERMISO,clinical.encounter.update_notes,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.encounter.update_notes,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/anulacion,PERMISO,clinical.encounter.void,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.encounter.void,replica control vigente
+ms-historial,PUT,/api/v1/recetas/{prescriptionId}/documento,PERMISO,clinical.prescription.attach_document,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.prescription.attach_document,replica control vigente
+ms-historial,PATCH,/api/v1/recetas/{prescriptionId}/estado,PERMISO,clinical.prescription.change_status,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.prescription.change_status,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/recetas,PERMISO,clinical.prescription.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.prescription.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/recetas,PERMISO,clinical.prescription.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.prescription.read,replica control vigente
+ms-historial,GET,/api/v1/recetas/{prescriptionId},PERMISO,clinical.prescription.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.prescription.read,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/procedimientos,PERMISO,clinical.procedure.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.procedure.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/procedimientos,PERMISO,clinical.procedure.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.procedure.read,replica control vigente
+ms-historial,PATCH,/api/v1/expedientes/{recordId}/estado,PERMISO,clinical.record.change_status,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission clinical.record.change_status,replica control vigente
+ms-historial,POST,/api/v1/expedientes,PERMISO,clinical.record.create,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.record.create,replica control vigente
+ms-historial,GET,/api/v1/expedientes,PERMISO,clinical.record.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.record.read,replica control vigente
+ms-historial,GET,/api/v1/expedientes/{recordId},PERMISO,clinical.record.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.record.read,replica control vigente
+ms-historial,PATCH,/api/v1/expedientes/{recordId}/compartir,PERMISO,clinical.record.share,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN,@RequiresPermission clinical.record.share,replica control vigente
+ms-historial,PATCH,/api/v1/ordenes-estudio/{orderId}/estado,PERMISO,clinical.study_order.change_status,CLINICAL,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_order.change_status,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/ordenes-estudio,PERMISO,clinical.study_order.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN,@RequiresPermission clinical.study_order.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/ordenes-estudio,PERMISO,clinical.study_order.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_order.read,replica control vigente
+ms-historial,GET,/api/v1/ordenes-estudio,PERMISO,clinical.study_order.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_order.read,replica control vigente
+ms-historial,GET,/api/v1/ordenes-estudio/{orderId},PERMISO,clinical.study_order.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_order.read,replica control vigente
+ms-historial,PATCH,/api/v1/ordenes-estudio/{orderId}/cita-toma,PERMISO,clinical.study_order.schedule_collection,CLINICAL,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_order.schedule_collection,replica control vigente
+ms-historial,POST,/api/v1/ordenes-estudio/{orderId}/resultados,PERMISO,clinical.study_result.create,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_result.create,replica control vigente
+ms-historial,GET,/api/v1/ordenes-estudio/{orderId}/resultados,PERMISO,clinical.study_result.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.study_result.read,replica control vigente
+ms-historial,POST,/api/v1/encuentros/{encounterId}/signos-vitales,PERMISO,clinical.vital_sign.create,CLINICAL,si,PLATFORM_ADMIN PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.vital_sign.create,replica control vigente
+ms-historial,GET,/api/v1/encuentros/{encounterId}/signos-vitales,PERMISO,clinical.vital_sign.read,CLINICAL,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission clinical.vital_sign.read,replica control vigente
+ms-historial,GET,/api/v1/medical-records/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-historial,GET,/internal/v1/encuentros,INTERNO,,,,,@InternalEndpoint,
+ms-historial,GET,/internal/v1/encuentros/{encounterId},INTERNO,,,,,@InternalEndpoint,
+ms-historial,GET,/internal/v1/expedientes,INTERNO,,,,,@InternalEndpoint,
+ms-historial,GET,/internal/v1/expedientes/{recordId},INTERNO,,,,,@InternalEndpoint,
+ms-historial,GET,/internal/v1/ordenes-estudio/{orderId},INTERNO,,,,,@InternalEndpoint,
+ms-documental,POST,/api/v1/consentimientos/generar,PERMISO,documents.consent.generate,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.generate,replica control vigente
+ms-documental,GET,/api/v1/consentimientos,PERMISO,documents.consent.read,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.read,replica control vigente
+ms-documental,GET,/api/v1/consentimientos/{consentId},PERMISO,documents.consent.read,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.read,replica control vigente
+ms-documental,POST,/api/v1/consentimientos/{consentId}/rechazo,PERMISO,documents.consent.reject,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.reject,replica control vigente
+ms-documental,POST,/api/v1/consentimientos/{consentId}/otp,PERMISO,documents.consent.request_otp,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.request_otp,replica control vigente
+ms-documental,POST,/api/v1/consentimientos/{consentId}/firma,PERMISO,documents.consent.sign,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent.sign,replica control vigente
+ms-documental,POST,/api/v1/consentimientos/plantillas,PERMISO,documents.consent_template.create,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission documents.consent_template.create,replica control vigente
+ms-documental,POST,/api/v1/consentimientos/plantillas/{templateId}/publicacion,PERMISO,documents.consent_template.publish,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission documents.consent_template.publish,replica control vigente
+ms-documental,GET,/api/v1/consentimientos/plantillas,PERMISO,documents.consent_template.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent_template.read,replica control vigente
+ms-documental,GET,/api/v1/consentimientos/plantillas/{templateId},PERMISO,documents.consent_template.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.consent_template.read,replica control vigente
+ms-documental,PATCH,/api/v1/documents/{documentId}/classification,PERMISO,documents.document.classify,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.classify,replica control vigente
+ms-documental,GET,/api/v1/documents/{documentId}/content,PERMISO,documents.document.download,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.download,replica control vigente
+ms-documental,POST,/api/v1/documents/{documentId}/links,PERMISO,documents.document.link,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.link,replica control vigente
+ms-documental,GET,/api/v1/documents,PERMISO,documents.document.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.read,replica control vigente
+ms-documental,GET,/api/v1/documents/{documentId},PERMISO,documents.document.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.read,replica control vigente
+ms-documental,POST,/api/v1/documents,PERMISO,documents.document.upload,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.upload,replica control vigente
+ms-documental,GET,/api/v1/documents/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-documental,GET,/internal/v1/documents/{documentId},INTERNO,,,,,@InternalEndpoint,
+ms-facturacion,POST,/api/v1/facturas,PERMISO,billing.invoice.issue,BILLING,si,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission billing.invoice.issue,replica control vigente
+ms-facturacion,GET,/api/v1/facturas,PERMISO,billing.invoice.read,BILLING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission billing.invoice.read,replica control vigente
+ms-facturacion,GET,/api/v1/facturas/{invoiceId},PERMISO,billing.invoice.read,BILLING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission billing.invoice.read,replica control vigente
+ms-facturacion,GET,/api/v1/billing/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-facturacion,GET,/internal/v1/facturas/{invoiceId},INTERNO,,,,,@InternalEndpoint,
+ms-notificaciones,POST,/api/v1/notifications,PERMISO,notifications.notification.create,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.notification.create,propuesta nueva
+ms-notificaciones,POST,/api/v1/notifications/{notificationId}/dispatch,PERMISO,notifications.notification.dispatch,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.notification.dispatch,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications,PERMISO,notifications.notification.read,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.notification.read,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications/{notificationId},PERMISO,notifications.notification.read,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.notification.read,propuesta nueva
+ms-notificaciones,POST,/api/v1/notifications/{notificationId}/retry,PERMISO,notifications.notification.retry,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.notification.retry,propuesta nueva
+ms-notificaciones,POST,/api/v1/notifications/rules,PERMISO,notifications.rule.create,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission notifications.rule.create,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications/rules,PERMISO,notifications.rule.read,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission notifications.rule.read,propuesta nueva
+ms-notificaciones,PUT,/api/v1/notifications/rules/{ruleId},PERMISO,notifications.rule.update,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission notifications.rule.update,propuesta nueva
+ms-notificaciones,POST,/api/v1/notifications/templates,PERMISO,notifications.template.create,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission notifications.template.create,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications/templates,PERMISO,notifications.template.read,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.template.read,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications/templates/{templateId},PERMISO,notifications.template.read,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.template.read,propuesta nueva
+ms-notificaciones,PUT,/api/v1/notifications/templates/{templateId},PERMISO,notifications.template.update,NOTIFICATIONS,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission notifications.template.update,propuesta nueva
+ms-notificaciones,POST,/api/v1/notifications/whatsapp/send,PERMISO,notifications.whatsapp.send,NOTIFICATIONS,si,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission notifications.whatsapp.send,propuesta nueva
+ms-notificaciones,GET,/api/v1/notifications/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-notificaciones,GET,/api/v1/notifications/webhooks/whatsapp,PUBLICO,,,,,@PublicEndpoint,
+ms-notificaciones,POST,/api/v1/notifications/webhooks/whatsapp,PUBLICO,,,,,@PublicEndpoint,
+ms-notificaciones,PUT,/internal/v1/notifications/references/organizations,INTERNO,,,,,@InternalEndpoint,
+ms-notificaciones,PUT,/internal/v1/notifications/references/patients,INTERNO,,,,,@InternalEndpoint,
+ms-notificaciones,PUT,/internal/v1/notifications/references/preferences,INTERNO,,,,,@InternalEndpoint,
+ms-notificaciones,POST,/internal/v1/notifications/whatsapp/send,INTERNO,,,,,@InternalEndpoint,
+ms-auditoria,GET,/api/v1/audit/events/export,PERMISO,audit.log.export,AUDIT,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission audit.log.export,replica control vigente
+ms-auditoria,GET,/api/v1/audit/events,PERMISO,audit.log.read,AUDIT,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission audit.log.read,replica control vigente
+ms-auditoria,GET,/api/v1/audit/events/{eventId},PERMISO,audit.log.read,AUDIT,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission audit.log.read,replica control vigente
+ms-auditoria,GET,/api/v1/audit/summary,PERMISO,audit.log.read,AUDIT,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission audit.log.read,replica control vigente
+ms-auditoria,GET,/api/v1/audit/integrity,PERMISO,audit.log.verify,AUDIT,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission audit.log.verify,replica control vigente
+ms-auditoria,GET,/api/v1/audit/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-auditoria,POST,/internal/v1/audit-events,INTERNO,,,,,@InternalEndpoint,
+ms-auditoria,POST,/internal/v1/audit-events/batch,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,POST,/api/v1/anuncios,PERMISO,marketing.advertisement.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.advertisement.create,replica control vigente
+ms-marketing,POST,/api/v1/anuncios/{advertisementId}/finalizacion,PERMISO,marketing.advertisement.finish,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.advertisement.finish,replica control vigente
+ms-marketing,POST,/api/v1/anuncios/{advertisementId}/pausa,PERMISO,marketing.advertisement.pause,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.advertisement.pause,replica control vigente
+ms-marketing,POST,/api/v1/anuncios/{advertisementId}/publicacion,PERMISO,marketing.advertisement.publish,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.advertisement.publish,replica control vigente
+ms-marketing,GET,/api/v1/anuncios,PERMISO,marketing.advertisement.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.advertisement.read,replica control vigente
+ms-marketing,POST,/api/v1/anuncios/{advertisementId}/clics,PERMISO,marketing.advertisement.track,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST PATIENT,@RequiresPermission marketing.advertisement.track,replica control vigente
+ms-marketing,POST,/api/v1/anuncios/{advertisementId}/impresiones,PERMISO,marketing.advertisement.track,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST PATIENT,@RequiresPermission marketing.advertisement.track,replica control vigente
+ms-marketing,GET,/api/v1/anuncios/vigentes,PERMISO,marketing.advertisement.view,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST PATIENT,@RequiresPermission marketing.advertisement.view,replica control vigente
+ms-marketing,GET,/api/v1/anuncios/{advertisementId},PERMISO,marketing.advertisement.view,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST PATIENT,@RequiresPermission marketing.advertisement.view,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/audiencia,PERMISO,marketing.campaign.build_audience,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.build_audience,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/cancelacion,PERMISO,marketing.campaign.cancel,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.cancel,replica control vigente
+ms-marketing,POST,/api/v1/campanas,PERMISO,marketing.campaign.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.create,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/finalizacion,PERMISO,marketing.campaign.finish,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.finish,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/lanzamiento,PERMISO,marketing.campaign.launch,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.launch,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/pausa,PERMISO,marketing.campaign.pause,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.pause,replica control vigente
+ms-marketing,GET,/api/v1/campanas,PERMISO,marketing.campaign.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.campaign.read,replica control vigente
+ms-marketing,GET,/api/v1/campanas/{campaignId},PERMISO,marketing.campaign.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.campaign.read,replica control vigente
+ms-marketing,GET,/api/v1/campanas/{campaignId}/rendimiento,PERMISO,marketing.campaign.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.campaign.read,replica control vigente
+ms-marketing,POST,/api/v1/campanas/{campaignId}/programacion,PERMISO,marketing.campaign.schedule,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.campaign.schedule,replica control vigente
+ms-marketing,POST,/api/v1/promociones/canjes,PERMISO,marketing.coupon.redeem,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission marketing.coupon.redeem,replica control vigente
+ms-marketing,POST,/api/v1/promociones/validar,PERMISO,marketing.coupon.validate,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission marketing.coupon.validate,replica control vigente
+ms-marketing,GET,/api/v1/fidelidad/movimientos,PERMISO,marketing.loyalty_account.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK PATIENT,@RequiresPermission marketing.loyalty_account.read,replica control vigente
+ms-marketing,GET,/api/v1/fidelidad/saldo,PERMISO,marketing.loyalty_account.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK PATIENT,@RequiresPermission marketing.loyalty_account.read,replica control vigente
+ms-marketing,POST,/api/v1/fidelidad/movimientos,PERMISO,marketing.loyalty_movement.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission marketing.loyalty_movement.create,replica control vigente
+ms-marketing,POST,/api/v1/fidelidad/programas,PERMISO,marketing.loyalty_program.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.loyalty_program.create,replica control vigente
+ms-marketing,POST,/api/v1/fidelidad/programas/{programId}/desactivacion,PERMISO,marketing.loyalty_program.deactivate,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.loyalty_program.deactivate,replica control vigente
+ms-marketing,GET,/api/v1/fidelidad/programas,PERMISO,marketing.loyalty_program.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.loyalty_program.read,replica control vigente
+ms-marketing,PUT,/api/v1/pacientes/{patientId}/opt-out,PERMISO,marketing.opt_out.update,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST PATIENT,@RequiresPermission marketing.opt_out.update,replica control vigente
+ms-marketing,GET,/api/v1/pacientes/actividad,PERMISO,marketing.patient_activity.read,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.patient_activity.read,replica control vigente
+ms-marketing,GET,/api/v1/pacientes/{patientId}/actividad,PERMISO,marketing.patient_activity.read,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.patient_activity.read,replica control vigente
+ms-marketing,POST,/api/v1/promociones,PERMISO,marketing.promotion.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.promotion.create,replica control vigente
+ms-marketing,POST,/api/v1/promociones/{promotionId}/desactivacion,PERMISO,marketing.promotion.deactivate,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.promotion.deactivate,replica control vigente
+ms-marketing,GET,/api/v1/promociones,PERMISO,marketing.promotion.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission marketing.promotion.read,replica control vigente
+ms-marketing,GET,/api/v1/promociones/{promotionId},PERMISO,marketing.promotion.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST BILLING_CLERK,@RequiresPermission marketing.promotion.read,replica control vigente
+ms-marketing,GET,/api/v1/campanas/{campaignId}/destinatarios,PERMISO,marketing.recipient.read,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.recipient.read,replica control vigente
+ms-marketing,POST,/api/v1/segmentos,PERMISO,marketing.segment.create,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.create,replica control vigente
+ms-marketing,POST,/api/v1/segmentos/{segmentId}/desactivacion,PERMISO,marketing.segment.deactivate,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.deactivate,replica control vigente
+ms-marketing,DELETE,/api/v1/segmentos/{segmentId},PERMISO,marketing.segment.delete,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.delete,replica control vigente
+ms-marketing,POST,/api/v1/segmentos/vista-previa,PERMISO,marketing.segment.evaluate,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.evaluate,replica control vigente
+ms-marketing,POST,/api/v1/segmentos/{segmentId}/evaluacion,PERMISO,marketing.segment.evaluate,MARKETING,si,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.evaluate,replica control vigente
+ms-marketing,GET,/api/v1/marketing/criterios-permitidos,PERMISO,marketing.segment.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.segment.read,replica control vigente
+ms-marketing,GET,/api/v1/segmentos,PERMISO,marketing.segment.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.segment.read,replica control vigente
+ms-marketing,GET,/api/v1/segmentos/{segmentId},PERMISO,marketing.segment.read,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR RECEPTIONIST,@RequiresPermission marketing.segment.read,replica control vigente
+ms-marketing,PATCH,/api/v1/segmentos/{segmentId},PERMISO,marketing.segment.update,MARKETING,no,PLATFORM_ADMIN ADMINISTRATOR,@RequiresPermission marketing.segment.update,replica control vigente
+ms-marketing,GET,/api/v1/marketing/ping,PUBLICO,,,,,@PublicEndpoint,
+ms-marketing,GET,/internal/v1/campanas/{campaignId}/destinatarios,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,GET,/internal/v1/campanas/{campaignId}/eventos,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,POST,/internal/v1/eventos,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,GET,/internal/v1/eventos/salientes,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,POST,/internal/v1/eventos/salientes/{eventId}/publicado,INTERNO,,,,,@InternalEndpoint,
+ms-marketing,POST,/internal/v1/promociones/validar,INTERNO,,,,,@InternalEndpoint,

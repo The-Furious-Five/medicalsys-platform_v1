@@ -27,7 +27,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * Valida el JWT emitido por ms-identidad y repropaga la identidad como headers de confianza
  * hacia los servicios internos, tal como esperan sus TenantContextFilter (ms-tenencia,
  * ms-historial, ms-facturacion, ms-pacientes, ms-documental): X-User-Id, X-Organization-Id,
- * X-Roles. Tambien garantiza X-Correlation-Id en cada salto, con la misma convencion de header
+ * X-Roles, y X-Permissions con los permisos del claim permissions (RBAC-03), que cada servicio exige
+ * con @RequiresPermission. Tambien garantiza X-Correlation-Id en cada salto, con la misma convencion de header
  * ya usada por esos mismos servicios (CorrelationIdFilter).
  *
  * <p>Alcance deliberadamente acotado (no es una matriz de autorizacion por ruta):
@@ -35,7 +36,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>Si no llega Authorization, el filtro no rechaza la solicitud: varias rutas reales son
  *       publicas por diseno (login, /ping, catalogos, /internal/v1/crypto, y hoy tambien
  *       ms-agenda/ms-profesionales, que no exigen JWT en su propio codigo). Se limita a retirar
- *       cualquier X-User-Id/X-Organization-Id/X-Roles que el cliente haya enviado el mismo, para
+ *       cualquier X-User-Id/X-Organization-Id/X-Roles/X-Permissions que el cliente haya enviado el mismo, para
  *       que nadie pueda suplantar un tenant sin pasar por ms-identidad. El servicio de destino
  *       sigue decidiendo si esa ausencia de contexto es un 401 (p. ej. TenantContextFilter).</li>
  *   <li>Si llega Authorization pero el token es invalido o expiro, aqui si se corta con 401: un
@@ -49,6 +50,7 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
     static final String ORGANIZATION_HEADER = "X-Organization-Id";
     static final String USER_HEADER = "X-User-Id";
     static final String ROLES_HEADER = "X-Roles";
+    static final String PERMISSIONS_HEADER = "X-Permissions";
     static final String CORRELATION_HEADER = "X-Correlation-Id";
 
     private final JwtDecoder jwtDecoder;
@@ -90,6 +92,10 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             if (roles != null && !roles.isEmpty()) {
                 overrides.put(ROLES_HEADER, String.join(",", roles));
             }
+            List<String> permissions = jwt.getClaimAsStringList("permissions");
+            if (permissions != null && !permissions.isEmpty()) {
+                overrides.put(PERMISSIONS_HEADER, String.join(",", permissions));
+            }
         }
 
         chain.doFilter(new TenantHeaderRequestWrapper(request, overrides), response);
@@ -105,6 +111,7 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
                 ORGANIZATION_HEADER.toLowerCase(Locale.ROOT),
                 USER_HEADER.toLowerCase(Locale.ROOT),
                 ROLES_HEADER.toLowerCase(Locale.ROOT),
+                PERMISSIONS_HEADER.toLowerCase(Locale.ROOT),
                 CORRELATION_HEADER.toLowerCase(Locale.ROOT));
 
         private final Map<String, String> overridesByLowerName = new LinkedHashMap<>();
