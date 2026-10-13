@@ -47,8 +47,12 @@ public class KeycloakClient {
         DISABLED
     }
 
-    /** Datos de una cuenta en Keycloak. El username es el correo; se inicia sesión con él. */
-    public record NewUser(String email, String firstName, String lastName, boolean enabled) { }
+    /**
+     * Datos de una cuenta en Keycloak. El username es el public_id de MedicalSys: inmutable y sin datos
+     * personales (con editUsernameAllowed=false Keycloak no deja cambiarlo ni al administrador). Se
+     * inicia sesión con el correo, que sí se puede modificar.
+     */
+    public record NewUser(String username, String email, String firstName, String lastName, boolean enabled) { }
 
     private final IdentityProperties.Keycloak config;
     private final ObjectMapper json;
@@ -149,7 +153,7 @@ public class KeycloakClient {
     }
 
     private String createUser(NewUser user, List<Map<String, Object>> credentials) {
-        Map<String, Object> body = Map.of("username", user.email(), "email", user.email(),
+        Map<String, Object> body = Map.of("username", user.username(), "email", user.email(),
                 "firstName", user.firstName(), "lastName", user.lastName(), "enabled", user.enabled(),
                 "emailVerified", true, "credentials", credentials);
         URI location = call(() -> http.post().uri(adminUrl("/users")).headers(h -> h.setBearerAuth(serviceToken()))

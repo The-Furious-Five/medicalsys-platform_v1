@@ -133,6 +133,10 @@ Como responde lo mismo a una contraseña incorrecta y a una cuenta bloqueada, ms
 bloqueo con la service account (`/attack-detection/brute-force/users/{id}`). La sesión que abre el password
 grant se cierra en el acto: el único token que circula es el de MedicalSys.
 
+En Keycloak el username de cada cuenta es su `public_id`: inmutable y sin datos personales. Con
+`editUsernameAllowed: false` Keycloak no deja cambiar el username ni al administrador. Se inicia sesión con
+el correo (`loginWithEmailAllowed`), que sí se puede modificar.
+
 **Migración de cuentas.** Al arrancar, `KeycloakAccountMigration` enlaza las cuentas sin
 `keycloak_user_id`. Si Keycloak ya tiene ese correo, guarda el id. Si no, crea el usuario importando el hash
 Argon2id de `password_hash` tal cual (`LegacyArgon2Hash`), sin conocer la contraseña, y borra el hash

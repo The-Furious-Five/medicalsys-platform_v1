@@ -109,8 +109,8 @@ public class KeycloakAccountLinker {
             return null;
         }
         String[] names = splitName(user.getFullName());
-        return keycloak.createUserWithLegacyHash(new KeycloakClient.NewUser(user.getEmail(), names[0], names[1],
-                user.getStatus() != UserStatus.INACTIVE), hash);
+        return keycloak.createUserWithLegacyHash(new KeycloakClient.NewUser(user.getPublicId().toString(),
+                user.getEmail(), names[0], names[1], user.getStatus() != UserStatus.INACTIVE), hash);
     }
 
     /** Keycloak exige nombre y apellido; full_name es un solo campo. */
