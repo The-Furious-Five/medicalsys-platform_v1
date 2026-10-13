@@ -6,7 +6,7 @@ credenciales contra Keycloak y sigue emitiendo su propio JWT con roles y permiso
 
 | Pieza | Valor |
 |---|---|
-| Imagen | `quay.io/keycloak/keycloak:26.4` (26.4.7 al 12/10/2026) |
+| Imagen | `quay.io/keycloak/keycloak:26.7.5` (las evidencias de IAM-01 e IAM-02 se tomaron con 26.4.7) |
 | Base | `keycloak` en el Postgres de la plataforma; la crean `keycloak-db-init` y `create-database.sh` |
 | Realm | `medicalsys`, importado desde `realm-medicalsys.json` al arrancar |
 | Cliente | `ms-identidad`, confidencial, con Direct Access Grants y service account |

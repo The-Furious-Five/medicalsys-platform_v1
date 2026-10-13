@@ -65,12 +65,22 @@ despliegue: `mysql-init` no cambia la contrasena de un usuario que ya existe, y 
 se importa si todavia no existe. Si las cambias despues, tambien hay que cambiarlas a mano en
 MySQL o en Keycloak.
 
+`DEMO_MASTER_KEY` tampoco se cambia nunca despues del primer despliegue: de ella se derivan las
+llaves con las que se cifra la narrativa clinica, y con otra ya no se puede descifrar.
+
 ```dotenv
 # Seguridad
 JWT_SECRET=CAMBIAR_minimo_32_bytes
 DEMO_MASTER_KEY=CAMBIAR
 CRYPTO_SERVICE_SHARED_SECRET=CAMBIAR
 IDENTITY_DEMO_ORGANIZATION=00000000-0000-4000-8000-0000000000a1
+
+# Cuentas demo del personal (admin@, recepcion@, doctor@medicalsys.demo...), para la presentacion.
+# La contrasena debe cumplir la politica de Keycloak (IAM-02): 12 a 64 caracteres, mayuscula,
+# minuscula, digito y caracter especial, y no estar en infra/keycloak/password-blacklists.
+# No uses la del README: es publica.
+IDENTITY_DEMO_USERS_ENABLED=true
+IDENTITY_DEMO_PASSWORD=CAMBIAR
 
 # MySQL
 MYSQL_ROOT_PASSWORD=CAMBIAR

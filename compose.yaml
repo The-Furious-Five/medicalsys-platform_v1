@@ -193,7 +193,7 @@ services:
     logging: *medicalsys-logging
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4
+    image: quay.io/keycloak/keycloak:26.7.5
     # --import-realm importa infra/keycloak/realm-medicalsys.json solo si el realm no existe.
     # Para aplicar cambios del archivo a un realm ya creado: infra/keycloak/sync-realm.sh.
     command: ["start-dev", "--http-port=8080", "--import-realm"]
@@ -243,6 +243,8 @@ services:
       SPRING_DATA_REDIS_PORT: "6379"
       JWT_SECRET: ${JWT_SECRET}
       IDENTITY_DEMO_USERS_ENABLED: ${IDENTITY_DEMO_USERS_ENABLED:-false}
+      # En un despliegue publico hay que cambiarla: la de por defecto esta en el README.
+      IDENTITY_DEMO_PASSWORD: ${IDENTITY_DEMO_PASSWORD:-SanGabriel.Demo26!}
       IDENTITY_DEMO_ORGANIZATION: ${IDENTITY_DEMO_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
       PLATFORM_ADMIN_SEED_ENABLED: ${PLATFORM_ADMIN_SEED_ENABLED:-false}
       PLATFORM_ADMIN_PUBLIC_ID: ${PLATFORM_ADMIN_PUBLIC_ID:-00000000-0000-4000-8000-000000000900}
