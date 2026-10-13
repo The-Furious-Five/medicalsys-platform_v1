@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-mysql --protocol=socket -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+mysql --protocol=tcp -h "${MYSQL_HOST:-127.0.0.1}" -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
     CREATE DATABASE IF NOT EXISTS identity_db
         CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
     CREATE USER IF NOT EXISTS 'identity_user'@'%'

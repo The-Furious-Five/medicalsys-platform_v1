@@ -41,7 +41,8 @@ public class UserAccount {
     @Column(name = "full_name", nullable = false, length = 180)
     private String fullName;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    /** NULL cuando la contrasena vive en Keycloak (hash_algorithm = 'keycloak'). */
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
     @Column(name = "hash_algorithm", nullable = false, length = 20)

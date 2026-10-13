@@ -22,7 +22,8 @@ import java.util.Objects;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.medicalsys.identidad.security.KeycloakClient.PasswordCheck;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,15 +33,15 @@ public class UserService {
 
     private final UserAccountRepository users;
     private final RoleRepository roles;
-    private final PasswordEncoder passwordEncoder;
+    private final CredentialService credentials;
     private final IdentityMapper mapper;
     private final SessionStore sessionStore;
 
-    public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
+    public UserService(UserAccountRepository users, RoleRepository roles, CredentialService credentials,
                        IdentityMapper mapper, SessionStore sessionStore) {
         this.users = users;
         this.roles = roles;
-        this.passwordEncoder = passwordEncoder;
+        this.credentials = credentials;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
     }
@@ -58,9 +59,7 @@ public class UserService {
         user.setPhoneE164(StringUtils.hasText(request.phoneE164()) ? request.phoneE164() : null);
         user.setOrganizationPublicId(request.organizationPublicId());
         user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "es-BO");
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setHashAlgorithm("argon2id");
-        user.setPasswordUpdatedAt(Instant.now());
+        credentials.store(user, request.password());
         user.setStatus(Boolean.TRUE.equals(request.activateImmediately())
                 ? UserStatus.ACTIVE
                 : UserStatus.PENDING_ACTIVATION);
@@ -123,15 +122,18 @@ public class UserService {
     @Transactional
     public void changePassword(UUID publicId, ChangePasswordRequest request) {
         UserAccount user = require(publicId);
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw ApiException.unauthorized("La contrasena actual no coincide");
-        }
-        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+        if (request.newPassword().equals(request.currentPassword())) {
             throw ApiException.badRequest("La nueva contrasena debe ser distinta de la actual");
         }
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        user.setHashAlgorithm("argon2id");
-        user.setPasswordUpdatedAt(Instant.now());
+        PasswordCheck check = credentials.verify(user, request.currentPassword());
+        if (check == PasswordCheck.INVALID) {
+            throw ApiException.unauthorized("La contrasena actual no coincide");
+        }
+        if (check == PasswordCheck.LOCKED) {
+            throw new ApiException(HttpStatus.LOCKED, "Cuenta bloqueada",
+                    "La cuenta esta bloqueada temporalmente por intentos fallidos");
+        }
+        credentials.store(user, request.newPassword());
         sessionStore.closeAll(user.getPublicId());
     }
 

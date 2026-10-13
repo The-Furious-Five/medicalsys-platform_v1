@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cuentas del centro de demostracion, con contrasena hasheada por {@link UserService}.
+ * Cuentas del centro de demostracion; su contrasena se guarda en Keycloak via {@link CredentialService}.
  * Se puede desactivar con IDENTITY_DEMO_USERS_ENABLED=false.
  *
  * <p>El padron no son tres cuentas genericas sino el personal de un policlinico: la
@@ -64,11 +64,14 @@ public class DemoUserSeeder implements ApplicationRunner {
     private final IdentityProperties properties;
     private final UserAccountRepository users;
     private final UserService userService;
+    private final CredentialService credentials;
 
-    public DemoUserSeeder(IdentityProperties properties, UserAccountRepository users, UserService userService) {
+    public DemoUserSeeder(IdentityProperties properties, UserAccountRepository users, UserService userService,
+                          CredentialService credentials) {
         this.properties = properties;
         this.users = users;
         this.userService = userService;
+        this.credentials = credentials;
     }
 
     @Override
@@ -98,6 +101,12 @@ public class DemoUserSeeder implements ApplicationRunner {
         users.findByEmailIgnoreCase(account.email())
                 .ifPresent(user -> {
                     boolean changed = false;
+                    // Cuentas sembradas por versiones anteriores con hash Argon2 local: pasan a Keycloak.
+                    String algorithm = user.getHashAlgorithm();
+                    credentials.migrateIfMatches(user, password);
+                    if (!algorithm.equals(user.getHashAlgorithm())) {
+                        changed = true;
+                    }
                     if (!publicId.equals(user.getPublicId())) {
                         user.setPublicId(publicId);
                         changed = true;

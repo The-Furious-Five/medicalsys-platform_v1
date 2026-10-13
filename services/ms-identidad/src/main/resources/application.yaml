@@ -60,3 +60,9 @@ medicalsys:
       email: ${PLATFORM_ADMIN_EMAIL:platform.admin@medicalsys.demo}
       full-name: ${PLATFORM_ADMIN_FULL_NAME:Administrador de MedicalSys}
       password: ${PLATFORM_ADMIN_PASSWORD:}
+    keycloak:
+      enabled: ${KEYCLOAK_ENABLED:true}
+      base-url: ${KEYCLOAK_BASE_URL:http://localhost:18080}
+      realm: ${KEYCLOAK_REALM:medicalsys}
+      client-id: ${KEYCLOAK_CLIENT_ID:ms-identidad}
+      client-secret: ${KEYCLOAK_CLIENT_SECRET:}

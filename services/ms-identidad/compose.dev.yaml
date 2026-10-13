@@ -61,6 +61,8 @@ services:
       # Minimo 32 bytes. En el entorno compartido lo provee el .env de la raiz.
       JWT_SECRET: ${JWT_SECRET:-reemplazalo-con-secreto-local-demostrativo}
       IDENTITY_DEMO_USERS_ENABLED: "true"
+      # Entorno aislado sin Keycloak: las contrasenas se guardan con Argon2 local.
+      KEYCLOAK_ENABLED: "false"
     ports:
       # Solo para probar el servicio aislado. En el entorno compartido nadie publica este puerto:
       # el unico puerto expuesto al host es el 8080 del gateway.

@@ -16,14 +16,96 @@ x-logging: &medicalsys-logging
     max-size: "10m"
     max-file: "3"
 
-# Conexion compartida al servicio MySQL administrado de Aiven. Cada microservicio
-# conserva su propia base para que sus migraciones Flyway permanezcan aisladas.
-x-aiven-mysql-environment: &aiven-mysql-environment
-  DB_USER: ${AIVEN_MYSQL_USER}
-  DB_PASSWORD: ${AIVEN_MYSQL_PASSWORD}
-  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${AIVEN_DB_POOL_SIZE:-2}
-
 services:
+  # Un solo MySQL local para todos los microservicios. Cada servicio conserva su
+  # propia base y su propio usuario para que sus migraciones Flyway permanezcan aisladas.
+  mysql:
+    image: mysql:8.4
+    command:
+      - --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-medicalsys-root-local}
+    ports:
+      - "${MYSQL_HOST_PORT:-13306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+    logging: *medicalsys-logging
+
+  # Crea bases y usuarios en cada arranque. Es idempotente, asi que tambien funciona sobre un
+  # volumen mysql_data ya existente (docker-entrypoint-initdb.d solo corre con el volumen vacio).
+  mysql-init:
+    image: mysql:8.4
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-medicalsys-root-local}
+      IDENTIDAD_DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD:-identidad-local}
+      TENENCIA_DB_PASSWORD: ${TENENCIA_DB_PASSWORD:-tenencia-local}
+      CATALOGOS_DB_PASSWORD: ${CATALOGOS_DB_PASSWORD:-catalogos-local}
+      CRIPTOGRAFIA_DB_PASSWORD: ${CRIPTOGRAFIA_DB_PASSWORD:-criptografia-local}
+      PACIENTES_DB_PASSWORD: ${PACIENTES_DB_PASSWORD:-pacientes-local}
+      PROFESIONALES_DB_PASSWORD: ${PROFESIONALES_DB_PASSWORD:-profesionales-local}
+      HISTORIAL_DB_PASSWORD: ${HISTORIAL_DB_PASSWORD:-historial-local}
+      DOCUMENTAL_DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD:-documental-local}
+      FACTURACION_DB_PASSWORD: ${FACTURACION_DB_PASSWORD:-facturacion-local}
+      NOTIFICACIONES_DB_PASSWORD: ${NOTIFICACIONES_DB_PASSWORD:-notificaciones-local}
+      MARKETING_DB_PASSWORD: ${MARKETING_DB_PASSWORD:-marketing-local}
+      AUDITORIA_DB_PASSWORD: ${AUDITORIA_DB_PASSWORD:-auditoria-local}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./infra/mysql/init:/scripts:ro
+    entrypoint: ["/bin/bash", "/scripts/01-create-databases.sh"]
+    restart: "no"
+    logging: *medicalsys-logging
+
+  # Keycloak guarda y verifica las contrasenas de las cuentas. ms-identidad sigue siendo la
+  # fuente de roles, permisos y organizacion, y sigue emitiendo el JWT que valida el gateway.
+  # Su base «keycloak» vive en el mismo Postgres de ms-agenda (la crea postgres-init).
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.5
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-local}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_PORT: "8080"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-local}
+      # Placeholder ${KEYCLOAK_CLIENT_SECRET} del realm exportado: Keycloak lo sustituye al importar.
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-medicalsys-identity-secret-local}
+    ports:
+      - "${KEYCLOAK_HOST_PORT:-18080}:8080"
+    volumes:
+      # --import-realm omite el realm si ya existe, asi que reiniciar no pisa cambios hechos en la consola.
+      - ./infra/keycloak/realm-medicalsys.json:/opt/keycloak/data/import/realm-medicalsys.json:ro
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      # La imagen no trae curl: se consulta /health/ready del puerto de gestion con bash.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '200 OK' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    logging: *medicalsys-logging
+
   postgres:
     image: postgres:17-alpine
     environment:
@@ -42,6 +124,25 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    logging: *medicalsys-logging
+
+  # Crea el rol y la base «keycloak» en el Postgres existente. Es idempotente, asi que tambien
+  # funciona sobre un volumen postgres_data ya creado (initdb.d solo corre con el volumen vacio).
+  postgres-init:
+    image: postgres:17-alpine
+    environment:
+      PGHOST: postgres
+      PGUSER: scheduling_user
+      PGPASSWORD: ${AGENDA_DB_PASSWORD}
+      PGDATABASE: scheduling_db
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak-local}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./infra/postgres/create-keycloak-db.sh:/scripts/create-keycloak-db.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/create-keycloak-db.sh"]
+    restart: "no"
     logging: *medicalsys-logging
 
   redis:
@@ -147,9 +248,10 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-identidad:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8081"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/identity_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/identity_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: identity_user
+      DB_PASSWORD: ${IDENTIDAD_DB_PASSWORD:-identidad-local}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
       JWT_SECRET: ${JWT_SECRET}
@@ -160,9 +262,18 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-platform.admin@medicalsys.demo}
       PLATFORM_ADMIN_FULL_NAME: ${PLATFORM_ADMIN_FULL_NAME:-Administrador de MedicalSys}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
+      KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: medicalsys
+      KEYCLOAK_CLIENT_ID: ms-identidad
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-medicalsys-identity-secret-local}
     ports:
       - "${IDENTITY_HOST_PORT:-8081}:8081"
     depends_on:
+      keycloak:
+        condition: service_healthy
+      mysql-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
@@ -174,14 +285,15 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-tenencia:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8082"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/tenancy_db?sslMode=REQUIRED&serverTimezone=UTC
-      DATABASE_KEEPALIVE_ENABLED: ${AIVEN_KEEPALIVE_ENABLED:-true}
-      DATABASE_KEEPALIVE_INTERVAL: ${AIVEN_KEEPALIVE_INTERVAL:-PT10M}
-      DATABASE_KEEPALIVE_INITIAL_DELAY: ${AIVEN_KEEPALIVE_INITIAL_DELAY:-PT1M}
+      DB_URL: jdbc:mysql://mysql:3306/tenancy_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: tenancy_user
+      DB_PASSWORD: ${TENENCIA_DB_PASSWORD:-tenencia-local}
     ports:
       - "${TENANCY_HOST_PORT:-8082}:8082"
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -191,11 +303,15 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-catalogos:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8083"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/catalogs_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/catalogs_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: catalogs_user
+      DB_PASSWORD: ${CATALOGOS_DB_PASSWORD:-catalogos-local}
     ports:
       - "${CATALOGS_HOST_PORT:-8083}:8083"
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -205,13 +321,17 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-criptografia:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8084"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/cryptography_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/cryptography_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: cryptography_user
+      DB_PASSWORD: ${CRIPTOGRAFIA_DB_PASSWORD:-criptografia-local}
       DEMO_MASTER_KEY: ${DEMO_MASTER_KEY}
       CRYPTO_SERVICE_SHARED_SECRET: ${CRYPTO_SERVICE_SHARED_SECRET}
     ports:
       - "${CRYPTOGRAPHY_HOST_PORT:-8084}:8084"
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -221,15 +341,18 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-pacientes:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8085"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/patients_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/patients_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: patients_user
+      DB_PASSWORD: ${PACIENTES_DB_PASSWORD:-pacientes-local}
       FLYWAY_LOCATIONS: ${PACIENTES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       AUDIT_SERVICE_URL: http://ms-auditoria:8091
     ports:
       - "${PATIENTS_HOST_PORT:-8085}:8085"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       kafka-init:
         condition: service_completed_successfully
       # El envio a la bitacora es tolerante a fallos por diseno -no tumba el alta de un
@@ -246,12 +369,16 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-profesionales:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8086"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/professionals_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/professionals_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: professionals_user
+      DB_PASSWORD: ${PROFESIONALES_DB_PASSWORD:-profesionales-local}
       FLYWAY_LOCATIONS: ${PROFESIONALES_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
     ports:
       - "${PROFESSIONALS_HOST_PORT:-8086}:8086"
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -292,9 +419,10 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-historial:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8088"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/medical_records_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/medical_records_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: medical_records_user
+      DB_PASSWORD: ${HISTORIAL_DB_PASSWORD:-historial-local}
       FLYWAY_LOCATIONS: ${HISTORIAL_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo}
       # El modo LOCAL solo aceptaba cuatro codigos CIE-10 fijos en application.yaml, asi que
       # cualquier diagnostico elegido en la interfaz desde el catalogo real de ms-catalogos se
@@ -308,6 +436,8 @@ services:
     ports:
       - "${MEDICAL_RECORDS_HOST_PORT:-8088}:8088"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       ms-catalogos:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
@@ -319,9 +449,10 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-documental:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8089"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/documents_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/documents_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: documents_user
+      DB_PASSWORD: ${DOCUMENTAL_DB_PASSWORD:-documental-local}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
@@ -332,6 +463,8 @@ services:
     ports:
       - "${DOCUMENTS_HOST_PORT:-8089}:8089"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
@@ -343,9 +476,10 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-facturacion:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8090"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/billing_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/billing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: billing_user
+      DB_PASSWORD: ${FACTURACION_DB_PASSWORD:-facturacion-local}
       # Modos remotos: el cliente de la factura sale de ms-pacientes y el precio de la
       # prestacion de ms-tenencia. En LOCAL, facturacion derivaba un cliente ficticio del UUID
       # y solo conocia dos prestaciones, de modo que cobrar cualquier otra era imposible.
@@ -358,6 +492,8 @@ services:
     ports:
       - "${BILLING_HOST_PORT:-8090}:8090"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       ms-pacientes:
         condition: service_healthy
       ms-tenencia:
@@ -371,9 +507,10 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-marketing:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8092"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/marketing_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/marketing_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: marketing_user
+      DB_PASSWORD: ${MARKETING_DB_PASSWORD:-marketing-local}
       # Modos remotos: marketing consulta la demografia real de ms-pacientes y las
       # prestaciones reales de ms-tenencia en vez de derivarlas del UUID.
       PATIENTS_MODE: ${MARKETING_PATIENTS_MODE:-REMOTE}
@@ -387,6 +524,8 @@ services:
     ports:
       - "${MARKETING_HOST_PORT:-8092}:8092"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       ms-pacientes:
         condition: service_healthy
       ms-tenencia:
@@ -402,12 +541,16 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-auditoria:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8091"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/audit_db?sslMode=REQUIRED&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/audit_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: audit_user
+      DB_PASSWORD: ${AUDITORIA_DB_PASSWORD:-auditoria-local}
       AUDIT_DEMO_SEED: ${AUDITORIA_DEMO_SEED:-false}
     ports:
       - "${AUDIT_HOST_PORT:-8093}:8091"
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging
 
@@ -417,11 +560,11 @@ services:
       dockerfile: Dockerfile
     image: medicalsys/ms-notificaciones:local
     environment:
-      <<: *aiven-mysql-environment
       SERVER_PORT: "8091"
-      DB_URL: jdbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/notifications_db?sslMode=REQUIRED&serverTimezone=UTC
-      R2DBC_URL: r2dbc:mysql://${AIVEN_MYSQL_HOST}:${AIVEN_MYSQL_PORT:-24365}/notifications_db?sslMode=REQUIRED
-      DB_POOL_SIZE: ${AIVEN_DB_POOL_SIZE:-2}
+      DB_URL: jdbc:mysql://mysql:3306/notifications_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: notifications_user
+      DB_PASSWORD: ${NOTIFICACIONES_DB_PASSWORD:-notificaciones-local}
+      R2DBC_URL: r2dbc:mysql://mysql:3306/notifications_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MARKETING_SERVICE_URL: http://ms-marketing:8092
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-mock}
@@ -438,6 +581,8 @@ services:
     ports:
       - "${NOTIFICATIONS_HOST_PORT:-8091}:8091"
     depends_on:
+      mysql-init:
+        condition: service_completed_successfully
       kafka-init:
         condition: service_completed_successfully
     logging: *medicalsys-logging
@@ -493,6 +638,7 @@ services:
     logging: *medicalsys-logging
 
 volumes:
+  mysql_data:
   postgres_data:
   redis_data:
   minio_data:

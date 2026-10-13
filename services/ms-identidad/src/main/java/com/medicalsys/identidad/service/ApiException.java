@@ -7,11 +7,22 @@ public class ApiException extends RuntimeException {
 
     private final HttpStatus status;
     private final String title;
+    private final String code;
 
     public ApiException(HttpStatus status, String title, String detail) {
+        this(status, title, detail, null);
+    }
+
+    /** {@code code} es un identificador estable para el frontend, p. ej. PASSWORD_CHANGE_REQUIRED. */
+    public ApiException(HttpStatus status, String title, String detail, String code) {
         super(detail);
         this.status = status;
         this.title = title;
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public static ApiException notFound(String detail) {

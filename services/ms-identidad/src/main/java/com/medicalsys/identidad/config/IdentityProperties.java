@@ -11,6 +11,7 @@ public class IdentityProperties {
     private final Lockout lockout = new Lockout();
     private final DemoUsers demoUsers = new DemoUsers();
     private final PlatformAdmin platformAdmin = new PlatformAdmin();
+    private final Keycloak keycloak = new Keycloak();
 
     public Jwt getJwt() {
         return jwt;
@@ -26,6 +27,10 @@ public class IdentityProperties {
 
     public PlatformAdmin getPlatformAdmin() {
         return platformAdmin;
+    }
+
+    public Keycloak getKeycloak() {
+        return keycloak;
     }
 
     public static class Jwt {
@@ -132,5 +137,28 @@ public class IdentityProperties {
         public void setFullName(String fullName) { this.fullName = fullName; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+    }
+
+    /**
+     * Keycloak guarda las contrasenas. Con {@code enabled=false} se vuelve al hash Argon2 local,
+     * util para levantar ms-identidad aislado (compose.dev.yaml) sin Keycloak.
+     */
+    public static class Keycloak {
+        private boolean enabled = true;
+        private String baseUrl = "http://localhost:18080";
+        private String realm = "medicalsys";
+        private String clientId = "ms-identidad";
+        private String clientSecret;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public String getRealm() { return realm; }
+        public void setRealm(String realm) { this.realm = realm; }
+        public String getClientId() { return clientId; }
+        public void setClientId(String clientId) { this.clientId = clientId; }
+        public String getClientSecret() { return clientSecret; }
+        public void setClientSecret(String clientSecret) { this.clientSecret = clientSecret; }
     }
 }
