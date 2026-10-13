@@ -9,48 +9,48 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pruebas de la politica de bloqueo de cuenta. No requieren contexto de Spring ni base de datos:
- * la verificacion de arranque completo se hace contra el contenedor real (ver README del servicio).
+ * Estado de bloqueo de la cuenta local. Desde IAM-03 los intentos los cuenta Keycloak (bloqueo al
+ * 3er intento, ver infra/keycloak); la cuenta local solo refleja el resultado. No requieren contexto
+ * de Spring ni base de datos.
  */
 class IdentidadApplicationTests {
 
     @Test
-    @DisplayName("la cuenta se bloquea al alcanzar el maximo de intentos fallidos")
-    void locksAfterMaxFailedAttempts() {
+    @DisplayName("el bloqueo de Keycloak se refleja como LOCKED, sin fecha de fin: es permanente")
+    void mirrorsIdentityProviderLockout() {
         UserAccount user = new UserAccount();
         user.setStatus(UserStatus.ACTIVE);
-        Instant lockUntil = Instant.now().plusSeconds(900);
 
-        for (int attempt = 0; attempt < 4; attempt++) {
-            user.registerFailedAttempt(5, lockUntil);
-        }
-        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
-        assertThat(user.getLockedUntil()).isNull();
+        user.markLockedByIdentityProvider();
 
-        user.registerFailedAttempt(5, lockUntil);
-
-        assertThat(user.getFailedAttempts()).isEqualTo((byte) 5);
         assertThat(user.getStatus()).isEqualTo(UserStatus.LOCKED);
-        assertThat(user.isCurrentlyLocked(Instant.now())).isTrue();
+        assertThat(user.getLockedUntil()).isNull();
     }
 
     @Test
-    @DisplayName("un acceso correcto limpia el contador y reactiva una cuenta bloqueada")
+    @DisplayName("un acceso correcto reactiva una cuenta bloqueada y registra el acceso")
     void successfulAccessClearsLock() {
         UserAccount user = new UserAccount();
         user.setStatus(UserStatus.ACTIVE);
-        Instant lockUntil = Instant.now().plusSeconds(900);
-        for (int attempt = 0; attempt < 5; attempt++) {
-            user.registerFailedAttempt(5, lockUntil);
-        }
+        user.markLockedByIdentityProvider();
 
         Instant now = Instant.now();
         user.registerSuccessfulAccess(now);
 
         assertThat(user.getFailedAttempts()).isZero();
-        assertThat(user.getLockedUntil()).isNull();
         assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
         assertThat(user.getLastAccessAt()).isEqualTo(now);
+    }
+
+    @Test
+    @DisplayName("una cuenta sin keycloak_user_id todavía no está enlazada")
+    void linkState() {
+        UserAccount user = new UserAccount();
+        assertThat(user.isLinkedToIdentityProvider()).isFalse();
+
+        user.setKeycloakUserId("3b043518-c564-4fbb-b35a-bbd9c7e9abb1");
+
+        assertThat(user.isLinkedToIdentityProvider()).isTrue();
     }
 
     @Test

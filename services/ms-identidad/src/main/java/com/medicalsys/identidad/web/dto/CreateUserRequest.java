@@ -11,7 +11,9 @@ import java.util.UUID;
 public record CreateUserRequest(
         @NotBlank @Email @Size(max = 160) String email,
         @NotBlank @Size(max = 180) String fullName,
-        @NotBlank @Size(min = 8, max = 200) String password,
+        // IAM-04: opcional. Sin ella se genera una contraseña temporal; con ella, Keycloak aplica la
+        // política. En ambos casos el usuario debe cambiarla en su primer ingreso (UPDATE_PASSWORD).
+        @Size(max = 64) String password,
         @Pattern(regexp = "^\\+[1-9][0-9]{6,18}$", message = "debe tener formato E.164") String phoneE164,
         UUID organizationPublicId,
         @Size(max = 5) String language,

@@ -1,0 +1,25 @@
+# IAM-03 · salida de services/ms-identidad/scripts/login-keycloak.sh
+# 2026-10-13T02:29:57Z · ms-identidad (rama feature/sins-51) contra Keycloak 26.4.7, entorno local de prueba
+
+Cuenta de prueba: iam03.prueba.1791858597@medicalsys.demo
+
+== 1. Contraseña válida
+HTTP 200  accessToken eyJhbGciOiJIUzI1… roles ["RECEPTIONIST"]
+
+== 2. Contraseña inválida (1er fallo)
+HTTP 401  - · Correo o contrasena incorrectos
+   Correo inexistente:
+HTTP 401  - · Correo o contrasena incorrectos
+
+== 3. Cuenta bloqueada al 3er intento
+   2º fallo:
+HTTP 401  - · Correo o contrasena incorrectos
+   3er fallo:
+HTTP 423  ACCOUNT_LOCKED · La cuenta esta bloqueada por intentos fallidos. Solicita el desbloqueo a un administrador.
+   Con la contraseña correcta:
+HTTP 423  ACCOUNT_LOCKED · La cuenta esta bloqueada por intentos fallidos. Solicita el desbloqueo a un administrador.
+   Tras desbloquear desde la app:
+HTTP 200  accessToken eyJhbGciOiJIUzI1… roles ["RECEPTIONIST"]
+
+== 4. Contraseña vencida
+HTTP 403  PASSWORD_CHANGE_REQUIRED · Debes cambiar tu contrasena antes de iniciar sesion.

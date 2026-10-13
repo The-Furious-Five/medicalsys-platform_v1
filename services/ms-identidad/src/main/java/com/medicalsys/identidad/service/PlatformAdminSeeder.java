@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -26,6 +27,7 @@ import org.springframework.util.StringUtils;
  * idempotente y no duplica ni la cuenta ni su rol.
  */
 @Component
+@Order(20) // antes de KeycloakAccountMigration (100), que enlaza lo que este seeder crea
 public class PlatformAdminSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformAdminSeeder.class);
@@ -34,13 +36,15 @@ public class PlatformAdminSeeder implements ApplicationRunner {
     private final UserAccountRepository users;
     private final RoleRepository roles;
     private final UserService userService;
+    private final KeycloakAccountLinker linker;
 
     public PlatformAdminSeeder(IdentityProperties properties, UserAccountRepository users,
-            RoleRepository roles, UserService userService) {
+            RoleRepository roles, UserService userService, KeycloakAccountLinker linker) {
         this.properties = properties;
         this.users = users;
         this.roles = roles;
         this.userService = userService;
+        this.linker = linker;
     }
 
     @Override
@@ -60,14 +64,16 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
 
         if (!users.existsByEmailIgnoreCase(config.getEmail())) {
-            userService.create(new CreateUserRequest(
+            userService.createSeedAccount(new CreateUserRequest(
                     config.getEmail(), config.getFullName(), config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
-                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))), null);
+                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))));
             log.info("Cuenta PLATFORM_ADMIN creada: {}", config.getEmail());
         }
 
         UserAccount user = users.findByEmailIgnoreCase(config.getEmail()).orElseThrow();
+        // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con PLATFORM_ADMIN_PASSWORD.
+        linker.restoreConfiguredCredential(user, config.getPassword());
         boolean changed = false;
         if (!config.getPublicId().equals(user.getPublicId())) {
             user.setPublicId(config.getPublicId());

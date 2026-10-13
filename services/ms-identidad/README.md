@@ -30,7 +30,9 @@ Dos decisiones que conviene conocer al leer la migración:
 - `organization_public_id`, `branch_public_id` y `encryption_key_public_id` son referencias externas:
   se guardan como `BINARY(16)` **sin clave foránea**, tal como exige el modelo distribuido.
 
-Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunca en texto plano.
+Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2id) y no en esta base: ver
+[Login delegado a Keycloak](#login-delegado-a-keycloak-iam-03). `V6__keycloak_account_link.sql` agrega
+`keycloak_user_id` y vuelve opcional `password_hash`, que solo existe hasta enlazar la cuenta.
 
 ## Endpoints
 
@@ -41,6 +43,7 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | GET | `/api/v1/identity/ping` | Prueba de vida del servicio |
 | GET | `/actuator/health` | Salud, incluye MySQL y Redis |
 | POST | `/api/v1/identity/auth/login` | Devuelve el JWT y el perfil del usuario |
+| POST | `/api/v1/identity/auth/change-password` | Sin sesión: primer ingreso con temporal o contraseña vencida (`email`, `currentPassword`, `newPassword`) |
 
 ### Autenticados (cabecera `Authorization: Bearer <token>`)
 
@@ -48,7 +51,7 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 |---|---|---|
 | GET | `/api/v1/identity/auth/me` | solo estar autenticado |
 | POST | `/api/v1/identity/auth/logout` | solo estar autenticado |
-| POST | `/api/v1/identity/auth/change-password` | solo estar autenticado |
+| POST | `/api/v1/identity/auth/change-password` | con sesión: solo estar autenticado (sin sesión, ver arriba) |
 | GET | `/api/v1/identity/roles`, `/roles/{code}`, `/permissions`, `/role-incompatibilities` | `identity.role.read` |
 | POST | `/api/v1/identity/roles` | `identity.role.manage` |
 | PATCH | `/api/v1/identity/roles/{code}` | `identity.role.manage` |
@@ -61,6 +64,8 @@ Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunc
 | POST | `/api/v1/identity/users` | `identity.user.create` |
 | PATCH | `/api/v1/identity/users/{publicId}` | `identity.user.update` |
 | PATCH | `/api/v1/identity/users/{publicId}/status` | `identity.user.change_status` |
+| POST | `/api/v1/identity/users/{publicId}/unlock` | `identity.user.unlock` |
+| POST | `/api/v1/identity/users/{publicId}/reset-password` | `identity.user.reset` |
 | POST | `/api/v1/identity/users/{publicId}/roles` | `identity.role.assign` |
 | DELETE | `/api/v1/identity/users/{publicId}/roles/{role}` | `identity.role.assign` |
 
@@ -110,10 +115,89 @@ El `organizationId` que envía el cliente nunca se usa como fuente de verdad: sa
 
 ## Reglas de acceso
 
-- Cinco intentos fallidos bloquean la cuenta 15 minutos (`status = LOCKED`, respuesta `423`).
-  El contador se confirma en su propia transacción, porque la del login se revierte al responder 401.
-- Una cuenta `PENDING_ACTIVATION` o `INACTIVE` no puede entrar (`403`).
-- El mensaje de error no distingue entre correo inexistente y contraseña incorrecta.
+| Caso | Respuesta de `/auth/login` |
+|---|---|
+| Contraseña válida | `200` con el JWT propio de MedicalSys (el contrato no cambia) |
+| Contraseña incorrecta o correo inexistente | `401` con el mismo mensaje: no se revela si el correo existe |
+| Cuenta bloqueada (3er intento fallido) | `423`, `code: ACCOUNT_LOCKED`; la cuenta local pasa a `LOCKED` |
+| Contraseña temporal o vencida (90 días) | `403`, `code: PASSWORD_CHANGE_REQUIRED` |
+| Cuenta `PENDING_ACTIVATION` o `INACTIVE` | `403`, sin consultar Keycloak (no suma intentos fallidos) |
+| Keycloak no responde | `503`, `code: IDENTITY_PROVIDER_UNAVAILABLE`; no hay credenciales locales de respaldo |
+
+`PATCH /users/{id}/status` con `ACTIVE` también levanta el bloqueo en Keycloak. `/auth/change-password`
+valida la contraseña actual en Keycloak y fija la nueva con la política completa; si no la cumple responde
+`400`, `code: PASSWORD_POLICY_VIOLATION`, con el motivo en español.
+
+## Login delegado a Keycloak (IAM-03)
+
+`AuthService.login` valida la contraseña con el token endpoint del realm `medicalsys` (cliente confidencial
+`ms-identidad`, Direct Access Grants). Keycloak aplica la política de IAM-02 y cuenta los intentos fallidos.
+Como responde lo mismo a una contraseña incorrecta y a una cuenta bloqueada, ms-identidad distingue el
+bloqueo con la service account (`/attack-detection/brute-force/users/{id}`). La sesión que abre el password
+grant se cierra en el acto: el único token que circula es el de MedicalSys.
+
+En Keycloak el username de cada cuenta es su `public_id`: inmutable y sin datos personales. Con
+`editUsernameAllowed: false` Keycloak no deja cambiar el username ni al administrador. Se inicia sesión con
+el correo (`loginWithEmailAllowed`), que sí se puede modificar.
+
+**Migración de cuentas.** Al arrancar, `KeycloakAccountMigration` enlaza las cuentas sin
+`keycloak_user_id`. Si Keycloak ya tiene ese correo, guarda el id. Si no, crea el usuario importando el hash
+Argon2id de `password_hash` tal cual (`LegacyArgon2Hash`), sin conocer la contraseña, y borra el hash
+local. La política rige para toda contraseña nueva o cambiada, y la heredada vence a los 90 días. Las
+cuentas demo usan `SanGabriel.Demo26!` (configurable con `IDENTITY_DEMO_PASSWORD`), que cumple la
+política: así ninguna cuenta de la demostración contradice IAM-02.
+
+Si una cuenta enlazada ya no existe en Keycloak (por ejemplo, se recreó su base), se desenlaza al arrancar.
+Las cuentas demo y la de plataforma se reponen desde `IDENTITY_DEMO_PASSWORD` y `PLATFORM_ADMIN_PASSWORD`;
+las demás necesitan un reinicio de contraseña. Una cuenta que se crea después del arranque se enlaza en su
+primer login.
+
+Comprobación de punta a punta: `scripts/login-keycloak.sh` recorre los cuatro casos con curl (salida de
+referencia en `scripts/evidencia-iam-03.txt`).
+
+## Gestión de usuarios sincronizada con Keycloak (IAM-04)
+
+**User ID estándar.** Cada cuenta tiene un `userCode` `MS-AA-NNNNN` (C-01): `MS` de MedicalSys, `AA` los
+dos últimos dígitos del año de alta y `NNNNN` un correlativo de `user_code_sequence`. Es único, no cambia
+nunca y no se reutiliza aunque la cuenta se dé de baja; no incluye rol ni datos personales. La V7 se lo
+asigna a las cuentas existentes por orden de alta. Aparece en `UserResponse` y en el contrato interno, y la
+búsqueda de usuarios también filtra por él. La inmutabilidad la garantiza la entidad
+(`updatable = false`); un trigger en la base requiere `--log-bin-trust-function-creators=ON` en el MySQL
+compartido y queda pendiente de confirmar en Aiven.
+
+| Operación | MedicalSys | Keycloak |
+|---|---|---|
+| Alta (`POST /users`) | Cuenta con `userCode` y roles | Usuario con username = `public_id`, contraseña **temporal** y `UPDATE_PASSWORD` |
+| Modificación (`PATCH /users/{id}`) | Nombre, correo, teléfono, idioma | Nombre y correo (el username no cambia) |
+| Baja (`PATCH /users/{id}/status` → `INACTIVE`) | Estado `INACTIVE`, la cuenta se conserva | `enabled: false`, nunca se borra |
+| Reactivación (`ACTIVE`) | Estado `ACTIVE` | Habilita y levanta el bloqueo |
+
+**Contraseña temporal.** En el alta, `password` es opcional. Sin ella, el sistema genera una de 19
+caracteres que siempre cumple la política (`Kq7m-Xw3p-Rt9v-Hn4c`) y la devuelve **una sola vez** en
+`temporaryPassword`. El administrador la entrega por un canal seguro y nunca conoce la definitiva. Con
+ella, Keycloak aplica la política (`400 PASSWORD_POLICY_VIOLATION`). En ambos casos el usuario debe
+cambiarla en su primer ingreso (`403 PASSWORD_CHANGE_REQUIRED` hasta hacerlo).
+
+Primero se crea el usuario en Keycloak y después se asigna el `userCode`, así que un rechazo por la
+política no gasta un número. Si la transacción local falla después de crear el usuario en Keycloak, el
+alta se deshace allí.
+
+Comprobación: `scripts/abm-keycloak.sh` compara MedicalSys y Keycloak en cada paso (salida de referencia
+en `scripts/evidencia-iam-04.txt`).
+
+## Desbloqueo, reinicio y cambio de contraseña (IAM-05)
+
+| Operación | Quién | Qué hace |
+|---|---|---|
+| `POST /users/{id}/unlock` | `identity.user.unlock` | Levanta el bloqueo al 3er intento en Keycloak (borra los intentos y vuelve a habilitar al usuario); `LOCKED` pasa a `ACTIVE`. Antes, el administrador verifica la identidad por otro canal |
+| `POST /users/{id}/reset-password` | `identity.user.reset` | Emite una contraseña temporal (`TemporaryPasswordResponse`, se muestra una sola vez), exige cambiarla y cierra las sesiones. Si la cuenta ya no existía en Keycloak, la vuelve a crear |
+| `POST /auth/change-password` sin sesión | El titular | Para la temporal o la vencida: `{email, currentPassword, newPassword}`. Keycloak valida la actual (los fallos cuentan para el bloqueo) y aplica la política a la nueva, incluido el histórico de 5 |
+
+Una cuenta dada de baja (`INACTIVE`) no se desbloquea ni se reinicia (`409`): primero se reactiva.
+
+Demostración: `scripts/desbloqueo-reinicio.sh` recorre el criterio de aceptación (salida de referencia en
+`scripts/evidencia-iam-05.txt`): 3 intentos bloquean, se desbloquea desde la app, reinicio, cambio
+forzado y reutilizar una contraseña anterior se rechaza.
 
 ## Variables de entorno
 
@@ -127,8 +211,11 @@ El `organizationId` que envía el cliente nunca se usa como fuente de verdad: sa
 | `JWT_SECRET` | sí | — | Mínimo 32 bytes; el servicio no arranca si es menor |
 | `JWT_ISSUER` | no | `medicalsys-ms-identidad` | Claim `iss` |
 | `JWT_ACCESS_TTL` | no | `PT1H` | Vigencia del token |
-| `IDENTITY_MAX_FAILED_ATTEMPTS` | no | `5` | Intentos antes del bloqueo |
-| `IDENTITY_LOCK_DURATION` | no | `PT15M` | Duración del bloqueo |
+| `KEYCLOAK_URL` | no | `http://keycloak:8080` | Keycloak en la red de Compose |
+| `KEYCLOAK_REALM` | no | `medicalsys` | Realm |
+| `KEYCLOAK_CLIENT_ID` | no | `ms-identidad` | Cliente confidencial |
+| `KEYCLOAK_CLIENT_SECRET` | sí | — | Desde `KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET` |
+| `KEYCLOAK_TIMEOUT` | no | `PT5S` | Conexión y lectura |
 | `IDENTITY_DEMO_USERS_ENABLED` | no | `true` | Crea las cuentas de demostración al arrancar |
 | `IDENTITY_DEMO_ORGANIZATION` | no | `11111111-…-111111111111` | Organización de la demo |
 | `IDENTITY_DEMO_PASSWORD` | no | `SanGabriel.Demo26!` | Contraseña de las cuentas de demostración |

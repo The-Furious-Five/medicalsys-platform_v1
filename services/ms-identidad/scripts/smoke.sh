@@ -40,14 +40,28 @@ EMAIL="prueba-$RANDOM@medicalsys.demo"
 
 # Los cuerpos que llevan variables se arman aqui y no dentro de "$(...)": el bash 3.2 de macOS deja
 # alli las llaves sin comillas, las expande por las comas y el servicio recibe un JSON roto.
-NEW_BODY="{\"email\":\"$EMAIL\",\"fullName\":\"Usuario De Prueba\",\"password\":\"Prueba1234!\",\"phoneE164\":\"+59171234567\",\"organizationPublicId\":\"$ORG\",\"activateImmediately\":true,\"roles\":[{\"role\":\"RECEPTIONIST\"}]}"
-DUP_BODY="{\"email\":\"$EMAIL\",\"fullName\":\"Duplicado\",\"password\":\"Prueba1234!\",\"activateImmediately\":true}"
-OTHER_ORG_BODY="{\"email\":\"otra-$EMAIL\",\"fullName\":\"Otra Organizacion\",\"password\":\"Prueba1234!\",\"organizationPublicId\":\"$OTHER_ORG\",\"activateImmediately\":true}"
-LOGIN_BODY="{\"email\":\"$EMAIL\",\"password\":\"Prueba1234!\"}"
+# IAM-04: sin "password" el alta genera una contrasena temporal; con ella, Keycloak aplica la politica.
+NEW_BODY="{\"email\":\"$EMAIL\",\"fullName\":\"Usuario De Prueba\",\"phoneE164\":\"+59171234567\",\"organizationPublicId\":\"$ORG\",\"activateImmediately\":true,\"roles\":[{\"role\":\"RECEPTIONIST\"}]}"
+DUP_BODY="{\"email\":\"$EMAIL\",\"fullName\":\"Duplicado\",\"password\":\"Prueba segura 2026!\",\"activateImmediately\":true}"
+OTHER_ORG_BODY="{\"email\":\"otra-$EMAIL\",\"fullName\":\"Otra Organizacion\",\"password\":\"Prueba segura 2026!\",\"organizationPublicId\":\"$OTHER_ORG\",\"activateImmediately\":true}"
+NEW_PASSWORD="Recepcion prueba $RANDOM ok!"
+LOGIN_BODY="{\"email\":\"$EMAIL\",\"password\":\"$NEW_PASSWORD\"}"
 BAD_LOGIN_BODY="{\"email\":\"$EMAIL\",\"password\":\"ClaveIncorrecta1\"}"
 
-PID=$(curl -s -X POST $B/api/v1/identity/users -H "$AUTH" -H "$JSON" -d "$NEW_BODY" | field publicId)
-echo "  usuario creado: $PID"
+curl -s -X POST $B/api/v1/identity/users -H "$AUTH" -H "$JSON" -d "$NEW_BODY" > /tmp/created.json
+PID=$(field publicId < /tmp/created.json)
+TEMP=$(field temporaryPassword < /tmp/created.json)
+echo "  usuario creado: $PID ($(field userCode < /tmp/created.json))"
+SHORT_BODY="{\"email\":\"corta-$EMAIL\",\"fullName\":\"Corta\",\"password\":\"Corta9!a\"}"
+check "alta con contrasena que no cumple la politica" 400 "$(code -X POST $B/api/v1/identity/users -H "$AUTH" -H "$JSON" -d "$SHORT_BODY")"
+check "  ... y el motivo es la politica" PASSWORD_POLICY_VIOLATION "$(field code < /tmp/body.json)"
+
+# IAM-05: primer ingreso. La temporal no da sesion (403) y se cambia sin sesion.
+TEMP_LOGIN="{\"email\":\"$EMAIL\",\"password\":\"$TEMP\"}"
+FIRST_CHANGE="{\"email\":\"$EMAIL\",\"currentPassword\":\"$TEMP\",\"newPassword\":\"$NEW_PASSWORD\"}"
+check "login con la contrasena temporal" 403 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$TEMP_LOGIN")"
+check "cambio sin sesion en el primer ingreso" 200 "$(code -X POST $B/api/v1/identity/auth/change-password -H "$JSON" -d "$FIRST_CHANGE")"
+check "login con la contrasena nueva" 200 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
 check "crear usuario duplicado" 409 "$(code -X POST $B/api/v1/identity/users -H "$AUTH" -H "$JSON" -d "$DUP_BODY")"
 check "crear cuenta en otra organizacion" 403 "$(code -X POST $B/api/v1/identity/users -H "$AUTH" -H "$JSON" -d "$OTHER_ORG_BODY")"
 check "listar cuentas de otra organizacion" 403 "$(code "$B/api/v1/identity/users?organizationPublicId=$OTHER_ORG" -H "$AUTH")"
@@ -72,13 +86,25 @@ check "recepcionista si puede ver su perfil" 200 "$(code $B/api/v1/identity/auth
 check "cerrar sesion" 200 "$(code -X POST $B/api/v1/identity/auth/logout -H "$NAUTH")"
 check "token revocado ya no sirve" 401 "$(code $B/api/v1/identity/auth/me -H "$NAUTH")"
 
-# Bloqueo por intentos fallidos (5 intentos configurados)
-for i in 1 2 3 4 5; do
+# Bloqueo por intentos fallidos: lo aplica Keycloak al 3er intento (IAM-02/IAM-03)
+for i in 1 2 3; do
   code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$BAD_LOGIN_BODY" > /dev/null
+  sleep 1.2  # con menos de 1 s entre fallos Keycloak aplica otra regla (bloqueo temporal por rafaga)
 done
-check "cuenta bloqueada tras 5 fallos" 423 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
-check "desbloquear cambiando estado" 200 "$(code -X PATCH $B/api/v1/identity/users/$PID/status -H "$AUTH" -H "$JSON" -d '{"status":"ACTIVE","reason":"prueba de humo"}')"
+check "cuenta bloqueada tras 3 fallos" 423 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
+check "desbloquear (IAM-05)" 200 "$(code -X POST $B/api/v1/identity/users/$PID/unlock -H "$AUTH")"
 check "login tras desbloqueo" 200 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
+check "reiniciar contrasena (IAM-05)" 200 "$(code -X POST $B/api/v1/identity/users/$PID/reset-password -H "$AUTH")"
+RESET_TEMP=$(field temporaryPassword < /tmp/body.json)
+check "login con la contrasena anterior tras el reinicio" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
+REUSE="{\"email\":\"$EMAIL\",\"currentPassword\":\"$RESET_TEMP\",\"newPassword\":\"$NEW_PASSWORD\"}"
+check "reutilizar una contrasena anterior" 400 "$(code -X POST $B/api/v1/identity/auth/change-password -H "$JSON" -d "$REUSE")"
+check "  ... por el historico" PASSWORD_POLICY_VIOLATION "$(field code < /tmp/body.json)"
+NEW_PASSWORD="Recepcion otra $RANDOM ok!"
+LOGIN_BODY="{\"email\":\"$EMAIL\",\"password\":\"$NEW_PASSWORD\"}"
+FORCED_CHANGE="{\"email\":\"$EMAIL\",\"currentPassword\":\"$RESET_TEMP\",\"newPassword\":\"$NEW_PASSWORD\"}"
+check "cambio forzado tras el reinicio" 200 "$(code -X POST $B/api/v1/identity/auth/change-password -H "$JSON" -d "$FORCED_CHANGE")"
+check "login con la nueva tras el reinicio" 200 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
 check "cuenta inactiva no puede entrar" 200 "$(code -X PATCH $B/api/v1/identity/users/$PID/status -H "$AUTH" -H "$JSON" -d '{"status":"INACTIVE"}')"
 check "login con cuenta inactiva" 403 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
 

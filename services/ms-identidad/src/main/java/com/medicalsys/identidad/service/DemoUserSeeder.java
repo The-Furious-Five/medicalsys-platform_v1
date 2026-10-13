@@ -11,11 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cuentas del centro de demostracion; su contrasena se guarda en Keycloak via {@link CredentialService}.
+ * Cuentas del centro de demostracion, con contrasena hasheada por {@link UserService}.
  * Se puede desactivar con IDENTITY_DEMO_USERS_ENABLED=false.
  *
  * <p>El padron no son tres cuentas genericas sino el personal de un policlinico: la
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * una cuenta que no existe y el alta desde la interfaz no encontraria con quien enlazarlo.
  */
 @Component
+@Order(10) // antes de KeycloakAccountMigration (100), que enlaza lo que este seeder crea
 public class DemoUserSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoUserSeeder.class);
@@ -64,14 +66,14 @@ public class DemoUserSeeder implements ApplicationRunner {
     private final IdentityProperties properties;
     private final UserAccountRepository users;
     private final UserService userService;
-    private final CredentialService credentials;
+    private final KeycloakAccountLinker linker;
 
     public DemoUserSeeder(IdentityProperties properties, UserAccountRepository users, UserService userService,
-                          CredentialService credentials) {
+                          KeycloakAccountLinker linker) {
         this.properties = properties;
         this.users = users;
         this.userService = userService;
-        this.credentials = credentials;
+        this.linker = linker;
     }
 
     @Override
@@ -90,9 +92,9 @@ public class DemoUserSeeder implements ApplicationRunner {
     private void seed(DemoAccount account, UUID organization, String password) {
         UUID publicId = UUID.fromString(account.publicId());
         if (!users.existsByEmailIgnoreCase(account.email())) {
-            userService.create(new CreateUserRequest(
+            userService.createSeedAccount(new CreateUserRequest(
                     account.email(), account.fullName(), password, account.phone(), organization, "es-BO", true,
-                    List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))), null);
+                    List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))));
             log.info("Cuenta de demostracion creada: {} con rol {}", account.email(), account.role());
         }
         // Identificador, organización y alcance de roles se reconcilian también en cuentas ya
@@ -100,13 +102,9 @@ public class DemoUserSeeder implements ApplicationRunner {
         // organización distinto al public_id sembrado por ms-tenencia.
         users.findByEmailIgnoreCase(account.email())
                 .ifPresent(user -> {
+                    // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la de la demo.
+                    linker.restoreConfiguredCredential(user, password);
                     boolean changed = false;
-                    // Cuentas sembradas por versiones anteriores con hash Argon2 local: pasan a Keycloak.
-                    String algorithm = user.getHashAlgorithm();
-                    credentials.migrateIfMatches(user, password);
-                    if (!algorithm.equals(user.getHashAlgorithm())) {
-                        changed = true;
-                    }
                     if (!publicId.equals(user.getPublicId())) {
                         user.setPublicId(publicId);
                         changed = true;

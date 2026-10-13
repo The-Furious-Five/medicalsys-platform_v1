@@ -48,10 +48,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("status", "session-closed"));
     }
 
+    /**
+     * Con sesión cambia la contraseña del titular del JWT. Sin sesión resuelve el primer ingreso con
+     * contraseña temporal y la contraseña vencida (IAM-05): la cuenta sale de {@code email}.
+     */
     @PostMapping("/change-password")
     public ResponseEntity<Map<String, String>> changePassword(Authentication authentication,
                                                               @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changePassword(subject(authentication), request);
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt) {
+            userService.changePassword(subject(authentication), request);
+        } else if (request.email() != null) {
+            userService.changePasswordWithoutSession(request);
+        } else {
+            throw ApiException.unauthorized("Inicia sesion o indica el correo de la cuenta");
+        }
         return ResponseEntity.ok(Map.of("status", "password-updated"));
     }
 

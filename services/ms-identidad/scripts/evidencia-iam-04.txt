@@ -1,0 +1,34 @@
+# IAM-04 · salida de services/ms-identidad/scripts/abm-keycloak.sh
+# 2026-10-13T02:43:33Z · rama feature/sins-22, Keycloak 26.4.7, entorno local (cuentas sembradas por develop y migradas)
+
+== Cuentas existentes migradas por V7 (User ID por orden de alta)
+user_code	email	status
+MS-26-00001	admin@medicalsys.demo	ACTIVE
+MS-26-00002	recepcion@medicalsys.demo	ACTIVE
+MS-26-00003	doctor@medicalsys.demo	ACTIVE
+MS-26-00004	caja@medicalsys.demo	ACTIVE
+MS-26-00005	pediatria@medicalsys.demo	ACTIVE
+MS-26-00006	ginecologia@medicalsys.demo	ACTIVE
+MS-26-00007	cardiologia@medicalsys.demo	ACTIVE
+MS-26-00008	traumatologia@medicalsys.demo	ACTIVE
+MS-26-00009	nutricion@medicalsys.demo	ACTIVE
+MS-26-00010	odontologia@medicalsys.demo	ACTIVE
+
+== Alta con una contraseña que no cumple la política
+{"status":400,"code":"PASSWORD_POLICY_VIOLATION","detail":"La contraseña debe tener al menos 12 caracteres."}
+
+== Alta (el sistema genera la contraseña temporal)
+{"userCode":"MS-26-00011","publicId":"b43bc95b-6be0-4517-84db-1d43b764b014","email":"iam04.alta.1791859413@medicalsys.demo","fullName":"Lucia Quispe Mamani","status":"ACTIVE","temporaryPassword":"(entregada una sola vez, 19 caracteres)"}
+MedicalSys GET:  {"userCode":"MS-26-00011","temporaryPassword":null}
+Keycloak:        {"username":"b43bc95b-6be0-4517-84db-1d43b764b014","email":"iam04.alta.1791859413@medicalsys.demo","firstName":"Lucia","lastName":"Quispe Mamani","enabled":true,"requiredActions":["UPDATE_PASSWORD"]}
+Login con la temporal: {"status":403,"code":"PASSWORD_CHANGE_REQUIRED","detail":"Debes cambiar tu contrasena antes de iniciar sesion."}
+
+== Modificación (nombre y correo)
+{"userCode":"MS-26-00011","email":"iam04.modificada.1791859413@medicalsys.demo","fullName":"Lucia Quispe de Rojas"}
+Keycloak:        {"username":"b43bc95b-6be0-4517-84db-1d43b764b014","email":"iam04.modificada.1791859413@medicalsys.demo","firstName":"Lucia","lastName":"Quispe de Rojas","enabled":true,"requiredActions":["UPDATE_PASSWORD"]}
+
+== Baja (deshabilita, nunca borra)
+{"userCode":"MS-26-00011","status":"INACTIVE"}
+Keycloak:        {"username":"b43bc95b-6be0-4517-84db-1d43b764b014","email":"iam04.modificada.1791859413@medicalsys.demo","firstName":"Lucia","lastName":"Quispe de Rojas","enabled":false,"requiredActions":["UPDATE_PASSWORD"]}
+Login:           {"status":403,"code":null,"detail":"La cuenta esta inactiva"}
+La cuenta sigue en MedicalSys: {"userCode":"MS-26-00011","status":"INACTIVE"}

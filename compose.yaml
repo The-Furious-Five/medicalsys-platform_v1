@@ -252,11 +252,8 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-platform.admin@medicalsys.demo}
       PLATFORM_ADMIN_FULL_NAME: ${PLATFORM_ADMIN_FULL_NAME:-Administrador de MedicalSys}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
-      KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
-      KEYCLOAK_BASE_URL: http://keycloak:8080
-      KEYCLOAK_REALM: medicalsys
-      KEYCLOAK_CLIENT_ID: ms-identidad
-      # Mismo secreto que el realm inyecta en el cliente ms-identidad (SINS-10).
+      # IAM-03: las credenciales se validan contra Keycloak (cliente confidencial ms-identidad).
+      KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:?falta KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET en .env}
     depends_on:
       keycloak:
