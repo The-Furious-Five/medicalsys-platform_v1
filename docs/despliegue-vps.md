@@ -60,7 +60,7 @@ y descargar las imagenes de GHCR.
 
 Cambia **todos** los valores `CAMBIAR`. Genera cada secreto con `openssl rand -base64 32`.
 
-Las contrasenas de base de datos y `KEYCLOAK_CLIENT_SECRET` se fijan en el **primer**
+Las contrasenas de base de datos y `KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET` se fijan en el **primer**
 despliegue: `mysql-init` no cambia la contrasena de un usuario que ya existe, y el realm solo
 se importa si todavia no existe. Si las cambias despues, tambien hay que cambiarlas a mano en
 MySQL o en Keycloak.
@@ -94,7 +94,7 @@ KEYCLOAK_DB_PASSWORD=CAMBIAR
 # Keycloak
 KEYCLOAK_ADMIN_USER=admin
 KEYCLOAK_ADMIN_PASSWORD=CAMBIAR
-KEYCLOAK_CLIENT_SECRET=CAMBIAR
+KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET=CAMBIAR
 KEYCLOAK_ENABLED=true
 
 # MinIO (documentos)
@@ -103,7 +103,7 @@ MINIO_ROOT_PASSWORD=CAMBIAR_minimo_8_caracteres
 MINIO_BUCKET=medicalsys-documents
 
 # Gateway: origenes del frontend separados por coma, p. ej. https://medicalsys.vercel.app
-GATEWAY_ALLOWED_ORIGINS=*
+GATEWAY_ALLOWED_ORIGINS=CAMBIAR
 
 # Datos de demostracion (para la presentacion)
 AUDITORIA_DEMO_SEED=true

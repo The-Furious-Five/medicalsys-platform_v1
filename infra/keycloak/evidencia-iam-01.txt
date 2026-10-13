@@ -1,0 +1,41 @@
+# IAM-01 · salida de infra/keycloak/smoke-token.sh
+# 2026-10-13T02:12:04Z · Keycloak Keycloak 26.4.7
+# Instancia local de prueba (puerto 28080). Ningún secreto aparece en la salida.
+
+== 1. Token del cliente ms-identidad (client_credentials)
+{
+  "iss": "http://localhost:28080/realms/medicalsys",
+  "azp": "ms-identidad",
+  "preferred_username": "service-account-ms-identidad",
+  "roles_realm_management": [
+    "manage-users",
+    "view-users",
+    "query-groups",
+    "query-users"
+  ]
+}
+
+== 2. Alta de iam01.prueba.1791857524 con la service account (Admin REST API)
+201 Created, id 1f03b063-945a-447e-9939-e3f65c9fc57a
+
+== 3. Token del usuario de prueba (password grant)
+{
+  "token_type": "Bearer",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "scope": "openid profile email"
+}
+{
+  "iss": "http://localhost:28080/realms/medicalsys",
+  "azp": "ms-identidad",
+  "preferred_username": "iam01.prueba.1791857524",
+  "email": "iam01.prueba.1791857524@medicalsys.invalid",
+  "exp": 1791857825,
+  "iat": 1791857525
+}
+
+== 4. Contraseña incorrecta
+{"error":"invalid_grant","error_description":"Invalid user credentials"}
+
+OK: realm medicalsys listo. client_credentials, manage-users y password grant funcionan.
+Usuario de prueba borrado.

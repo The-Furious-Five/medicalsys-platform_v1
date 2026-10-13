@@ -2,25 +2,37 @@
   "realm": "medicalsys",
   "displayName": "MedicalSys",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "passwordPolicy": "length(12) and maxLength(64) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and passwordBlacklist(medicalsys.txt) and passwordHistory(5) and forceExpiredPasswordChange(90) and hashAlgorithm(argon2)",
+  "bruteForceProtected": true,
+  "permanentLockout": true,
+  "maxTemporaryLockouts": 0,
+  "failureFactor": 3,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
   "clients": [
     {
       "clientId": "ms-identidad",
       "name": "ms-identidad",
-      "description": "Cliente confidencial de ms-identidad: verifica contrasenas (Direct Access Grants) y administra cuentas (service account).",
+      "description": "Cliente confidencial de ms-identidad: valida credenciales (Direct Access Grants) y administra usuarios con su service account (manage-users).",
       "enabled": true,
+      "protocol": "openid-connect",
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "secret": "${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET}",
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
-      "protocol": "openid-connect"
+      "frontchannelLogout": false
     }
   ],
   "users": [
@@ -29,7 +41,7 @@
       "enabled": true,
       "serviceAccountClientId": "ms-identidad",
       "clientRoles": {
-        "realm-management": ["manage-users"]
+        "realm-management": ["manage-users", "view-users", "query-users"]
       }
     }
   ]

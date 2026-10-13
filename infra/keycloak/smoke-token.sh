@@ -1,71 +1,81 @@
 #!/usr/bin/env bash
-# Prueba de humo del realm medicalsys (IAM-01).
+# IAM-01: prueba de humo del realm medicalsys contra un Keycloak en ejecución.
 #
-#   1. Pide un token client_credentials con el service account de ms-identidad.
-#   2. Con ese token crea (si no existe) un usuario de prueba via Admin REST API, lo que
-#      demuestra el rol manage-users de realm-management.
-#   3. Pide un token password (Direct Access Grants) para el usuario de prueba.
+#   set -a; source .env; set +a
+#   bash infra/keycloak/smoke-token.sh            # http://localhost:${KEYCLOAK_HOST_PORT:-18080}
 #
-# Uso: bash infra/keycloak/smoke-token.sh [http://localhost:18080]
+# 1. El cliente ms-identidad obtiene un token propio (client_credentials): el secreto es válido.
+# 2. Con ese token crea un usuario de prueba por la Admin REST API: la service account tiene
+#    manage-users.
+# 3. El usuario pide un token con su contraseña (Direct Access Grants): el token endpoint
+#    responde como lo usará AuthService.login.
+# 4. Borra el usuario de prueba, también si un paso falla.
+#
+# Requiere curl y jq. La contraseña de prueba se genera en cada corrida y no se imprime.
 set -euo pipefail
 
-BASE_URL="${1:-${KEYCLOAK_URL:-http://localhost:18080}}"
-REALM="${KEYCLOAK_REALM:-medicalsys}"
-CLIENT_ID="${KEYCLOAK_CLIENT_ID:-ms-identidad}"
-CLIENT_SECRET="${KEYCLOAK_CLIENT_SECRET:-medicalsys-identity-secret-local}"
-TEST_USER="${KC_TEST_USER:-usuario.prueba@medicalsys.demo}"
-TEST_PASSWORD="${KC_TEST_PASSWORD:-Prueba1234!}"
+KC_URL="${KC_URL:-http://localhost:${KEYCLOAK_HOST_PORT:-18080}}"
+REALM="${REALM:-medicalsys}"
+CLIENT_ID="ms-identidad"
+CLIENT_SECRET="${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:?falta KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET (source .env)}"
+TOKEN_URL="$KC_URL/realms/$REALM/protocol/openid-connect/token"
+ADMIN_URL="$KC_URL/admin/realms/$REALM"
 
-TOKEN_URL="$BASE_URL/realms/$REALM/protocol/openid-connect/token"
-ADMIN_URL="$BASE_URL/admin/realms/$REALM"
+TEST_USER="iam01.prueba.$(date +%s)"
+TEST_PASSWORD="Iam01 prueba $(openssl rand -hex 6) Ok9!"
+user_id=""
 
-json_field() {
-  sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p"
+step() { printf '\n== %s\n' "$1"; }
+fail() { printf 'FALLA: %s\n' "$1" >&2; exit 1; }
+
+cleanup() {
+  if [ -n "$user_id" ] && [ -n "${service_token:-}" ]; then
+    curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $service_token" "$ADMIN_URL/users/$user_id" || true
+    echo "Usuario de prueba borrado."
+  fi
+}
+trap cleanup EXIT
+
+claims() { # payload del JWT, sin verificar firma: solo para mostrar la evidencia
+  local payload
+  payload="$(cut -d. -f2 <<<"$1" | tr '_-' '/+')"
+  while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+  base64 -d <<<"$payload" 2>/dev/null
 }
 
-echo "== 1. Token del service account ($CLIENT_ID)"
-SERVICE_TOKEN=$(curl -sS --fail-with-body "$TOKEN_URL" \
-  -d grant_type=client_credentials \
-  -d client_id="$CLIENT_ID" \
-  -d client_secret="$CLIENT_SECRET" | json_field access_token)
-[ -n "$SERVICE_TOKEN" ] || { echo "No se obtuvo token del service account" >&2; exit 1; }
-echo "   ok"
+step "1. Token del cliente ms-identidad (client_credentials)"
+service_response="$(curl -sS -X POST "$TOKEN_URL" \
+  -d grant_type=client_credentials -d client_id="$CLIENT_ID" --data-urlencode client_secret="$CLIENT_SECRET")"
+service_token="$(jq -r '.access_token // empty' <<<"$service_response")"
+[ -n "$service_token" ] || fail "sin access_token: $(jq -c '{error, error_description}' <<<"$service_response")"
+claims "$service_token" | jq '{iss, azp, preferred_username, roles_realm_management: .resource_access["realm-management"].roles}'
 
-echo "== 2. Usuario de prueba $TEST_USER"
-EXISTING=$(curl -sS --fail-with-body -H "Authorization: Bearer $SERVICE_TOKEN" \
-  "$ADMIN_URL/users?username=$TEST_USER&exact=true")
-if [ "$EXISTING" = "[]" ]; then
-  curl -sS --fail-with-body -o /dev/null -H "Authorization: Bearer $SERVICE_TOKEN" \
-    -H "Content-Type: application/json" "$ADMIN_URL/users" -d @- <<JSON
-{
-  "username": "$TEST_USER",
-  "email": "$TEST_USER",
-  "firstName": "Usuario",
-  "lastName": "Prueba",
-  "enabled": true,
-  "emailVerified": true,
-  "credentials": [{"type": "password", "value": "$TEST_PASSWORD", "temporary": false}]
-}
-JSON
-  echo "   creado con el service account (manage-users)"
-else
-  echo "   ya existia"
-fi
+step "2. Alta de $TEST_USER con la service account (Admin REST API)"
+status="$(curl -sS -o /dev/null -w '%{http_code}' -D /tmp/iam01-headers.$$ -X POST "$ADMIN_URL/users" \
+  -H "Authorization: Bearer $service_token" -H 'Content-Type: application/json' \
+  -d "$(jq -n --arg u "$TEST_USER" --arg p "$TEST_PASSWORD" '{
+        username: $u, email: ($u + "@medicalsys.invalid"), firstName: "Prueba", lastName: "IAM-01",
+        enabled: true, emailVerified: true,
+        credentials: [{type: "password", value: $p, temporary: false}] }')")"
+[ "$status" = "201" ] || fail "el alta respondió $status (¿falta manage-users?)"
+user_id="$(grep -i '^location:' /tmp/iam01-headers.$$ | tr -d '\r' | sed 's#.*/users/##')"
+rm -f /tmp/iam01-headers.$$
+echo "201 Created, id $user_id"
 
-echo "== 3. Token del usuario de prueba (Direct Access Grants)"
-RESPONSE=$(curl -sS --fail-with-body "$TOKEN_URL" \
-  -d grant_type=password \
-  -d client_id="$CLIENT_ID" \
-  -d client_secret="$CLIENT_SECRET" \
-  -d username="$TEST_USER" \
-  -d password="$TEST_PASSWORD" \
-  -d scope=openid)
-ACCESS_TOKEN=$(printf '%s' "$RESPONSE" | json_field access_token)
-[ -n "$ACCESS_TOKEN" ] || { echo "Respuesta sin access_token: $RESPONSE" >&2; exit 1; }
+step "3. Token del usuario de prueba (password grant)"
+user_response="$(curl -sS -X POST "$TOKEN_URL" \
+  -d grant_type=password -d client_id="$CLIENT_ID" --data-urlencode client_secret="$CLIENT_SECRET" \
+  --data-urlencode username="$TEST_USER" --data-urlencode password="$TEST_PASSWORD" -d scope=openid)"
+user_token="$(jq -r '.access_token // empty' <<<"$user_response")"
+[ -n "$user_token" ] || fail "sin access_token: $(jq -c '{error, error_description}' <<<"$user_response")"
+jq '{token_type, expires_in, refresh_expires_in, scope}' <<<"$user_response"
+claims "$user_token" | jq '{iss, azp, preferred_username, email, exp, iat}'
 
-# Muestra los claims del access token (payload JWT en base64url).
-PAYLOAD=$(printf '%s' "$ACCESS_TOKEN" | cut -d. -f2 | tr '_-' '/+')
-while [ $(( ${#PAYLOAD} % 4 )) -ne 0 ]; do PAYLOAD="$PAYLOAD="; done
-echo "   token_type=$(printf '%s' "$RESPONSE" | json_field token_type)"
-echo "   claims: $(printf '%s' "$PAYLOAD" | base64 -d 2>/dev/null)"
-echo "OK: el token endpoint emitio un access token para $TEST_USER"
+step "4. Contraseña incorrecta"
+bad="$(curl -sS -X POST "$TOKEN_URL" \
+  -d grant_type=password -d client_id="$CLIENT_ID" --data-urlencode client_secret="$CLIENT_SECRET" \
+  --data-urlencode username="$TEST_USER" --data-urlencode password="incorrecta")"
+jq -c '{error, error_description}' <<<"$bad"
+[ "$(jq -r .error <<<"$bad")" = "invalid_grant" ] || fail "se esperaba invalid_grant"
+
+printf '\nOK: realm %s listo. client_credentials, manage-users y password grant funcionan.\n' "$REALM"

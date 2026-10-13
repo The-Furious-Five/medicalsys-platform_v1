@@ -1,0 +1,34 @@
+# IAM-02 · salida de infra/keycloak/policy-check.sh
+# 2026-10-13T02:14:30Z · Keycloak 26.4.7 · instancia local de prueba (puerto 28080)
+
+== Política del realm
+== Usuario de prueba iam02.prueba-1791857670x
+
+== Reglas: cada contraseña inválida se rechaza con su mensaje
+Regla                              HTTP   Mensaje de Keycloak
+Mínimo 12 caracteres              400    invalidPasswordMinLengthMessage
+Máximo 64 caracteres              400    invalidPasswordMaxLengthMessage
+Al menos 1 mayúscula              400    invalidPasswordMinUpperCaseCharsMessage
+Al menos 1 minúscula              400    invalidPasswordMinLowerCaseCharsMessage
+Al menos 1 dígito                 400    invalidPasswordMinDigitsMessage
+Al menos 1 carácter especial      400    invalidPasswordMinSpecialCharsMessage
+Distinta del nombre de usuario     400    invalidPasswordNotUsernameMessage
+Distinta del correo                400    invalidPasswordNotEmailMessage
+Lista negra                        400    invalidPasswordBlacklistedMessage
+
+== Histórico: no se reutilizan las últimas 5
+Contraseña válida aceptada: 204
+Reutilizar la anterior             400    invalidPasswordHistoryMessage
+
+== Almacenamiento: algoritmo del hash
+algorithm=argon2, {"hashLength":["32"],"memory":["7168"],"type":["id"],"version":["1.3"],"parallelism":["1"]}
+
+== Bloqueo al 3er intento fallido
+Antes: ok
+Intento fallido 1: invalid_grant: Invalid user credentials
+Intento fallido 2: invalid_grant: Invalid user credentials
+Intento fallido 3: invalid_grant: Invalid user credentials
+Contraseña correcta después de 3 fallos: invalid_grant: Invalid user credentials
+Detección de fuerza bruta: {"disabled":true,"numFailures":3}
+
+OK: todas las reglas rechazan y la cuenta se bloquea al 3er intento.
