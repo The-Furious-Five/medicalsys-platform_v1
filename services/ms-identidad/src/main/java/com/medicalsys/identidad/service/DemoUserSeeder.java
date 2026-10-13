@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * una cuenta que no existe y el alta desde la interfaz no encontraria con quien enlazarlo.
  */
 @Component
+@Order(10) // antes de KeycloakAccountMigration (100), que enlaza lo que este seeder crea
 public class DemoUserSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoUserSeeder.class);
@@ -64,11 +66,14 @@ public class DemoUserSeeder implements ApplicationRunner {
     private final IdentityProperties properties;
     private final UserAccountRepository users;
     private final UserService userService;
+    private final KeycloakAccountLinker linker;
 
-    public DemoUserSeeder(IdentityProperties properties, UserAccountRepository users, UserService userService) {
+    public DemoUserSeeder(IdentityProperties properties, UserAccountRepository users, UserService userService,
+                          KeycloakAccountLinker linker) {
         this.properties = properties;
         this.users = users;
         this.userService = userService;
+        this.linker = linker;
     }
 
     @Override
@@ -97,6 +102,8 @@ public class DemoUserSeeder implements ApplicationRunner {
         // organización distinto al public_id sembrado por ms-tenencia.
         users.findByEmailIgnoreCase(account.email())
                 .ifPresent(user -> {
+                    // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la de la demo.
+                    linker.restoreConfiguredCredential(user, password);
                     boolean changed = false;
                     if (!publicId.equals(user.getPublicId())) {
                         user.setPublicId(publicId);

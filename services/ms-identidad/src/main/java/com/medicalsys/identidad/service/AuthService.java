@@ -1,8 +1,8 @@
 package com.medicalsys.identidad.service;
 
-import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
+import com.medicalsys.identidad.keycloak.KeycloakClient;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.IssuedToken;
 import com.medicalsys.identidad.security.SessionStore;
@@ -17,33 +17,39 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Inicio de sesión (IAM-03). La contraseña se valida contra Keycloak, que aplica la política, el
+ * vencimiento y el bloqueo al 3er intento. Si es válida, ms-identidad emite su propio JWT con roles y
+ * permisos: el contrato de /auth/login no cambia.
+ */
 @Service
 public class AuthService {
+
+    private static final String INVALID_CREDENTIALS = "Correo o contrasena incorrectos";
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserAccountRepository users;
-    private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final SessionStore sessionStore;
     private final IdentityMapper mapper;
-    private final IdentityProperties properties;
     private final AccountAccessService accountAccess;
+    private final KeycloakClient keycloak;
+    private final KeycloakAccountLinker linker;
 
-    public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder, TokenService tokenService,
-                       SessionStore sessionStore, IdentityMapper mapper, IdentityProperties properties,
-                       AccountAccessService accountAccess) {
+    public AuthService(UserAccountRepository users, TokenService tokenService, SessionStore sessionStore,
+                       IdentityMapper mapper, AccountAccessService accountAccess, KeycloakClient keycloak,
+                       KeycloakAccountLinker linker) {
         this.users = users;
-        this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
         this.sessionStore = sessionStore;
         this.mapper = mapper;
-        this.properties = properties;
         this.accountAccess = accountAccess;
+        this.keycloak = keycloak;
+        this.linker = linker;
     }
 
     @Transactional
@@ -52,14 +58,10 @@ public class AuthService {
         Optional<UserAccount> found = users.findByEmailIgnoreCase(request.email().trim());
         if (found.isEmpty()) {
             // Mismo mensaje que una contrasena incorrecta: no revelamos si el correo existe.
-            throw ApiException.unauthorized("Correo o contrasena incorrectos");
+            throw ApiException.unauthorized(INVALID_CREDENTIALS);
         }
 
         UserAccount user = found.get();
-        if (user.isCurrentlyLocked(now)) {
-            throw new ApiException(org.springframework.http.HttpStatus.LOCKED, "Cuenta bloqueada",
-                    "La cuenta esta bloqueada hasta " + user.getLockedUntil());
-        }
         if (user.getStatus() == UserStatus.INACTIVE) {
             throw ApiException.forbidden("La cuenta esta inactiva");
         }
@@ -67,11 +69,21 @@ public class AuthService {
             throw ApiException.forbidden("La cuenta aun no fue activada");
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            // El contador se guarda en una transaccion aparte: esta se revierte al lanzar el 401.
-            int attempts = accountAccess.registerFailedAttempt(user.getId());
-            log.warn("Intento de acceso fallido para la cuenta {} (intentos={})", user.getPublicId(), attempts);
-            throw ApiException.unauthorized("Correo o contrasena incorrectos");
+        String keycloakUserId = keycloakUserId(user);
+        switch (keycloak.checkPassword(user.getEmail(), request.password())) {
+            case VALID -> { }
+            case PASSWORD_CHANGE_REQUIRED -> throw ApiException.passwordChangeRequired();
+            case DISABLED -> throw ApiException.forbidden("La cuenta esta inactiva");
+            case INVALID_CREDENTIALS -> {
+                // Keycloak responde lo mismo a una contrasena incorrecta y a una cuenta bloqueada.
+                if (keycloak.isLockedOut(keycloakUserId)) {
+                    accountAccess.registerLockout(user.getId());
+                    log.warn("Acceso rechazado: la cuenta {} esta bloqueada por intentos fallidos", user.getPublicId());
+                    throw ApiException.accountLocked();
+                }
+                log.warn("Intento de acceso fallido para la cuenta {}", user.getPublicId());
+                throw ApiException.unauthorized(INVALID_CREDENTIALS);
+            }
         }
 
         user.registerSuccessfulAccess(now);
@@ -87,6 +99,22 @@ public class AuthService {
                 token.issuedAt(),
                 token.expiresAt(),
                 describe(user, roles, permissions));
+    }
+
+    /**
+     * Id de Keycloak de la cuenta. Las cuentas creadas antes de IAM-03 se enlazan aqui si la migracion
+     * de arranque no las alcanzo; el cambio se copia a esta entidad para que el guardado del login no
+     * lo pise.
+     */
+    private String keycloakUserId(UserAccount user) {
+        if (user.isLinkedToIdentityProvider()) {
+            return user.getKeycloakUserId();
+        }
+        String linked = linker.link(user.getId())
+                .orElseThrow(() -> ApiException.unauthorized(INVALID_CREDENTIALS));
+        user.setKeycloakUserId(linked);
+        user.setPasswordHash(null);
+        return linked;
     }
 
     @Transactional(readOnly = true)

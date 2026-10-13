@@ -2,6 +2,7 @@ package com.medicalsys.identidad.repository;
 
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,13 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     Optional<UserAccount> findByPublicId(UUID publicId);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    /** Cuentas aun no enlazadas a Keycloak (IAM-03). */
+    @Query("select u.id from UserAccount u where u.keycloakUserId is null")
+    List<Long> findUnlinkedIds();
+
+    @Query("select u.id from UserAccount u where u.keycloakUserId is not null")
+    List<Long> findLinkedIds();
 
     @Query("""
             select u from UserAccount u

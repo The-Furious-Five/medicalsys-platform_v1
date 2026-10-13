@@ -24,6 +24,9 @@ public class ApiExceptionHandler {
     public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
         problem.setTitle(ex.getTitle());
+        if (ex.getCode() != null) {
+            problem.setProperty("code", ex.getCode());
+        }
         decorate(problem, request);
         return problem;
     }

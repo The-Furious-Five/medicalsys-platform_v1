@@ -5,6 +5,8 @@ import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.domain.UserStatus;
+import com.medicalsys.identidad.keycloak.KeycloakClient;
+import com.medicalsys.identidad.keycloak.PasswordPolicyException;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
@@ -39,15 +41,20 @@ public class UserService {
     private final IdentityMapper mapper;
     private final SessionStore sessionStore;
     private final RoleGovernance governance;
+    private final KeycloakClient keycloak;
+    private final KeycloakAccountLinker linker;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
-                       IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance) {
+                       IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance,
+                       KeycloakClient keycloak, KeycloakAccountLinker linker) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
         this.governance = governance;
+        this.keycloak = keycloak;
+        this.linker = linker;
     }
 
     @Transactional
@@ -128,6 +135,10 @@ public class UserService {
         }
         if (target == UserStatus.ACTIVE) {
             user.setLockedUntil(null);
+            // El bloqueo al 3er intento lo aplica Keycloak: reactivar la cuenta tambien lo levanta.
+            if (user.isLinkedToIdentityProvider()) {
+                keycloak.unlock(user.getKeycloakUserId());
+            }
         }
         user.setStatus(target);
         if (target != UserStatus.ACTIVE) {
@@ -137,19 +148,41 @@ public class UserService {
         return mapper.toUserResponse(user);
     }
 
+    /**
+     * IAM-03: la contrasena vive en Keycloak. La actual se valida con el token endpoint (tres errores
+     * bloquean la cuenta, como en el login) y la nueva se fija por la Admin REST API, que aplica la
+     * politica completa, incluido el historico de las ultimas 5.
+     */
     @Transactional
     public void changePassword(UUID publicId, ChangePasswordRequest request) {
         UserAccount user = require(publicId);
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw ApiException.unauthorized("La contrasena actual no coincide");
+        String keycloakUserId = keycloakUserId(user);
+        switch (keycloak.checkPassword(user.getEmail(), request.currentPassword())) {
+            case VALID, PASSWORD_CHANGE_REQUIRED -> { }
+            case DISABLED -> throw ApiException.forbidden("La cuenta esta inactiva");
+            case INVALID_CREDENTIALS -> throw ApiException.unauthorized("La contrasena actual no coincide");
         }
-        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+        if (request.currentPassword().equals(request.newPassword())) {
             throw ApiException.badRequest("La nueva contrasena debe ser distinta de la actual");
         }
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        user.setHashAlgorithm("argon2id");
+        try {
+            keycloak.setPassword(keycloakUserId, request.newPassword(), false);
+        } catch (PasswordPolicyException ex) {
+            throw ApiException.passwordPolicy(ex.getMessage());
+        }
         user.setPasswordUpdatedAt(Instant.now());
         sessionStore.closeAll(user.getPublicId());
+    }
+
+    private String keycloakUserId(UserAccount user) {
+        if (user.isLinkedToIdentityProvider()) {
+            return user.getKeycloakUserId();
+        }
+        String linked = linker.link(user.getId())
+                .orElseThrow(() -> ApiException.conflict("La cuenta no tiene credencial: solicita un reinicio de contrasena"));
+        user.setKeycloakUserId(linked);
+        user.setPasswordHash(null);
+        return linked;
     }
 
     @Transactional

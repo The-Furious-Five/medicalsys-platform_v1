@@ -1,39 +1,28 @@
 package com.medicalsys.identidad.service;
 
-import com.medicalsys.identidad.config.IdentityProperties;
-import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.repository.UserAccountRepository;
-import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Registra los intentos fallidos de acceso en una transaccion propia.
+ * Refleja en la cuenta local el bloqueo por fuerza bruta que decide Keycloak (IAM-02/IAM-03).
  *
- * <p>El login responde 401 lanzando una excepcion, lo que revierte su transaccion. Si el contador
- * se incrementara ahi, el bloqueo por intentos fallidos nunca se guardaria. Por eso este servicio
- * usa REQUIRES_NEW: el contador se confirma aunque el login termine en error.
+ * <p>Keycloak cuenta los intentos fallidos y bloquea al 3er intento. ms-identidad solo guarda el
+ * estado LOCKED para mostrarlo en la gestión de usuarios. El login responde 423 lanzando una
+ * excepción, lo que revierte su transacción; por eso este servicio usa REQUIRES_NEW.
  */
 @Service
 public class AccountAccessService {
 
     private final UserAccountRepository users;
-    private final IdentityProperties properties;
 
-    public AccountAccessService(UserAccountRepository users, IdentityProperties properties) {
+    public AccountAccessService(UserAccountRepository users) {
         this.users = users;
-        this.properties = properties;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public int registerFailedAttempt(Long userAccountId) {
-        UserAccount user = users.findById(userAccountId).orElse(null);
-        if (user == null) {
-            return 0;
-        }
-        Instant lockUntil = Instant.now().plus(properties.getLockout().getLockDuration());
-        user.registerFailedAttempt(properties.getLockout().getMaxFailedAttempts(), lockUntil);
-        return user.getFailedAttempts() == null ? 0 : user.getFailedAttempts();
+    public void registerLockout(Long userAccountId) {
+        users.findById(userAccountId).ifPresent(user -> user.markLockedByIdentityProvider());
     }
 }

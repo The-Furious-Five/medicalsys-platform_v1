@@ -47,9 +47,14 @@ medicalsys:
       issuer: ${JWT_ISSUER:medicalsys-ms-identidad}
       secret: ${JWT_SECRET}
       access-token-ttl: ${JWT_ACCESS_TTL:PT1H}
-    lockout:
-      max-failed-attempts: ${IDENTITY_MAX_FAILED_ATTEMPTS:5}
-      lock-duration: ${IDENTITY_LOCK_DURATION:PT15M}
+    # IAM-03: las credenciales, la política de contraseñas y el bloqueo al 3er intento viven en
+    # Keycloak (infra/keycloak). ms-identidad solo las valida y sigue emitiendo su propio JWT.
+    keycloak:
+      base-url: ${KEYCLOAK_URL:http://keycloak:8080}
+      realm: ${KEYCLOAK_REALM:medicalsys}
+      client-id: ${KEYCLOAK_CLIENT_ID:ms-identidad}
+      client-secret: ${KEYCLOAK_CLIENT_SECRET}
+      timeout: ${KEYCLOAK_TIMEOUT:PT5S}
     demo-users:
       enabled: ${IDENTITY_DEMO_USERS_ENABLED:true}
       # Debe coincidir con el public_id de la organización DEMO sembrada por ms-tenencia.

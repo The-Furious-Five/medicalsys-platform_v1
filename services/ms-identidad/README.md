@@ -30,7 +30,9 @@ Dos decisiones que conviene conocer al leer la migración:
 - `organization_public_id`, `branch_public_id` y `encryption_key_public_id` son referencias externas:
   se guardan como `BINARY(16)` **sin clave foránea**, tal como exige el modelo distribuido.
 
-Las contraseñas se almacenan con Argon2id (`hash_algorithm = 'argon2id'`); nunca en texto plano.
+Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2id) y no en esta base: ver
+[Login delegado a Keycloak](#login-delegado-a-keycloak-iam-03). `V6__keycloak_account_link.sql` agrega
+`keycloak_user_id` y vuelve opcional `password_hash`, que solo existe hasta enlazar la cuenta.
 
 ## Endpoints
 
@@ -110,10 +112,40 @@ El `organizationId` que envía el cliente nunca se usa como fuente de verdad: sa
 
 ## Reglas de acceso
 
-- Cinco intentos fallidos bloquean la cuenta 15 minutos (`status = LOCKED`, respuesta `423`).
-  El contador se confirma en su propia transacción, porque la del login se revierte al responder 401.
-- Una cuenta `PENDING_ACTIVATION` o `INACTIVE` no puede entrar (`403`).
-- El mensaje de error no distingue entre correo inexistente y contraseña incorrecta.
+| Caso | Respuesta de `/auth/login` |
+|---|---|
+| Contraseña válida | `200` con el JWT propio de MedicalSys (el contrato no cambia) |
+| Contraseña incorrecta o correo inexistente | `401` con el mismo mensaje: no se revela si el correo existe |
+| Cuenta bloqueada (3er intento fallido) | `423`, `code: ACCOUNT_LOCKED`; la cuenta local pasa a `LOCKED` |
+| Contraseña temporal o vencida (90 días) | `403`, `code: PASSWORD_CHANGE_REQUIRED` |
+| Cuenta `PENDING_ACTIVATION` o `INACTIVE` | `403`, sin consultar Keycloak (no suma intentos fallidos) |
+| Keycloak no responde | `503`, `code: IDENTITY_PROVIDER_UNAVAILABLE`; no hay credenciales locales de respaldo |
+
+`PATCH /users/{id}/status` con `ACTIVE` también levanta el bloqueo en Keycloak. `/auth/change-password`
+valida la contraseña actual en Keycloak y fija la nueva con la política completa; si no la cumple responde
+`400`, `code: PASSWORD_POLICY_VIOLATION`, con el motivo en español.
+
+## Login delegado a Keycloak (IAM-03)
+
+`AuthService.login` valida la contraseña con el token endpoint del realm `medicalsys` (cliente confidencial
+`ms-identidad`, Direct Access Grants). Keycloak aplica la política de IAM-02 y cuenta los intentos fallidos.
+Como responde lo mismo a una contraseña incorrecta y a una cuenta bloqueada, ms-identidad distingue el
+bloqueo con la service account (`/attack-detection/brute-force/users/{id}`). La sesión que abre el password
+grant se cierra en el acto: el único token que circula es el de MedicalSys.
+
+**Migración de cuentas.** Al arrancar, `KeycloakAccountMigration` enlaza las cuentas sin
+`keycloak_user_id`. Si Keycloak ya tiene ese correo, guarda el id. Si no, crea el usuario importando el hash
+Argon2id de `password_hash` tal cual (`LegacyArgon2Hash`), sin conocer la contraseña, y borra el hash
+local. Las cuentas demo conservan `Demo1234!`, así que el frontend no cambia. La política rige para toda
+contraseña nueva o cambiada, y la heredada vence a los 90 días.
+
+Si una cuenta enlazada ya no existe en Keycloak (por ejemplo, se recreó su base), se desenlaza al arrancar.
+Las cuentas demo y la de plataforma se reponen desde `IDENTITY_DEMO_PASSWORD` y `PLATFORM_ADMIN_PASSWORD`;
+las demás necesitan un reinicio de contraseña. Una cuenta que se crea después del arranque se enlaza en su
+primer login.
+
+Comprobación de punta a punta: `scripts/login-keycloak.sh` recorre los cuatro casos con curl (salida de
+referencia en `scripts/evidencia-iam-03.txt`).
 
 ## Variables de entorno
 
@@ -127,8 +159,11 @@ El `organizationId` que envía el cliente nunca se usa como fuente de verdad: sa
 | `JWT_SECRET` | sí | — | Mínimo 32 bytes; el servicio no arranca si es menor |
 | `JWT_ISSUER` | no | `medicalsys-ms-identidad` | Claim `iss` |
 | `JWT_ACCESS_TTL` | no | `PT1H` | Vigencia del token |
-| `IDENTITY_MAX_FAILED_ATTEMPTS` | no | `5` | Intentos antes del bloqueo |
-| `IDENTITY_LOCK_DURATION` | no | `PT15M` | Duración del bloqueo |
+| `KEYCLOAK_URL` | no | `http://keycloak:8080` | Keycloak en la red de Compose |
+| `KEYCLOAK_REALM` | no | `medicalsys` | Realm |
+| `KEYCLOAK_CLIENT_ID` | no | `ms-identidad` | Cliente confidencial |
+| `KEYCLOAK_CLIENT_SECRET` | sí | — | Desde `KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET` |
+| `KEYCLOAK_TIMEOUT` | no | `PT5S` | Conexión y lectura |
 | `IDENTITY_DEMO_USERS_ENABLED` | no | `true` | Crea las cuentas de demostración al arrancar |
 | `IDENTITY_DEMO_ORGANIZATION` | no | `11111111-…-111111111111` | Organización de la demo |
 | `IDENTITY_DEMO_PASSWORD` | no | `Demo1234!` | Contraseña de las cuentas de demostración |

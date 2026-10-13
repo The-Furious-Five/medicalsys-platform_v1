@@ -72,11 +72,12 @@ check "recepcionista si puede ver su perfil" 200 "$(code $B/api/v1/identity/auth
 check "cerrar sesion" 200 "$(code -X POST $B/api/v1/identity/auth/logout -H "$NAUTH")"
 check "token revocado ya no sirve" 401 "$(code $B/api/v1/identity/auth/me -H "$NAUTH")"
 
-# Bloqueo por intentos fallidos (5 intentos configurados)
-for i in 1 2 3 4 5; do
+# Bloqueo por intentos fallidos: lo aplica Keycloak al 3er intento (IAM-02/IAM-03)
+for i in 1 2 3; do
   code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$BAD_LOGIN_BODY" > /dev/null
+  sleep 1.2  # con menos de 1 s entre fallos Keycloak aplica otra regla (bloqueo temporal por rafaga)
 done
-check "cuenta bloqueada tras 5 fallos" 423 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
+check "cuenta bloqueada tras 3 fallos" 423 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
 check "desbloquear cambiando estado" 200 "$(code -X PATCH $B/api/v1/identity/users/$PID/status -H "$AUTH" -H "$JSON" -d '{"status":"ACTIVE","reason":"prueba de humo"}')"
 check "login tras desbloqueo" 200 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d "$LOGIN_BODY")"
 check "cuenta inactiva no puede entrar" 200 "$(code -X PATCH $B/api/v1/identity/users/$PID/status -H "$AUTH" -H "$JSON" -d '{"status":"INACTIVE"}')"

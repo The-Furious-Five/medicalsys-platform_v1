@@ -216,10 +216,15 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-platform.admin@medicalsys.demo}
       PLATFORM_ADMIN_FULL_NAME: ${PLATFORM_ADMIN_FULL_NAME:-Administrador de MedicalSys}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
+      # IAM-03: las credenciales se validan contra Keycloak (cliente confidencial ms-identidad).
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:?falta KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET en .env}
     ports:
       - "${IDENTITY_HOST_PORT:-8081}:8081"
     depends_on:
       redis:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
     logging: *medicalsys-logging

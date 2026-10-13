@@ -43,6 +43,28 @@ services:
       timeout: 3s
       retries: 20
 
+  # IAM-03: mismo realm y lista negra que el compose de la raiz, con la base embebida de desarrollo
+  # de Keycloak (dev-file) para no depender del Postgres de la plataforma.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: ["start-dev", "--http-port=8080", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-dev-admin}
+      KC_HOSTNAME_STRICT: "false"
+      KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET: ${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:-dev-ms-identidad-secret}
+    ports:
+      - "18080:8080"
+    volumes:
+      - ../../infra/keycloak/realm-medicalsys.json:/opt/keycloak/data/import/realm-medicalsys.json:ro
+      - ../../infra/keycloak/password-blacklists:/opt/keycloak/data/password-blacklists:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '(exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null'"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+
   ms-identidad:
     build:
       context: .
@@ -50,6 +72,8 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     environment:
       SERVER_PORT: 8081
@@ -61,6 +85,8 @@ services:
       # Minimo 32 bytes. En el entorno compartido lo provee el .env de la raiz.
       JWT_SECRET: ${JWT_SECRET:-reemplazalo-con-secreto-local-demostrativo}
       IDENTITY_DEMO_USERS_ENABLED: "true"
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:-dev-ms-identidad-secret}
     ports:
       # Solo para probar el servicio aislado. En el entorno compartido nadie publica este puerto:
       # el unico puerto expuesto al host es el 8080 del gateway.

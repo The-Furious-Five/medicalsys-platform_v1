@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class IdentityProperties {
 
     private final Jwt jwt = new Jwt();
-    private final Lockout lockout = new Lockout();
+    private final Keycloak keycloak = new Keycloak();
     private final DemoUsers demoUsers = new DemoUsers();
     private final PlatformAdmin platformAdmin = new PlatformAdmin();
 
@@ -16,8 +16,8 @@ public class IdentityProperties {
         return jwt;
     }
 
-    public Lockout getLockout() {
-        return lockout;
+    public Keycloak getKeycloak() {
+        return keycloak;
     }
 
     public DemoUsers getDemoUsers() {
@@ -58,25 +58,27 @@ public class IdentityProperties {
         }
     }
 
-    public static class Lockout {
-        private int maxFailedAttempts = 5;
-        private Duration lockDuration = Duration.ofMinutes(15);
+    /**
+     * Cliente confidencial ms-identidad del realm medicalsys (IAM-03): valida credenciales con
+     * Direct Access Grants y administra usuarios con su service account.
+     */
+    public static class Keycloak {
+        private String baseUrl = "http://keycloak:8080";
+        private String realm = "medicalsys";
+        private String clientId = "ms-identidad";
+        private String clientSecret;
+        private Duration timeout = Duration.ofSeconds(5);
 
-        public int getMaxFailedAttempts() {
-            return maxFailedAttempts;
-        }
-
-        public void setMaxFailedAttempts(int maxFailedAttempts) {
-            this.maxFailedAttempts = maxFailedAttempts;
-        }
-
-        public Duration getLockDuration() {
-            return lockDuration;
-        }
-
-        public void setLockDuration(Duration lockDuration) {
-            this.lockDuration = lockDuration;
-        }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public String getRealm() { return realm; }
+        public void setRealm(String realm) { this.realm = realm; }
+        public String getClientId() { return clientId; }
+        public void setClientId(String clientId) { this.clientId = clientId; }
+        public String getClientSecret() { return clientSecret; }
+        public void setClientSecret(String clientSecret) { this.clientSecret = clientSecret; }
+        public Duration getTimeout() { return timeout; }
+        public void setTimeout(Duration timeout) { this.timeout = timeout; }
     }
 
     public static class DemoUsers {

@@ -29,6 +29,10 @@ public class UserAccount {
     @Column(name = "public_id", nullable = false, unique = true)
     private UUID publicId = UUID.randomUUID();
 
+    /** Usuario del realm medicalsys que guarda la credencial (IAM-03). Nulo hasta enlazar la cuenta. */
+    @Column(name = "keycloak_user_id", length = 36, unique = true)
+    private String keycloakUserId;
+
     @Column(name = "organization_public_id")
     private UUID organizationPublicId;
 
@@ -41,7 +45,11 @@ public class UserAccount {
     @Column(name = "full_name", nullable = false, length = 180)
     private String fullName;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    /**
+     * Solo para cuentas aun no enlazadas a Keycloak: al enlazarlas, el hash se importa al realm y
+     * se borra de aqui. La credencial vigente vive en Keycloak.
+     */
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
     @Column(name = "hash_algorithm", nullable = false, length = 20)
@@ -94,12 +102,13 @@ public class UserAccount {
         return lockedUntil != null && lockedUntil.isAfter(now);
     }
 
-    public void registerFailedAttempt(int maxAttempts, Instant lockUntil) {
-        this.failedAttempts = (byte) ((this.failedAttempts == null ? 0 : this.failedAttempts) + 1);
-        if (this.failedAttempts >= maxAttempts) {
-            this.lockedUntil = lockUntil;
-            this.status = UserStatus.LOCKED;
-        }
+    /**
+     * Refleja el bloqueo por fuerza bruta de Keycloak (permanente: solo lo levanta un administrador),
+     * para que la gestion de usuarios muestre el estado sin consultar Keycloak por cada fila.
+     */
+    public void markLockedByIdentityProvider() {
+        this.status = UserStatus.LOCKED;
+        this.lockedUntil = null;
     }
 
     public void registerSuccessfulAccess(Instant now) {
@@ -109,6 +118,10 @@ public class UserAccount {
         if (this.status == UserStatus.LOCKED) {
             this.status = UserStatus.ACTIVE;
         }
+    }
+
+    public boolean isLinkedToIdentityProvider() {
+        return keycloakUserId != null;
     }
 
     public Long getId() {
@@ -121,6 +134,14 @@ public class UserAccount {
 
     public void setPublicId(UUID publicId) {
         this.publicId = publicId;
+    }
+
+    public String getKeycloakUserId() {
+        return keycloakUserId;
+    }
+
+    public void setKeycloakUserId(String keycloakUserId) {
+        this.keycloakUserId = keycloakUserId;
     }
 
     public UUID getOrganizationPublicId() {
