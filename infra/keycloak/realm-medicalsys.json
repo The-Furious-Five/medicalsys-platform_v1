@@ -8,6 +8,16 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
   "editUsernameAllowed": false,
+  "passwordPolicy": "length(12) and maxLength(64) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and passwordBlacklist(medicalsys.txt) and passwordHistory(5) and forceExpiredPasswordChange(90) and hashAlgorithm(argon2)",
+  "bruteForceProtected": true,
+  "permanentLockout": true,
+  "maxTemporaryLockouts": 0,
+  "failureFactor": 3,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
   "clients": [
     {
       "clientId": "ms-identidad",

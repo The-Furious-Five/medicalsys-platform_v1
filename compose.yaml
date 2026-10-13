@@ -182,6 +182,8 @@ services:
       - "${KEYCLOAK_HOST_PORT:-18080}:8080"
     volumes:
       - ./infra/keycloak/realm-medicalsys.json:/opt/keycloak/data/import/realm-medicalsys.json:ro
+      # Lista negra de la política de contraseñas (IAM-02): passwordBlacklist(medicalsys.txt).
+      - ./infra/keycloak/password-blacklists:/opt/keycloak/data/password-blacklists:ro
     depends_on:
       keycloak-db-init:
         condition: service_completed_successfully

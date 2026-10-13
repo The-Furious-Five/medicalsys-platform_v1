@@ -1,0 +1,821 @@
+123456789012
+1234567890123
+1q2w3e4r5t6y
+1qaz2wsx3edc
+abc123 2026!
+abc123-2026!
+abc12312345!
+abc123123456
+abc1231234567
+abc123_2026!
+abc123abc123
+abcdef 2026!
+abcdef-2026!
+abcdef12345!
+abcdef123456
+abcdef1234567
+abcdef_2026!
+admin1234567
+administrador 123!
+administrador 2026!
+administrador!123
+administrador!2026
+administrador#123
+administrador-2026!
+administrador123!
+administrador123.
+administrador1234!
+administrador12345!
+administrador123456
+administrador1234567
+administrador2024!
+administrador2025!
+administrador2026!
+administrador2026.
+administrador@123
+administrador@1234
+administrador@2026
+administrador_2026!
+administradora 123!
+administradora 2026!
+administradora!123
+administradora!2026
+administradora#123
+administradora-2026!
+administradora123!
+administradora123.
+administradora1234!
+administradora12345!
+administradora123456
+administradora1234567
+administradora2024!
+administradora2025!
+administradora2026!
+administradora2026.
+administradora@123
+administradora@1234
+administradora@2026
+administradora_2026!
+asdfgh 2026!
+asdfgh-2026!
+asdfgh12345!
+asdfgh123456
+asdfgh1234567
+asdfgh_2026!
+asdfghjkl 123!
+asdfghjkl 2026!
+asdfghjkl!123
+asdfghjkl!2026
+asdfghjkl#123
+asdfghjkl-2026!
+asdfghjkl123!
+asdfghjkl123.
+asdfghjkl1234!
+asdfghjkl12345!
+asdfghjkl123456
+asdfghjkl1234567
+asdfghjkl2024!
+asdfghjkl2025!
+asdfghjkl2026!
+asdfghjkl2026.
+asdfghjkl@123
+asdfghjkl@1234
+asdfghjkl@2026
+asdfghjkl_2026!
+batman 2026!
+batman-2026!
+batman12345!
+batman123456
+batman1234567
+batman_2026!
+bienvenida 123!
+bienvenida 2026!
+bienvenida!123
+bienvenida!2026
+bienvenida#123
+bienvenida-2026!
+bienvenida123!
+bienvenida123.
+bienvenida1234!
+bienvenida12345!
+bienvenida123456
+bienvenida1234567
+bienvenida2024!
+bienvenida2025!
+bienvenida2026!
+bienvenida2026.
+bienvenida@123
+bienvenida@1234
+bienvenida@2026
+bienvenida_2026!
+bienvenido 123!
+bienvenido 2026!
+bienvenido!123
+bienvenido!2026
+bienvenido#123
+bienvenido-2026!
+bienvenido123!
+bienvenido123.
+bienvenido1234!
+bienvenido12345!
+bienvenido123456
+bienvenido1234567
+bienvenido2024!
+bienvenido2025!
+bienvenido2026!
+bienvenido2026.
+bienvenido@123
+bienvenido@1234
+bienvenido@2026
+bienvenido_2026!
+bolivia 123!
+bolivia 2026!
+bolivia!2026
+bolivia-2026!
+bolivia1234!
+bolivia12345!
+bolivia123456
+bolivia1234567
+bolivia2024!
+bolivia2025!
+bolivia2026!
+bolivia2026.
+bolivia@1234
+bolivia@2026
+bolivia_2026!
+cambiame1234!
+cambiar1234!
+clave1234567
+clinica 123!
+clinica 2026!
+clinica!2026
+clinica-2026!
+clinica1234!
+clinica12345!
+clinica123456
+clinica1234567
+clinica2024!
+clinica2025!
+clinica2026!
+clinica2026.
+clinica@1234
+clinica@2026
+clinica_2026!
+clínica 123!
+clínica 2026!
+clínica!2026
+clínica-2026!
+clínica1234!
+clínica12345!
+clínica123456
+clínica1234567
+clínica2024!
+clínica2025!
+clínica2026!
+clínica2026.
+clínica@1234
+clínica@2026
+clínica_2026!
+cochabamba 123!
+cochabamba 2026!
+cochabamba!123
+cochabamba!2026
+cochabamba#123
+cochabamba-2026!
+cochabamba123!
+cochabamba123.
+cochabamba1234!
+cochabamba12345!
+cochabamba123456
+cochabamba1234567
+cochabamba2024!
+cochabamba2025!
+cochabamba2026!
+cochabamba2026.
+cochabamba@123
+cochabamba@1234
+cochabamba@2026
+cochabamba_2026!
+consultorio 123!
+consultorio 2026!
+consultorio!123
+consultorio!2026
+consultorio#123
+consultorio-2026!
+consultorio123!
+consultorio123.
+consultorio1234!
+consultorio12345!
+consultorio123456
+consultorio1234567
+consultorio2024!
+consultorio2025!
+consultorio2026!
+consultorio2026.
+consultorio@123
+consultorio@1234
+consultorio@2026
+consultorio_2026!
+contrasena 123!
+contrasena 2026!
+contrasena!123
+contrasena!2026
+contrasena#123
+contrasena-2026!
+contrasena123!
+contrasena123.
+contrasena1234!
+contrasena12345!
+contrasena123456
+contrasena1234567
+contrasena2024!
+contrasena2025!
+contrasena2026!
+contrasena2026.
+contrasena@123
+contrasena@1234
+contrasena@2026
+contrasena_2026!
+contraseña 123!
+contraseña 2026!
+contraseña!123
+contraseña!2026
+contraseña#123
+contraseña-2026!
+contraseña1 123!
+contraseña1 2026!
+contraseña1!123
+contraseña1!2026
+contraseña1#123
+contraseña1-2026!
+contraseña1123!
+contraseña1123.
+contraseña11234!
+contraseña112345!
+contraseña1123456
+contraseña11234567
+contraseña12024!
+contraseña12025!
+contraseña12026!
+contraseña12026.
+contraseña123!
+contraseña123.
+contraseña1234!
+contraseña12345!
+contraseña123456
+contraseña1234567
+contraseña1@123
+contraseña1@1234
+contraseña1@2026
+contraseña1_2026!
+contraseña2024!
+contraseña2025!
+contraseña2026!
+contraseña2026.
+contraseña@123
+contraseña@1234
+contraseña@2026
+contraseña_2026!
+demo1234!demo
+doctor 2026!
+doctor-2026!
+doctor12345!
+doctor123456
+doctor1234567
+doctor_2026!
+doctora 123!
+doctora 2026!
+doctora!2026
+doctora-2026!
+doctora1234!
+doctora12345!
+doctora123456
+doctora1234567
+doctora2024!
+doctora2025!
+doctora2026!
+doctora2026.
+doctora@1234
+doctora@2026
+doctora_2026!
+dragon 2026!
+dragon-2026!
+dragon12345!
+dragon123456
+dragon1234567
+dragon_2026!
+enfermera 123!
+enfermera 2026!
+enfermera!123
+enfermera!2026
+enfermera#123
+enfermera-2026!
+enfermera123!
+enfermera123.
+enfermera1234!
+enfermera12345!
+enfermera123456
+enfermera1234567
+enfermera2024!
+enfermera2025!
+enfermera2026!
+enfermera2026.
+enfermera@123
+enfermera@1234
+enfermera@2026
+enfermera_2026!
+enfermero 123!
+enfermero 2026!
+enfermero!123
+enfermero!2026
+enfermero#123
+enfermero-2026!
+enfermero123!
+enfermero123.
+enfermero1234!
+enfermero12345!
+enfermero123456
+enfermero1234567
+enfermero2024!
+enfermero2025!
+enfermero2026!
+enfermero2026.
+enfermero@123
+enfermero@1234
+enfermero@2026
+enfermero_2026!
+football 123!
+football 2026!
+football!123
+football!2026
+football#123
+football-2026!
+football123!
+football123.
+football1234!
+football12345!
+football123456
+football1234567
+football2024!
+football2025!
+football2026!
+football2026.
+football@123
+football@1234
+football@2026
+football_2026!
+futbol 2026!
+futbol-2026!
+futbol12345!
+futbol123456
+futbol1234567
+futbol_2026!
+hospital 123!
+hospital 2026!
+hospital!123
+hospital!2026
+hospital#123
+hospital-2026!
+hospital123!
+hospital123.
+hospital1234!
+hospital12345!
+hospital123456
+hospital1234567
+hospital2024!
+hospital2025!
+hospital2026!
+hospital2026.
+hospital@123
+hospital@1234
+hospital@2026
+hospital_2026!
+iloveyou 123!
+iloveyou 2026!
+iloveyou!123
+iloveyou!2026
+iloveyou#123
+iloveyou-2026!
+iloveyou123!
+iloveyou123.
+iloveyou1234!
+iloveyou12345!
+iloveyou123456
+iloveyou1234567
+iloveyou2024!
+iloveyou2025!
+iloveyou2026!
+iloveyou2026.
+iloveyou@123
+iloveyou@1234
+iloveyou@2026
+iloveyou_2026!
+lapaz1234567
+letmein 123!
+letmein 2026!
+letmein!2026
+letmein-2026!
+letmein1234!
+letmein12345!
+letmein123456
+letmein1234567
+letmein2024!
+letmein2025!
+letmein2026!
+letmein2026.
+letmein@1234
+letmein@2026
+letmein_2026!
+master 2026!
+master-2026!
+master12345!
+master123456
+master1234567
+master_2026!
+medicalsys 123!
+medicalsys 2026!
+medicalsys!123
+medicalsys!2026
+medicalsys#123
+medicalsys-2026!
+medicalsys1 123!
+medicalsys1 2026!
+medicalsys1!123
+medicalsys1!2026
+medicalsys1#123
+medicalsys1-2026!
+medicalsys1123!
+medicalsys1123.
+medicalsys11234!
+medicalsys112345!
+medicalsys1123456
+medicalsys11234567
+medicalsys12024!
+medicalsys12025!
+medicalsys12026!
+medicalsys12026.
+medicalsys123!
+medicalsys123.
+medicalsys1234!
+medicalsys12345!
+medicalsys123456
+medicalsys1234567
+medicalsys1@123
+medicalsys1@1234
+medicalsys1@2026
+medicalsys1_2026!
+medicalsys2024!
+medicalsys2025!
+medicalsys2026!
+medicalsys2026.
+medicalsys@123
+medicalsys@1234
+medicalsys@2026
+medicalsys_2026!
+medico 2026!
+medico-2026!
+medico12345!
+medico123456
+medico1234567
+medico_2026!
+miclave12345!
+monkey 2026!
+monkey-2026!
+monkey12345!
+monkey123456
+monkey1234567
+monkey_2026!
+médico 2026!
+médico-2026!
+médico12345!
+médico123456
+médico1234567
+médico_2026!
+nuevaclave123!
+oruro1234567
+p@ssw0rd 123!
+p@ssw0rd 2026!
+p@ssw0rd!123
+p@ssw0rd!2026
+p@ssw0rd#123
+p@ssw0rd-2026!
+p@ssw0rd123!
+p@ssw0rd123.
+p@ssw0rd1234
+p@ssw0rd1234!
+p@ssw0rd12345!
+p@ssw0rd123456
+p@ssw0rd1234567
+p@ssw0rd2024!
+p@ssw0rd2025!
+p@ssw0rd2026!
+p@ssw0rd2026.
+p@ssw0rd@123
+p@ssw0rd@1234
+p@ssw0rd@2026
+p@ssw0rd_2026!
+p@ssword 123!
+p@ssword 2026!
+p@ssword!123
+p@ssword!2026
+p@ssword#123
+p@ssword-2026!
+p@ssword123!
+p@ssword123.
+p@ssword1234
+p@ssword1234!
+p@ssword12345!
+p@ssword123456
+p@ssword1234567
+p@ssword2024!
+p@ssword2025!
+p@ssword2026!
+p@ssword2026.
+p@ssword@123
+p@ssword@1234
+p@ssword@2026
+p@ssword_2026!
+paciente 123!
+paciente 2026!
+paciente!123
+paciente!2026
+paciente#123
+paciente-2026!
+paciente123!
+paciente123.
+paciente1234!
+paciente12345!
+paciente123456
+paciente1234567
+paciente2024!
+paciente2025!
+paciente2026!
+paciente2026.
+paciente@123
+paciente@1234
+paciente@2026
+paciente_2026!
+passw0rd 123!
+passw0rd 2026!
+passw0rd!123
+passw0rd!2026
+passw0rd#123
+passw0rd-2026!
+passw0rd123!
+passw0rd123.
+passw0rd1234!
+passw0rd12345!
+passw0rd123456
+passw0rd1234567
+passw0rd2024!
+passw0rd2025!
+passw0rd2026!
+passw0rd2026.
+passw0rd@123
+passw0rd@1234
+passw0rd@2026
+passw0rd_2026!
+password 123!
+password 2026!
+password!123
+password!2026
+password#123
+password-2026!
+password123!
+password123.
+password1234
+password1234!
+password12345!
+password123456
+password1234567
+password2024!
+password2025!
+password2026!
+password2026.
+password@123
+password@1234
+password@2026
+password_2026!
+potosi 2026!
+potosi-2026!
+potosi12345!
+potosi123456
+potosi1234567
+potosi_2026!
+princesa 123!
+princesa 2026!
+princesa!123
+princesa!2026
+princesa#123
+princesa-2026!
+princesa123!
+princesa123.
+princesa1234!
+princesa12345!
+princesa123456
+princesa1234567
+princesa2024!
+princesa2025!
+princesa2026!
+princesa2026.
+princesa@123
+princesa@1234
+princesa@2026
+princesa_2026!
+princess 123!
+princess 2026!
+princess!123
+princess!2026
+princess#123
+princess-2026!
+princess123!
+princess123.
+princess1234!
+princess12345!
+princess123456
+princess1234567
+princess2024!
+princess2025!
+princess2026!
+princess2026.
+princess@123
+princess@1234
+princess@2026
+princess_2026!
+qwerty 2026!
+qwerty-2026!
+qwerty12345!
+qwerty123456
+qwerty1234567
+qwerty_2026!
+qwertyuiop 123!
+qwertyuiop 2026!
+qwertyuiop!123
+qwertyuiop!2026
+qwertyuiop#123
+qwertyuiop-2026!
+qwertyuiop123!
+qwertyuiop123.
+qwertyuiop1234!
+qwertyuiop12345!
+qwertyuiop123456
+qwertyuiop1234567
+qwertyuiop2024!
+qwertyuiop2025!
+qwertyuiop2026!
+qwertyuiop2026.
+qwertyuiop@123
+qwertyuiop@1234
+qwertyuiop@2026
+qwertyuiop_2026!
+salud1234567
+santacruz 123!
+santacruz 2026!
+santacruz!123
+santacruz!2026
+santacruz#123
+santacruz-2026!
+santacruz123!
+santacruz123.
+santacruz1234!
+santacruz12345!
+santacruz123456
+santacruz1234567
+santacruz2024!
+santacruz2025!
+santacruz2026!
+santacruz2026.
+santacruz@123
+santacruz@1234
+santacruz@2026
+santacruz_2026!
+secreto 123!
+secreto 2026!
+secreto!2026
+secreto-2026!
+secreto1234!
+secreto12345!
+secreto123456
+secreto1234567
+secreto2024!
+secreto2025!
+secreto2026!
+secreto2026.
+secreto@1234
+secreto@2026
+secreto_2026!
+sucre1234567
+sunshine 123!
+sunshine 2026!
+sunshine!123
+sunshine!2026
+sunshine#123
+sunshine-2026!
+sunshine123!
+sunshine123.
+sunshine1234!
+sunshine12345!
+sunshine123456
+sunshine1234567
+sunshine2024!
+sunshine2025!
+sunshine2026!
+sunshine2026.
+sunshine@123
+sunshine@1234
+sunshine@2026
+sunshine_2026!
+superman 123!
+superman 2026!
+superman!123
+superman!2026
+superman#123
+superman-2026!
+superman123!
+superman123.
+superman1234!
+superman12345!
+superman123456
+superman1234567
+superman2024!
+superman2025!
+superman2026!
+superman2026.
+superman@123
+superman@1234
+superman@2026
+superman_2026!
+tarija 2026!
+tarija-2026!
+tarija12345!
+tarija123456
+tarija1234567
+tarija_2026!
+teamo1234567
+temporal1234!
+temporal2026!
+trustno1 123!
+trustno1 2026!
+trustno1!123
+trustno1!2026
+trustno1#123
+trustno1-2026!
+trustno1123!
+trustno1123.
+trustno11234!
+trustno112345!
+trustno1123456
+trustno11234567
+trustno12024!
+trustno12025!
+trustno12026!
+trustno12026.
+trustno1@123
+trustno1@1234
+trustno1@2026
+trustno1_2026!
+usuario 123!
+usuario 2026!
+usuario!2026
+usuario-2026!
+usuario1234!
+usuario12345!
+usuario123456
+usuario1234567
+usuario2024!
+usuario2025!
+usuario2026!
+usuario2026.
+usuario@1234
+usuario@2026
+usuario_2026!
+welcome 123!
+welcome 2026!
+welcome!2026
+welcome-2026!
+welcome1234!
+welcome12345!
+welcome123456
+welcome1234567
+welcome2024!
+welcome2025!
+welcome2026!
+welcome2026.
+welcome@1234
+welcome@2026
+welcome_2026!
+zxcvbnm 123!
+zxcvbnm 2026!
+zxcvbnm!2026
+zxcvbnm-2026!
+zxcvbnm1234!
+zxcvbnm12345!
+zxcvbnm123456
+zxcvbnm1234567
+zxcvbnm2024!
+zxcvbnm2025!
+zxcvbnm2026!
+zxcvbnm2026.
+zxcvbnm@1234
+zxcvbnm@2026
+zxcvbnm_2026!

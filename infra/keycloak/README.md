@@ -46,6 +46,37 @@ bash infra/keycloak/sync-realm.sh
 
 Aplica la configuración de nivel realm sin tocar usuarios ni clientes.
 
+## Política de contraseñas y bloqueo (IAM-02)
+
+Valores de la hoja «Decisiones» del kickoff (C-01) y de PO-03, en `passwordPolicy` y en la
+detección de fuerza bruta del realm:
+
+| Decisión | Configuración en Keycloak |
+|---|---|
+| Longitud de 12 a 64 caracteres | `length(12)`, `maxLength(64)` |
+| 1 mayúscula, 1 minúscula, 1 dígito y 1 carácter especial; los espacios se permiten | `upperCase(1)`, `lowerCase(1)`, `digits(1)`, `specialChars(1)` |
+| No usar el usuario ni el correo | `notUsername`, `notEmail` |
+| Lista negra de frases fáciles | `passwordBlacklist(medicalsys.txt)`: [`password-blacklists/medicalsys.txt`](password-blacklists/medicalsys.txt), 821 entradas en minúsculas (Keycloak compara sin distinguir mayúsculas) |
+| Histórico de las últimas 5 | `passwordHistory(5)` |
+| Vida útil de 90 días | `forceExpiredPasswordChange(90)` |
+| Hash Argon2id | `hashAlgorithm(argon2)`: Keycloak guarda `type=id`, versión 1.3 y sal propia por credencial |
+| Bloqueo al 3er intento, sin desbloqueo automático | `bruteForceProtected`, `failureFactor: 3`, `permanentLockout: true`, `maxTemporaryLockouts: 0` |
+
+El token endpoint responde `Invalid user credentials` tanto a una contraseña incorrecta como a
+una cuenta bloqueada: no revela si el usuario existe ni cuántos intentos le quedan.
+ms-identidad distingue el bloqueo consultando
+`/attack-detection/brute-force/users/{id}` con su service account (IAM-03).
+
+Comprobación:
+
+```bash
+bash infra/keycloak/policy-check.sh
+```
+
+Recorre cada regla con una contraseña inválida, el histórico, el algoritmo del hash y el
+bloqueo al 3er intento. La salida de referencia está en
+[`evidencia-iam-02.txt`](evidencia-iam-02.txt).
+
 ## Decisión go/no-go (12/10/2026): GO
 
 Keycloak arrancó con el realm importado sobre el Postgres existente, y el smoke test pasó
