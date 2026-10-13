@@ -64,10 +64,10 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
 
         if (!users.existsByEmailIgnoreCase(config.getEmail())) {
-            userService.create(new CreateUserRequest(
+            userService.createSeedAccount(new CreateUserRequest(
                     config.getEmail(), config.getFullName(), config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
-                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))), null);
+                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))));
             log.info("Cuenta PLATFORM_ADMIN creada: {}", config.getEmail());
         }
 

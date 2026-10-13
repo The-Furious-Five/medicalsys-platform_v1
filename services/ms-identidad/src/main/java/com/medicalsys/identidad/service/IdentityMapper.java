@@ -21,6 +21,7 @@ public class IdentityMapper {
     public UserResponse toUserResponse(UserAccount user) {
         return new UserResponse(
                 user.getPublicId(),
+                user.getUserCode(),
                 user.getOrganizationPublicId(),
                 user.getEmail(),
                 user.getFullName(),
@@ -33,12 +34,14 @@ public class IdentityMapper {
                 user.getLastAccessAt(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getRoleAssignments().stream().map(this::toRoleAssignment).toList());
+                user.getRoleAssignments().stream().map(this::toRoleAssignment).toList(),
+                null);
     }
 
     public InternalUserResponse toInternalResponse(UserAccount user) {
         return new InternalUserResponse(
                 user.getPublicId(),
+                user.getUserCode(),
                 user.getOrganizationPublicId(),
                 user.getEmail(),
                 user.getFullName(),

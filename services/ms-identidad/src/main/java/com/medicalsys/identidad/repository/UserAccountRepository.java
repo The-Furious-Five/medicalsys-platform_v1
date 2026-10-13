@@ -30,7 +30,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
             select u from UserAccount u
             where (:organizationPublicId is null or u.organizationPublicId = :organizationPublicId)
               and (:status is null or u.status = :status)
-              and (:search is null or lower(u.email) like :search or lower(u.fullName) like :search)
+              and (:search is null or lower(u.email) like :search or lower(u.fullName) like :search
+                   or lower(u.userCode) like :search)
             """)
     Page<UserAccount> search(@Param("organizationPublicId") UUID organizationPublicId,
                              @Param("status") UserStatus status,

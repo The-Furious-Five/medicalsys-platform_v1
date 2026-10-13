@@ -28,6 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -43,10 +45,13 @@ public class UserService {
     private final RoleGovernance governance;
     private final KeycloakClient keycloak;
     private final KeycloakAccountLinker linker;
+    private final UserCodeGenerator userCodes;
+    private final TemporaryPasswordGenerator temporaryPasswords;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
                        IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance,
-                       KeycloakClient keycloak, KeycloakAccountLinker linker) {
+                       KeycloakClient keycloak, KeycloakAccountLinker linker, UserCodeGenerator userCodes,
+                       TemporaryPasswordGenerator temporaryPasswords) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
@@ -55,10 +60,63 @@ public class UserService {
         this.governance = governance;
         this.keycloak = keycloak;
         this.linker = linker;
+        this.userCodes = userCodes;
+        this.temporaryPasswords = temporaryPasswords;
     }
 
+    /**
+     * Alta desde la API (IAM-04): la cuenta se crea en MedicalSys con su User ID y en Keycloak con
+     * contraseña temporal (UPDATE_PASSWORD). Si no se indica, el sistema la genera y la devuelve una sola
+     * vez. Si la transacción local falla después de crear el usuario en Keycloak, ese alta se deshace.
+     */
     @Transactional
     public UserResponse create(CreateUserRequest request, UUID actorPublicId) {
+        UserAccount user = newAccount(request, actorPublicId);
+        user.setPasswordUpdatedAt(Instant.now());
+
+        // Keycloak primero: si rechaza la contraseña por la política, no se consume un User ID.
+        boolean generated = !StringUtils.hasText(request.password());
+        String temporaryPassword = generated ? temporaryPasswords.generate() : request.password();
+        String[] names = KeycloakAccountLinker.splitName(user.getFullName());
+        String keycloakUserId;
+        try {
+            keycloakUserId = keycloak.createUserWithPassword(new KeycloakClient.NewUser(
+                    user.getPublicId().toString(), user.getEmail(), names[0], names[1],
+                    user.getStatus() != UserStatus.INACTIVE), temporaryPassword, true);
+        } catch (PasswordPolicyException ex) {
+            throw ApiException.passwordPolicy(ex.getMessage());
+        }
+        undoKeycloakAccountOnRollback(keycloakUserId);
+        user.setKeycloakUserId(keycloakUserId);
+
+        UserCodeGenerator.IssuedCode code = userCodes.next();
+        user.setUserCode(code.code());
+        users.saveAndFlush(user);
+        userCodes.assign(code, user.getId());
+
+        UserResponse response = mapper.toUserResponse(user);
+        return generated ? response.withTemporaryPassword(temporaryPassword) : response;
+    }
+
+    /**
+     * Cuentas de demostración y de plataforma, cuya contraseña sale de la configuración y no cumple
+     * necesariamente la política: se guardan con hash local y KeycloakAccountMigration las importa a
+     * Keycloak al arrancar, igual que las cuentas anteriores a IAM-03.
+     */
+    @Transactional
+    public UserResponse createSeedAccount(CreateUserRequest request) {
+        UserAccount user = newAccount(request, null);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setHashAlgorithm("argon2id");
+        user.setPasswordUpdatedAt(Instant.now());
+        UserCodeGenerator.IssuedCode code = userCodes.next();
+        user.setUserCode(code.code());
+        users.saveAndFlush(user);
+        userCodes.assign(code, user.getId());
+        return mapper.toUserResponse(user);
+    }
+
+    private UserAccount newAccount(CreateUserRequest request, UUID actorPublicId) {
         String email = request.email().trim().toLowerCase();
         if (users.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("Ya existe una cuenta con el correo " + email);
@@ -71,9 +129,6 @@ public class UserService {
         user.setPhoneE164(StringUtils.hasText(request.phoneE164()) ? request.phoneE164() : null);
         user.setOrganizationPublicId(governance.organizationForNewAccount(actor, request.organizationPublicId()));
         user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "es-BO");
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setHashAlgorithm("argon2id");
-        user.setPasswordUpdatedAt(Instant.now());
         user.setStatus(Boolean.TRUE.equals(request.activateImmediately())
                 ? UserStatus.ACTIVE
                 : UserStatus.PENDING_ACTIVATION);
@@ -88,7 +143,22 @@ public class UserService {
                 attachRole(user, assignment, actor);
             }
         }
-        return mapper.toUserResponse(users.save(user));
+        return user;
+    }
+
+    /** Si la transacción del alta se revierte, el usuario ya creado en Keycloak se borra. */
+    private void undoKeycloakAccountOnRollback(String keycloakUserId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    keycloak.deleteUser(keycloakUserId);
+                }
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -108,18 +178,35 @@ public class UserService {
         return mapper.toUserResponse(user);
     }
 
+    /** Modificación (IAM-04): nombre y correo se sincronizan con Keycloak; el User ID no cambia. */
     @Transactional
     public UserResponse update(UUID publicId, UpdateUserRequest request, UUID actorPublicId) {
         UserAccount user = require(publicId);
         governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
-        if (StringUtils.hasText(request.fullName())) {
+        boolean profileChanged = false;
+        if (StringUtils.hasText(request.fullName()) && !request.fullName().trim().equals(user.getFullName())) {
             user.setFullName(request.fullName().trim());
+            profileChanged = true;
+        }
+        if (StringUtils.hasText(request.email())) {
+            String email = request.email().trim().toLowerCase();
+            if (!email.equalsIgnoreCase(user.getEmail())) {
+                if (users.existsByEmailIgnoreCase(email)) {
+                    throw ApiException.conflict("Ya existe una cuenta con el correo " + email);
+                }
+                user.setEmail(email);
+                profileChanged = true;
+            }
         }
         if (request.phoneE164() != null) {
             user.setPhoneE164(StringUtils.hasText(request.phoneE164()) ? request.phoneE164() : null);
         }
         if (StringUtils.hasText(request.language())) {
             user.setLanguage(request.language());
+        }
+        if (profileChanged && user.isLinkedToIdentityProvider()) {
+            String[] names = KeycloakAccountLinker.splitName(user.getFullName());
+            keycloak.updateProfile(user.getKeycloakUserId(), user.getEmail(), names[0], names[1]);
         }
         return mapper.toUserResponse(user);
     }
@@ -139,6 +226,10 @@ public class UserService {
             if (user.isLinkedToIdentityProvider()) {
                 keycloak.unlock(user.getKeycloakUserId());
             }
+        }
+        // Baja (IAM-04): se deshabilita en Keycloak, nunca se borra, para conservar la trazabilidad.
+        if ((target == UserStatus.INACTIVE || target == UserStatus.LOCKED) && user.isLinkedToIdentityProvider()) {
+            keycloak.setEnabled(user.getKeycloakUserId(), false);
         }
         user.setStatus(target);
         if (target != UserStatus.ACTIVE) {

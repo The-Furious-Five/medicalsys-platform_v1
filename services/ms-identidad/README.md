@@ -151,6 +151,36 @@ primer login.
 Comprobación de punta a punta: `scripts/login-keycloak.sh` recorre los cuatro casos con curl (salida de
 referencia en `scripts/evidencia-iam-03.txt`).
 
+## Gestión de usuarios sincronizada con Keycloak (IAM-04)
+
+**User ID estándar.** Cada cuenta tiene un `userCode` `MS-AA-NNNNN` (C-01): `MS` de MedicalSys, `AA` los
+dos últimos dígitos del año de alta y `NNNNN` un correlativo de `user_code_sequence`. Es único, no cambia
+nunca y no se reutiliza aunque la cuenta se dé de baja; no incluye rol ni datos personales. La V7 se lo
+asigna a las cuentas existentes por orden de alta. Aparece en `UserResponse` y en el contrato interno, y la
+búsqueda de usuarios también filtra por él. La inmutabilidad la garantiza la entidad
+(`updatable = false`); un trigger en la base requiere `--log-bin-trust-function-creators=ON` en el MySQL
+compartido y queda pendiente de confirmar en Aiven.
+
+| Operación | MedicalSys | Keycloak |
+|---|---|---|
+| Alta (`POST /users`) | Cuenta con `userCode` y roles | Usuario con username = `public_id`, contraseña **temporal** y `UPDATE_PASSWORD` |
+| Modificación (`PATCH /users/{id}`) | Nombre, correo, teléfono, idioma | Nombre y correo (el username no cambia) |
+| Baja (`PATCH /users/{id}/status` → `INACTIVE`) | Estado `INACTIVE`, la cuenta se conserva | `enabled: false`, nunca se borra |
+| Reactivación (`ACTIVE`) | Estado `ACTIVE` | Habilita y levanta el bloqueo |
+
+**Contraseña temporal.** En el alta, `password` es opcional. Sin ella, el sistema genera una de 19
+caracteres que siempre cumple la política (`Kq7m-Xw3p-Rt9v-Hn4c`) y la devuelve **una sola vez** en
+`temporaryPassword`. El administrador la entrega por un canal seguro y nunca conoce la definitiva. Con
+ella, Keycloak aplica la política (`400 PASSWORD_POLICY_VIOLATION`). En ambos casos el usuario debe
+cambiarla en su primer ingreso (`403 PASSWORD_CHANGE_REQUIRED` hasta hacerlo).
+
+Primero se crea el usuario en Keycloak y después se asigna el `userCode`, así que un rechazo por la
+política no gasta un número. Si la transacción local falla después de crear el usuario en Keycloak, el
+alta se deshace allí.
+
+Comprobación: `scripts/abm-keycloak.sh` compara MedicalSys y Keycloak en cada paso (salida de referencia
+en `scripts/evidencia-iam-04.txt`).
+
 ## Variables de entorno
 
 | Variable | Obligatoria | Por defecto | Descripción |

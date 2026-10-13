@@ -1,5 +1,6 @@
 package com.medicalsys.identidad.web.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.medicalsys.identidad.domain.UserStatus;
 import java.time.Instant;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.UUID;
 
 public record UserResponse(
         UUID publicId,
+        String userCode,
         UUID organizationPublicId,
         String email,
         String fullName,
@@ -19,5 +21,13 @@ public record UserResponse(
         Instant lastAccessAt,
         Instant createdAt,
         Instant updatedAt,
-        List<RoleAssignmentResponse> roles) {
+        List<RoleAssignmentResponse> roles,
+        // Solo en la respuesta del alta cuando el sistema genera la contraseña temporal: se muestra
+        // una vez al administrador, que la entrega por un canal seguro. Nunca se guarda ni se loguea.
+        @JsonInclude(JsonInclude.Include.NON_NULL) String temporaryPassword) {
+
+    public UserResponse withTemporaryPassword(String password) {
+        return new UserResponse(publicId, userCode, organizationPublicId, email, fullName, phoneE164, language,
+                status, mfaEnabled, failedAttempts, lockedUntil, lastAccessAt, createdAt, updatedAt, roles, password);
+    }
 }

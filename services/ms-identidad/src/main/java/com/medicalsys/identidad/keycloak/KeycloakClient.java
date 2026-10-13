@@ -152,6 +152,35 @@ public class KeycloakClient {
         return createUser(user, List.of(credential));
     }
 
+    /**
+     * Alta con contraseña (IAM-04). Keycloak aplica la política; con {@code temporary} agrega
+     * UPDATE_PASSWORD y el usuario debe cambiarla en su primer ingreso.
+     */
+    public String createUserWithPassword(NewUser user, String password, boolean temporary) {
+        return createUser(user, List.of(Map.of("type", "password", "value", password, "temporary", temporary)));
+    }
+
+    /** Modificación (IAM-04): sincroniza correo y nombre. El username (public_id) no cambia. */
+    public void updateProfile(String userId, String email, String firstName, String lastName) {
+        Map<String, Object> body = Map.of("email", email, "emailVerified", true, "firstName", firstName,
+                "lastName", lastName);
+        call(() -> http.put().uri(adminUrl("/users/" + userId)).headers(h -> h.setBearerAuth(serviceToken()))
+                .contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toBodilessEntity());
+    }
+
+    /** Baja (IAM-04): deshabilita, nunca borra, para conservar la trazabilidad. */
+    public void setEnabled(String userId, boolean enabled) {
+        call(() -> http.put().uri(adminUrl("/users/" + userId)).headers(h -> h.setBearerAuth(serviceToken()))
+                .contentType(MediaType.APPLICATION_JSON).body(Map.of("enabled", enabled))
+                .retrieve().toBodilessEntity());
+    }
+
+    /** Solo para deshacer un alta cuya transacción local falló: nunca se usa como baja. */
+    public void deleteUser(String userId) {
+        call(() -> http.delete().uri(adminUrl("/users/" + userId)).headers(h -> h.setBearerAuth(serviceToken()))
+                .retrieve().toBodilessEntity());
+    }
+
     private String createUser(NewUser user, List<Map<String, Object>> credentials) {
         Map<String, Object> body = Map.of("username", user.username(), "email", user.email(),
                 "firstName", user.firstName(), "lastName", user.lastName(), "enabled", user.enabled(),
@@ -161,7 +190,15 @@ public class KeycloakClient {
                 .exchange((request, res) -> {
                     if (res.getStatusCode().value() == 400) {
                         Map<String, Object> error = res.bodyTo(JSON_OBJECT);
+                        if (error != null && error.get("errorMessage") != null) {
+                            // Validación del perfil de usuario (correo, nombre), no de la contraseña.
+                            throw ApiException.badRequest("Keycloak rechazó el campo " + error.get("field")
+                                    + ": " + error.get("errorMessage"));
+                        }
                         throw new PasswordPolicyException(error == null ? "" : String.valueOf(error.get("error")));
+                    }
+                    if (res.getStatusCode().value() == 409) {
+                        throw ApiException.conflict("Ya existe una cuenta con el correo " + user.email());
                     }
                     requireSuccess(res.getStatusCode(), "alta de usuario");
                     return res.getHeaders().getLocation();

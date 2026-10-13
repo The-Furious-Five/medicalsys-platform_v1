@@ -92,9 +92,9 @@ public class DemoUserSeeder implements ApplicationRunner {
     private void seed(DemoAccount account, UUID organization, String password) {
         UUID publicId = UUID.fromString(account.publicId());
         if (!users.existsByEmailIgnoreCase(account.email())) {
-            userService.create(new CreateUserRequest(
+            userService.createSeedAccount(new CreateUserRequest(
                     account.email(), account.fullName(), password, account.phone(), organization, "es-BO", true,
-                    List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))), null);
+                    List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))));
             log.info("Cuenta de demostracion creada: {} con rol {}", account.email(), account.role());
         }
         // Identificador, organización y alcance de roles se reconcilian también en cuentas ya

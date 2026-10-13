@@ -29,6 +29,10 @@ public class UserAccount {
     @Column(name = "public_id", nullable = false, unique = true)
     private UUID publicId = UUID.randomUUID();
 
+    /** User ID estándar MS-AA-NNNNN (IAM-04): único, inmutable y nunca reutilizado. */
+    @Column(name = "user_code", nullable = false, length = 16, updatable = false)
+    private String userCode;
+
     /** Usuario del realm medicalsys que guarda la credencial (IAM-03). Nulo hasta enlazar la cuenta. */
     @Column(name = "keycloak_user_id", length = 36, unique = true)
     private String keycloakUserId;
@@ -134,6 +138,14 @@ public class UserAccount {
 
     public void setPublicId(UUID publicId) {
         this.publicId = publicId;
+    }
+
+    public String getUserCode() {
+        return userCode;
+    }
+
+    public void setUserCode(String userCode) {
+        this.userCode = userCode;
     }
 
     public String getKeycloakUserId() {
