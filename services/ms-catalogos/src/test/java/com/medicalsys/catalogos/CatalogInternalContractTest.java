@@ -158,6 +158,23 @@ class CatalogInternalContractTest {
     }
 
     @Test
+    @DisplayName("Un parametro obligatorio ausente o fuera del enum es 400 con los seis campos de error, no 500")
+    void missingOrInvalidQueryParameterIsBadRequest() throws Exception {
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/tax")).header("X-Correlation-Id", CORRELATION))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.correlationId").value(CORRELATION))
+                .andExpect(jsonPath("$.path").value("/api/v1/catalogs/tax"));
+
+        mockMvc.perform(asStaff(get("/api/v1/catalogs/tax")).param("type", "NO_EXISTE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+    }
+
+    @Test
     @DisplayName("RF-11.1: sin identidad propagada por el gateway, la API publica de catalogos responde 401")
     void publicRoutesRejectMissingIdentity() throws Exception {
         mockMvc.perform(get("/api/v1/catalogs/cie10").param("q", "J00").header("X-Correlation-Id", CORRELATION))

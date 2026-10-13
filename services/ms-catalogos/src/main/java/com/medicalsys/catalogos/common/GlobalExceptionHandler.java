@@ -9,8 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -27,6 +29,7 @@ public class GlobalExceptionHandler {
             "SPECIALTY_NOT_FOUND", "La especialidad no existe en el catalogo vigente",
             "VALIDATION_ERROR", "La solicitud no supera las validaciones",
             "MALFORMED_REQUEST", "El cuerpo de la solicitud no es un JSON valido",
+            "INVALID_PARAMETER", "Falta un parametro obligatorio o su valor no es valido",
             "UNAUTHENTICATED", "La solicitud no incluye una identidad valida propagada por el gateway"
     );
 
@@ -44,6 +47,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex, HttpServletRequest req) {
         String code = ex instanceof HttpMessageNotReadableException ? "MALFORMED_REQUEST" : "VALIDATION_ERROR";
         return ResponseEntity.badRequest().body(error(400, code, messageFor(code), req));
+    }
+
+    /** Query param ausente o fuera de su tipo (p. ej. ?type= con un valor que no es del enum). */
+    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidParameter(Exception ex, HttpServletRequest req) {
+        return ResponseEntity.badRequest().body(error(400, "INVALID_PARAMETER", messageFor("INVALID_PARAMETER"), req));
     }
 
     @ExceptionHandler(Exception.class)
