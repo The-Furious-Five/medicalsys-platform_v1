@@ -78,7 +78,7 @@ Codigos estables: `VALIDATION_ERROR`, `MALFORMED_REQUEST`, `UNAUTHENTICATED`, `F
 `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE`, `DOCUMENT_NOT_FOUND`, `RESOURCE_NOT_FOUND`,
 `DOCUMENT_LINK_ALREADY_EXISTS`, `DATA_INTEGRITY_CONFLICT`, `EMPTY_FILE`, `FILE_TOO_LARGE`,
 `FILE_TYPE_NOT_ALLOWED`, `INVALID_RETENTION_DATE`, `DOCUMENT_NOT_AVAILABLE`,
-`DOCUMENT_INTEGRITY_FAILURE`, `STORAGE_UNAVAILABLE`, `INTERNAL_ERROR`.
+`INTEGRITY_MISMATCH`, `STORAGE_UNAVAILABLE`, `INTERNAL_ERROR`.
 
 ## 5. Ping
 
@@ -223,8 +223,26 @@ GET /api/v1/documents/{documentId}/content
 
 Antes de responder, el servicio descarga el objeto a un archivo temporal, recalcula SHA-256 y
 compara hash y tamano con MySQL. Si coinciden devuelve los bytes con `Content-Disposition:
-attachment` y `X-Content-SHA256`. Si no coinciden devuelve `500 DOCUMENT_INTEGRITY_FAILURE` y no
+attachment` y `X-Content-SHA256`. Si no coinciden devuelve `409 INTEGRITY_MISMATCH`, registra una
+advertencia estructurada en el log (documentId, organizationId, objectKey y ambos hashes) y no
 entrega el archivo.
+
+```http
+GET /api/v1/documents/{documentId}/integrity
+```
+
+Recalcula el SHA-256 del objeto almacenado sin descargarlo al cliente y lo compara contra el
+registrado al subirlo. Siempre responde `200 OK`, incluso si no coinciden (el caller decide que
+hacer; la descarga en el punto 9 es la que bloquea):
+
+```json
+{
+  "documentId": "00000000-0000-4000-8000-0000000000d1",
+  "expectedHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+  "actualHash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+  "matches": true
+}
+```
 
 ## 10. Contrato interno para Historial
 

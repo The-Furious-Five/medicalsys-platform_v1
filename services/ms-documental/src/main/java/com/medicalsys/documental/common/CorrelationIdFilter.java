@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
     public static final String HEADER = "X-Correlation-Id";
     private static final String ATTRIBUTE = CorrelationIdFilter.class.getName() + ".value";
+    private static final String MDC_KEY = "correlationId";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -24,7 +26,12 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         String correlationId = normalize(request.getHeader(HEADER));
         request.setAttribute(ATTRIBUTE, correlationId);
         response.setHeader(HEADER, correlationId);
-        filterChain.doFilter(request, response);
+        MDC.put(MDC_KEY, correlationId);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove(MDC_KEY);
+        }
     }
 
     public static String current(HttpServletRequest request) {

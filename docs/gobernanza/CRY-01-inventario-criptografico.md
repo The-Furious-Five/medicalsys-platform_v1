@@ -1,0 +1,42 @@
+# CRY-01 - Inventario criptografico y estandar de algoritmos
+
+Fuente: codigo del repositorio (rama de trabajo, 2026-10). Cada fila describe lo que el codigo hace hoy, no lo planeado.
+Estado: **Implementado** = existe en codigo; **Parcial** = existe con limitacion; **No implementado** = solo esquema/diseno, sin codigo.
+Pendiente de revision por Nicole (criterio de aceptacion de SINS-4).
+
+## 1. Inventario
+
+| # | Mecanismo | Proposito | Ubicacion | Algoritmo | Longitud / parametros | Gestion de la clave | Estado |
+|---|-----------|-----------|-----------|-----------|-----------------------|---------------------|--------|
+| 1 | Hash de contrasenas | Almacenar `user_account.password_hash` | ms-identidad: `config/SecurityConfig.java` (`Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8()`), `UserService`, `UserAccount.hashAlgorithm="argon2id"` | Argon2id (con sal por hash, la genera Spring) | Parametros por defecto de Spring Security 5.8 (no fijados en el repo) | No hay clave; la sal viaja dentro del hash. No existe Keycloak en el repo: Argon2id lo hace ms-identidad | Implementado |
+| 2 | Cifrado de narrativa clinica (servicio) | Cifrar/descifrar texto clinico por tenant | ms-criptografia: `crypto/TenantAesGcm.java`, `key/EncryptionKeyService`, `POST /internal/v1/cifrado` y `/descifrado` | AES-256-GCM; nonce de 12 bytes aleatorio (`SecureRandom`); tag de 128 bits; AAD = `org|proposito|version` | Clave de 256 bits | DEK derivada por tenant/proposito/version/keyId con HKDF-SHA256 (extract-expand de una sola vuelta, HMAC-SHA256) a partir de `DEMO_MASTER_KEY` (variable de entorno). Sal HKDF constante en codigo (`"MedicalSys-MVP-HKDF"`). `wrapped_dek` y `kek_reference` existen en `encryption_key` pero NO se usan (el codigo lo documenta). Estados de clave ACTIVE/AT_ROTACION/RETIRED/COMPROMISED en esquema; sin endpoint de rotacion encontrado | Parcial (todos los tenants comparten la misma master key) |
+| 3 | Cifrado de narrativa clinica (modo LOCAL de historial) | Igual que 2, en proceso, sin llamar a ms-criptografia | ms-historial: `client/LocalNarrativeCipher.java`; `application.yaml` `medicalsys.crypto.mode: ${CRYPTO_MODE:LOCAL}` (LOCAL es el valor por defecto; compose.yaml no lo cambia) | AES-256-GCM, IV 12 bytes, tag 128 bits, byte de version de formato | Clave AES-256 = `SHA-256(DEMO_MASTER_KEY)`; sin HKDF, sin separacion por tenant. Si `DEMO_MASTER_KEY` esta vacia genera clave efimera por arranque (se pierden los datos al reiniciar) | `DEMO_MASTER_KEY` por entorno. Distinto esquema que el punto 2: los datos cifrados en LOCAL no son interoperables con REMOTE | Parcial (modo por defecto) |
+| 4 | Cifrado de narrativa (modo REMOTE de historial) | Delegar en ms-criptografia | ms-historial: `client/RemoteNarrativeCipher.java` (`CRYPTO_MODE=REMOTE`) | Ver fila 2 | Ver fila 2 | Ver fila 2 | Implementado (opcional) |
+| 5 | HMAC del webhook de WhatsApp (Meta) | Autenticar el cuerpo del webhook entrante (`X-Hub-Signature-256`) | ms-notificaciones: `service/WhatsappWebhookService.verifySignature` | HMAC-SHA256, comparacion en tiempo constante (`MessageDigest.isEqual`) | Longitud del `WHATSAPP_APP_SECRET` no validada | Secreto en variable de entorno `WHATSAPP_APP_SECRET` (default vacio). **Si esta vacio, la verificacion se omite** (`return` sin error) | Parcial |
+| 6 | Verificacion del webhook (verify token) | Handshake `hub.verify_token` | mismo servicio, `MessageDigest.isEqual` | Comparacion de cadenas en tiempo constante (no es hash) | n/a | Token en configuracion | Implementado |
+| 7 | Hash de documentos | Integridad de archivos en MinIO | ms-documental: `service/HashingService`, `DocumentService` (upload guarda `sha256_hash`; descarga y `GET /api/v1/documents/{id}/integrity` lo recalculan) | SHA-256 (hex, 64 chars) | 256 bits | Sin clave (hash simple). Discrepancia -> 409 `INTEGRITY_MISMATCH` + log + evento `DOCUMENT_INTEGRITY_MISMATCH` a ms-auditoria | Implementado |
+| 8 | Cadena de hashes de la bitacora | Detectar alteracion de eventos de auditoria | ms-auditoria: `service/AuditHashChain.java`, `AuditIntegrityService` | SHA-256 sobre representacion canonica + `previousHash` | 256 bits | Sin clave (no es HMAC: quien escriba en la base puede recalcular la cadena completa) | Implementado |
+| 9 | Sello de contenido de encuentros clinicos y recetas | Firmar/sellar el contenido del encuentro | ms-historial: `service/ContentHasher.java` (hash sobre ciphertext + datos estructurales); `Prescription.sha256Hash` | SHA-256 | 256 bits | Sin clave: es un hash, no una firma digital | Implementado |
+| 10 | Hash de consentimientos | `consent_template.body_hash`, `rendered_body_hash`, `document_sha256_hash` (PDF firmado) | ms-documental: solo columnas `CHAR(64)` en `V1__create_schema.sql` | Se asume SHA-256 por el ancho de columna | 64 hex | n/a | **No implementado**: ningun codigo calcula ni verifica estos hashes. El PDF de consentimiento firmado tampoco se verifica |
+| 11 | OTP de firma de consentimiento | Firma por OTP WhatsApp/SMS | ms-documental: solo valores de enum/CHECK en esquema (`OTP_WHATSAPP`, `OTP_SMS`, `OTP_REQUESTED`, `OTP_VALIDATED`) | - | - | - | **No implementado**: no hay generacion ni hash/sal de OTP en el codigo |
+| 12 | JWT de sesion | Firmar y validar access tokens | ms-identidad: `SecurityConfig` (HS256, `NimbusJwtEncoder/Decoder`), `TokenService`; ms-gateway: `GatewayJwtConfig` (misma clave) | HS256 (HMAC-SHA256) simetrico | Exige >= 32 bytes (valida en arranque). TTL por defecto 1 h (`JWT_ACCESS_TTL`) | Secreto compartido `JWT_SECRET` por entorno entre identidad y gateway; sin rotacion; el gateway puede firmar tokens (clave simetrica). RS256 no evaluado en el codigo | Implementado (RS256 pendiente de evaluar) |
+| 13 | TLS hacia MySQL (Aiven) | Cifrar conexion a base | `compose.yaml`: `sslMode=REQUIRED` en identidad, tenencia, catalogos, criptografia, pacientes, profesionales, historial, documental, facturacion, marketing, auditoria, notificaciones (JDBC y R2DBC) | TLS (version negociada por JVM/Aiven; no fijada en el repo) | n/a | Certificado del servidor de Aiven; no hay truststore/CA propia configurada | Implementado en compose |
+| 14 | TLS en perfiles locales | Desarrollo | `application-local.yaml` de facturacion, historial, marketing, tenencia; default de `ms-notificaciones/application.yaml`; `ms-identidad/compose.dev.yaml` | Ninguno: `useSSL=false` | - | - | Sin cifrado (solo desarrollo) |
+| 15 | Trafico interno y almacenamiento | Entre servicios, MinIO, Postgres de agenda, Kafka | `compose.yaml`: `http://ms-auditoria:8091`, `MINIO_ENDPOINT: http://minio:9000`, `jdbc:postgresql://postgres:5432/...` | Sin TLS | - | Credenciales MinIO por entorno (`MINIO_ROOT_USER/PASSWORD`). `serverSideEncryption` se guarda como `NONE` en `StoredDocument` (no hay SSE en MinIO) | Sin cifrado (red de contenedores) |
+| 16 | TLS saliente a Meta | Llamadas a Graph API | ms-notificaciones: `WHATSAPP_GRAPH_BASE_URL=https://graph.facebook.com` | TLS por defecto de la JVM | n/a | CA del truststore JVM | Implementado |
+| 17 | Tunel HTTPS publico | Exponer webhook / frontend | No se encontro configuracion de tunel (ngrok/cloudflared) en el repo | - | - | - | No verificable desde el codigo |
+
+## 2. Algoritmos prohibidos (estandar)
+
+MD5, SHA-1, DES/3DES, RC4 y cualquier modo ECB. Verificacion sobre el codigo: no se encontro uso de ninguno en `services/*/src/main`. Excepciones declaradas fuera del servicio: `scripts/checksums.sh|.ps1 --compare` calcula MD5 y CRC32 solo con fines didacticos (comparar checksum vs hash criptografico), nunca para decisiones de seguridad.
+Nota: el enum `EncryptionKey.Algorithm` de ms-criptografia admite `AES_256_CBC` y `CHACHA20_POLY1305` ademas de `AES_256_GCM`; el codigo de cifrado solo implementa AES-GCM.
+
+## 3. Hallazgos relevantes para PO-05
+
+1. Master key unica (`DEMO_MASTER_KEY`) para todos los tenants; `wrapped_dek`/`kek_reference` sin uso real; sal HKDF constante en codigo.
+2. El modo por defecto de historial (LOCAL) no usa HKDF ni separacion por tenant (fila 3).
+3. Webhook de Meta sin firma verificada cuando `WHATSAPP_APP_SECRET` esta vacio.
+4. `JWT_SECRET` simetrico compartido; sin rotacion.
+5. Hash de consentimientos y OTP: solo esquema, sin codigo.
+6. Cadena de auditoria y sellos de encuentro son hashes sin clave (detectan error, no a un atacante con acceso a la base).
+7. Contrasena demo por defecto (`IDENTITY_DEMO_PASSWORD:Demo1234!`) con usuarios demo habilitados por defecto.

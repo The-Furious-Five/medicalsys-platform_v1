@@ -1,6 +1,7 @@
 package com.medicalsys.documental.api;
 
 import com.medicalsys.documental.api.dto.ClassifyDocumentRequest;
+import com.medicalsys.documental.api.dto.DocumentIntegrityResponse;
 import com.medicalsys.documental.api.dto.DocumentLinkRequest;
 import com.medicalsys.documental.api.dto.DocumentLinkResponse;
 import com.medicalsys.documental.api.dto.DocumentPageResponse;
@@ -133,5 +134,13 @@ public class DocumentsController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .header("X-Content-SHA256", download.sha256Hash())
                 .body(body);
+    }
+
+    @GetMapping("/{documentId}/integrity")
+    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    public DocumentIntegrityResponse integrity(@PathVariable UUID documentId,
+            HttpServletRequest servletRequest) {
+        return DocumentIntegrityResponse.from(service.checkIntegrity(
+                documentId, RequestIdentity.from(servletRequest).organizationId()));
     }
 }

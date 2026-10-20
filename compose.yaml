@@ -10,6 +10,9 @@ x-service-healthcheck: &medicalsys-healthcheck
   retries: 30
   start_period: 40s
 
+# Politica de retencion de logs (OWASP A09 - LOG-03): rotacion local a 10 MB por archivo,
+# maximo 3 archivos por contenedor (~30 MB por servicio). Aplicada a todos los servicios via
+# este ancla para evitar que los logs llenen el disco del host sin perder trazabilidad reciente.
 x-logging: &medicalsys-logging
   driver: local
   options:
@@ -60,7 +63,7 @@ services:
     logging: *medicalsys-logging
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -81,7 +84,7 @@ services:
     logging: *medicalsys-logging
 
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:latest
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -315,6 +318,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET:-medicalsys-documents-local}
       DOCUMENT_MAX_SIZE_BYTES: ${DOCUMENT_MAX_SIZE_BYTES:-104857600}
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
     ports:
       - "${DOCUMENTS_HOST_PORT:-8089}:8089"
     depends_on:

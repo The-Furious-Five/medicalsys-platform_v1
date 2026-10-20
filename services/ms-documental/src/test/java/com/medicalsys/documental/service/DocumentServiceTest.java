@@ -54,6 +54,8 @@ class DocumentServiceTest {
     private DocumentLinkRepository linkRepository;
     @Mock
     private ObjectStorage storage;
+    @Mock
+    private IntegrityAuditor integrityAuditor;
 
     private DocumentService service;
     private PreparedDownload preparedDownload;
@@ -70,7 +72,8 @@ class DocumentServiceTest {
                 new HashingService(),
                 new FilenameSanitizer(),
                 new DocumentFilePolicy(),
-                new DocumentMapper());
+                new DocumentMapper(),
+                integrityAuditor);
     }
 
     @AfterEach
@@ -184,7 +187,39 @@ class DocumentServiceTest {
         ApiException exception = assertThrows(ApiException.class,
                 () -> service.prepareDownload(document.getPublicId(), ORGANIZATION_ID));
 
-        assertEquals(ErrorCode.DOCUMENT_INTEGRITY_FAILURE, exception.code());
+        assertEquals(ErrorCode.INTEGRITY_MISMATCH, exception.code());
+        org.mockito.Mockito.verify(integrityAuditor).integrityMismatch(
+                org.mockito.ArgumentMatchers.eq(document.getPublicId()), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(document.getSha256Hash()), org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void integrityCheckReportsMatchForUntamperedObject() {
+        StoredDocument document = storedDocument();
+        when(documentRepository.findByPublicIdAndOrganizationPublicId(document.getPublicId(), ORGANIZATION_ID))
+                .thenReturn(Optional.of(document));
+        when(storage.get(document.getObjectKey())).thenReturn(new ByteArrayInputStream(PDF));
+
+        IntegrityCheckResult result = service.checkIntegrity(document.getPublicId(), ORGANIZATION_ID);
+
+        assertTrue(result.matches());
+        assertEquals(document.getSha256Hash(), result.expectedHash());
+        assertEquals(document.getSha256Hash(), result.actualHash());
+    }
+
+    @Test
+    void integrityCheckReportsMismatchWithoutThrowingWhenObjectWasAltered() {
+        StoredDocument document = storedDocument();
+        when(documentRepository.findByPublicIdAndOrganizationPublicId(document.getPublicId(), ORGANIZATION_ID))
+                .thenReturn(Optional.of(document));
+        when(storage.get(document.getObjectKey()))
+                .thenReturn(new ByteArrayInputStream("altered".getBytes(StandardCharsets.UTF_8)));
+
+        IntegrityCheckResult result = service.checkIntegrity(document.getPublicId(), ORGANIZATION_ID);
+
+        assertTrue(!result.matches());
+        assertEquals(document.getSha256Hash(), result.expectedHash());
+        assertTrue(!result.actualHash().equalsIgnoreCase(result.expectedHash()));
     }
 
     private MockMultipartFile pdf() {

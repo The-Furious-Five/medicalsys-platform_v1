@@ -1,5 +1,7 @@
 package com.medicalsys.identidad.service;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleCode;
 import com.medicalsys.identidad.domain.UserAccount;
@@ -17,11 +19,15 @@ import com.medicalsys.identidad.web.dto.UpdateUserRequest;
 import com.medicalsys.identidad.web.dto.UserResponse;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,14 +40,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final IdentityMapper mapper;
     private final SessionStore sessionStore;
+    private final AuditTrail auditTrail;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
-                       IdentityMapper mapper, SessionStore sessionStore) {
+                       IdentityMapper mapper, SessionStore sessionStore, AuditTrail auditTrail) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
+        this.auditTrail = auditTrail;
     }
 
     @Transactional
@@ -70,7 +78,10 @@ public class UserService {
                 attachRole(user, assignment, actor);
             }
         }
-        return mapper.toUserResponse(users.save(user));
+        UserAccount saved = users.save(user);
+        auditTrail.record(AuditEventDraft.userManagement("USER_CREATED", actorPublicId, saved.getPublicId(),
+                saved.getEmail(), saved.getOrganizationPublicId(), null, Map.of()));
+        return mapper.toUserResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -99,12 +110,15 @@ public class UserService {
         if (StringUtils.hasText(request.language())) {
             user.setLanguage(request.language());
         }
+        auditTrail.record(AuditEventDraft.userManagement("USER_UPDATED", currentActorId(), user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), null, Map.of()));
         return mapper.toUserResponse(user);
     }
 
     @Transactional
     public UserResponse changeStatus(UUID publicId, ChangeStatusRequest request) {
         UserAccount user = require(publicId);
+        UserStatus previous = user.getStatus();
         UserStatus target = request.status();
         if (target == UserStatus.LOCKED && user.getLockedUntil() == null) {
             user.setLockedUntil(Instant.now().plusSeconds(3600));
@@ -116,6 +130,14 @@ public class UserService {
         if (target != UserStatus.ACTIVE) {
             sessionStore.closeAll(user.getPublicId());
         }
+
+        UUID actorId = currentActorId();
+        String action = previous == UserStatus.LOCKED && target == UserStatus.ACTIVE
+                ? "ACCOUNT_UNLOCKED"
+                : target != UserStatus.ACTIVE ? "USER_DISABLED" : "USER_UPDATED";
+        auditTrail.record(AuditEventDraft.userManagement(action, actorId, user.getPublicId(), user.getEmail(),
+                user.getOrganizationPublicId(), request.reason(), Map.of("previousStatus", previous.name(),
+                        "newStatus", target.name())));
         return mapper.toUserResponse(user);
     }
 
@@ -132,6 +154,9 @@ public class UserService {
         user.setHashAlgorithm("argon2id");
         user.setPasswordUpdatedAt(Instant.now());
         sessionStore.closeAll(user.getPublicId());
+        // Autoservicio: el actor es la propia cuenta, nunca la contrasena viaja en el evento.
+        auditTrail.record(AuditEventDraft.userManagement("PASSWORD_CHANGED", publicId, user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), null, Map.of()));
     }
 
     @Transactional
@@ -139,6 +164,8 @@ public class UserService {
         UserAccount user = require(publicId);
         UserAccount actor = actorPublicId == null ? null : users.findByPublicId(actorPublicId).orElse(null);
         attachRole(user, request, actor);
+        auditTrail.record(AuditEventDraft.userManagement("ROLE_ASSIGNED", actorPublicId, user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), null, Map.of("role", request.role().name())));
         return mapper.toUserResponse(user);
     }
 
@@ -151,7 +178,23 @@ public class UserService {
             throw ApiException.notFound("La cuenta no tiene asignado el rol " + roleCode);
         }
         sessionStore.closeAll(user.getPublicId());
+        auditTrail.record(AuditEventDraft.userManagement("ROLE_REVOKED", currentActorId(), user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), null, Map.of("role", roleCode.name())));
         return mapper.toUserResponse(user);
+    }
+
+    /**
+     * Actor de operaciones que no reciben el id explicitamente desde el controlador.
+     *
+     * <p>Se lee del {@code SecurityContextHolder} en vez de agregar un parametro a cada firma:
+     * el filtro de autenticacion ya deja ahi el JWT validado de quien hace la solicitud.
+     */
+    private UUID currentActorId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            return UUID.fromString(jwt.getSubject());
+        }
+        return null;
     }
 
     private void attachRole(UserAccount user, RoleAssignmentRequest request, UserAccount actor) {

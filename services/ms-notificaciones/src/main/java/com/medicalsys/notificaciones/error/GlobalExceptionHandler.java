@@ -44,23 +44,28 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> integrity(DataIntegrityViolationException exception, ServerWebExchange exchange) {
-        log.warn("Violacion de integridad en {}", exchange.getRequest().getPath().value());
+        log.warn("Violacion de integridad en {} corr={}", exchange.getRequest().getPath().value(),
+                correlationId(exchange));
         return response(HttpStatus.CONFLICT, "DATA_INTEGRITY_CONFLICT",
                 "La operacion viola una restriccion de unicidad o dominio", exchange, List.of());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> unexpected(Exception exception, ServerWebExchange exchange) {
-        log.error("Fallo inesperado en {}", exchange.getRequest().getPath().value(), exception);
+        log.error("Fallo inesperado en {} corr={}", exchange.getRequest().getPath().value(),
+                correlationId(exchange), exception);
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
                 "Ocurrio un fallo inesperado al procesar la solicitud", exchange, List.of());
     }
 
+    private String correlationId(ServerWebExchange exchange) {
+        return exchange.getResponse().getHeaders().getFirst("X-Correlation-Id");
+    }
+
     private ResponseEntity<ApiError> response(HttpStatus status, String code, String message,
             ServerWebExchange exchange, List<FieldViolation> details) {
-        String correlationId = exchange.getResponse().getHeaders().getFirst("X-Correlation-Id");
         ApiError body = new ApiError(Instant.now(), status.value(), status.getReasonPhrase(), code, message,
-                exchange.getRequest().getPath().value(), correlationId, details);
+                exchange.getRequest().getPath().value(), correlationId(exchange), details);
         return ResponseEntity.status(status).body(body);
     }
 }
