@@ -1,0 +1,10 @@
+# HARD-03 (SINS-14) Firma del webhook de WhatsApp — OWASP A08
+# Fase: despues — 2026-10-12T23:43:44Z
+
+Configuracion por defecto: NOTIFICATION_PROVIDER=mock y WHATSAPP_APP_SECRET vacio.
+
+## Payload sin firma
+$ curl -X POST http://localhost:8080/api/v1/notifications/webhooks/whatsapp -H Content-Type: application/json -d {"object":"whatsapp_business_account","entry":[]}
+HTTP/1.1 401 
+{"timestamp":"2026-10-12T23:43:45.949566825Z","status":401,"error":"Unauthorized","code":"INVALID_WEBHOOK_SIGNATURE","message":"El webhook no tiene un secreto configurado para validar la firma","path":"/api/v1/notifications/webhooks/whatsapp","correlationId":"fe3d071c-95f1-43aa-866e-d94b04bf4942","d
+

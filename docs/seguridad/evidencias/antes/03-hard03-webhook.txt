@@ -1,0 +1,9 @@
+# HARD-03 (SINS-14) Firma del webhook de WhatsApp — OWASP A08
+# Fase: antes — 2026-10-12T23:32:05Z
+
+Configuracion por defecto: NOTIFICATION_PROVIDER=mock y WHATSAPP_APP_SECRET vacio.
+
+## Payload sin firma
+$ curl -X POST http://localhost:8080/api/v1/notifications/webhooks/whatsapp -H Content-Type: application/json -d {"object":"whatsapp_business_account","entry":[]}
+HTTP/1.1 200 
+

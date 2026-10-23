@@ -21,7 +21,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
-import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -66,6 +66,15 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        // Antes de cualquier corte: los 401 y 503 de este filtro tambien deben llevar las cabeceras.
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+        response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+        response.setHeader("Server", "");
+
         Map<String, String> overrides = new LinkedHashMap<>();
 
         String correlationId = request.getHeader(CORRELATION_HEADER);
@@ -94,7 +103,7 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
                     response.getWriter().write("{\"title\":\"Sesion revocada\",\"detail\":\"La sesion ya no esta activa\"}");
                     return;
                 }
-            } catch (RedisConnectionFailureException ex) {
+            } catch (DataAccessException ex) {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"title\":\"Servicio no disponible\",\"detail\":\"No se pudo verificar la sesion\"}");
@@ -116,12 +125,6 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             }
         }
 
-        response.setHeader("X-Content-Type-Options", "nosniff");
-        response.setHeader("X-Frame-Options", "DENY");
-        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
-        response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-        response.setHeader("Server", "");
         chain.doFilter(new TenantHeaderRequestWrapper(request, overrides), response);
     }
 

@@ -1,0 +1,19 @@
+# HARD-03 (SINS-14) Rutas internas de identidad y Actuator — OWASP A05
+# Fase: despues — 2026-10-12T23:43:47Z
+
+## Ruta interna de identidad, sin autenticacion
+$ docker compose exec -T ms-gateway curl -s -w '\nHTTP %{http_code}' http://ms-identidad:8081/internal/v1/users/00000000-0000-4000-8000-000000000903
+{"detail":"Se requiere un token de acceso valido","instance":"/internal/v1/users/00000000-0000-4000-8000-000000000903","status":401,"title":"Credenciales invalidas","service":"ms-identidad","correlationId":"4a625d27-52c5-475d-94bf-f2045d065040"}
+HTTP 401
+
+
+## Detalle de salud de identidad, sin autenticacion
+$ docker compose exec -T ms-gateway curl -s -w '\nHTTP %{http_code}' http://ms-identidad:8081/actuator/health
+{"groups":["liveness","readiness"],"status":"UP"}
+HTTP 200
+
+
+## Ruta interna de identidad directo desde el host :8081
+$ curl http://localhost:8081/internal/v1/users/00000000-0000-4000-8000-000000000903
+SIN RESPUESTA (curl exit 7): curl: (7) Failed to connect to localhost port 8081 after 2259 ms: Could not connect to server
+

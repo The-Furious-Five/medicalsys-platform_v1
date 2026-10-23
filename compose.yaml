@@ -578,6 +578,9 @@ services:
     # El gateway solo enruta, pero arrancar antes que sus destinos hace que las primeras
     # peticiones del frontend devuelvan 503 sin motivo aparente.
     depends_on:
+      # Sin Redis el gateway no puede comprobar la sesion y responde 503 a todo token.
+      redis:
+        condition: service_healthy
       ms-identidad:
         condition: service_healthy
       ms-tenencia:
@@ -599,6 +602,20 @@ services:
       ms-auditoria:
         condition: service_healthy
     healthcheck: *medicalsys-healthcheck
+    logging: *medicalsys-logging
+
+  # Publicacion por tunel de Cloudflare (DEP-01). Solo arranca con --profile publico.
+  # No publica puertos: sale hacia Cloudflare y alcanza al gateway por la red interna.
+  cloudflared:
+    image: cloudflare/cloudflared:2025.8.1
+    profiles: ["publico"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      ms-gateway:
+        condition: service_healthy
+    restart: unless-stopped
     logging: *medicalsys-logging
 
 volumes:

@@ -12,7 +12,7 @@ El análisis de los 14 POM del árbol limpio de `origin/develop` encontró 3 vul
 | CVE-2026-8763 | Crítica | bcprov-jdk18on 1.78.1 |
 | CVE-2026-13506 | Alta | bcprov-jdk18on 1.78.1 |
 
-Reporte: `trivy-fs-antes-develop-20261012.json`. Se conserva `trivy-fs-antes-20261011.json` como captura anterior del HEAD local, que no corresponde a la rama develop.
+Reporte: `trivy-fs-antes-develop-20261012.json`.
 
 ## Trivy de imágenes
 
@@ -33,3 +33,11 @@ Los conteos son ocurrencias por imagen/paquete, no CVE únicos. Los 14 JSON `med
 Se ejecutó ZAP Baseline contra el gateway de `origin/develop` en `http://host.docker.internal:8081/actuator/health`. El gateway de referencia se inició temporalmente como contenedor independiente; la exploración cubrió 8 URLs, principalmente Actuator. Resultado: **0 FAIL**, 2 familias de advertencias: 4 ocurrencias de `Cross-Origin-Resource-Policy Header Missing or Invalid` (bajo) y 2 de `Non-Storable Content` (informativa).
 
 Reportes: `zap-baseline-antes-20261012.json` y `zap-baseline-antes-20261012.html`. No se encontró especificación OpenAPI en `origin/develop`, por lo que no se ejecutó API scan. La cobertura ZAP no representa una evaluación autenticada de todos los microservicios.
+
+## Cómo reproducir y resumir
+
+Los comandos exactos están en `../escanear.sh` y en el procedimiento PR-04. El resumen por severidad de esta carpeta se obtiene con:
+
+```
+python docs/seguridad/escaneos/resumen.py docs/seguridad/escaneos/antes
+```

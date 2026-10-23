@@ -1,0 +1,20 @@
+# HARD-03 (SINS-14) Rutas internas de identidad y Actuator — OWASP A05
+# Fase: antes — 2026-10-12T23:32:07Z
+
+## Ruta interna de identidad, sin autenticacion
+$ docker compose -p medicalsys-antes exec -T ms-gateway curl -s -w '\nHTTP %{http_code}' http://ms-identidad:8081/internal/v1/users/00000000-0000-4000-8000-000000000903
+{"publicId":"00000000-0000-4000-8000-000000000903","organizationPublicId":"00000000-0000-4000-8000-0000000000a1","email":"doctor@medicalsys.demo","fullName":"Ricardo Salazar Peredo","status":"ACTIVE","roles":["PHYSICIAN"]}
+HTTP 200
+
+
+## Detalle de salud de identidad, sin autenticacion
+$ docker compose -p medicalsys-antes exec -T ms-gateway curl -s -w '\nHTTP %{http_code}' http://ms-identidad:8081/actuator/health
+{"components":{"db":{"details":{"database":"MySQL","validationQuery":"isValid()"},"status":"UP"},"diskSpace":{"details":{"total":1081101176832,"free":994579623936,"threshold":10485760,"path":"/app/.","exists":true},"status":"UP"},"livenessState":{"status":"UP"},"ping":{"status":"UP"},"readinessState":{"status":"UP"},"redis":{"details":{"version":"7.4.11"},"status":"UP"},"ssl":{"details":{"expiring
+HTTP 200
+
+
+## Ruta interna de identidad directo desde el host :8081
+$ curl http://localhost:8081/internal/v1/users/00000000-0000-4000-8000-000000000903
+HTTP/1.1 200 
+{"publicId":"00000000-0000-4000-8000-000000000903","organizationPublicId":"00000000-0000-4000-8000-0000000000a1","email":"doctor@medicalsys.demo","fullName":"Ricardo Salazar Peredo","status":"ACTIVE","roles":["PHYSICIAN"]}
+

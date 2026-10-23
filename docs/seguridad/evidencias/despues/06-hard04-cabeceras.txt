@@ -1,0 +1,27 @@
+# HARD-04 (SINS-15) Cabeceras de seguridad del gateway
+# Fase: despues — 2026-10-12T23:43:51Z
+
+## Respuesta 200 del gateway
+$ curl http://localhost:8080/actuator/health
+HTTP/1.1 200 
+Content-Security-Policy: frame-ancestors 'none'
+Cross-Origin-Resource-Policy: same-origin
+Referrer-Policy: strict-origin-when-cross-origin
+Server: 
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+{"groups":["liveness","readiness"],"status":"UP"}
+
+## Respuesta 401 del gateway (token invalido)
+$ curl http://localhost:8080/api/v1/encuentros -H Authorization: Bearer no-es-un-jwt
+HTTP/1.1 401 
+Content-Security-Policy: frame-ancestors 'none'
+Cross-Origin-Resource-Policy: same-origin
+Referrer-Policy: strict-origin-when-cross-origin
+Server: 
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+{"title":"Token invalido","detail":"El token de acceso es invalido o expiro"}
+

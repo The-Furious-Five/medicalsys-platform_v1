@@ -38,8 +38,8 @@ El primer arranque tarda varios minutos porque cada servicio se compila dentro d
 Compose espera a que cada dependencia responda `/actuator/health` antes de arrancar a quien la
 consume, así que cuando `docker compose ps` muestre todo `healthy` el sistema está listo.
 
-Comprobación rápida (con `IDENTITY_DEMO_USERS_ENABLED=true` en `.env`; la contraseña demo
-cumple la política de Keycloak de IAM-02):
+Comprobación rápida (requiere `IDENTITY_DEMO_USERS_ENABLED=true` en `.env`: las cuentas demo vienen
+desactivadas por defecto; su contraseña cumple la política de Keycloak de IAM-02):
 
 ```bash
 curl -s localhost:8080/api/v1/identity/auth/login \
@@ -52,6 +52,10 @@ Para empezar de cero —por ejemplo tras cambiar una migración— hay que borra
 ```bash
 docker compose down -v && docker compose up -d --build
 ```
+
+Si vienes de una versión anterior a la red `medicalsys-interna`, ejecuta `docker compose down` una
+vez antes de levantar: los contenedores de inicialización creados en la red vieja (`kafka-init`,
+`minio-init`) no se recrean solos y fallan al no resolver `kafka` ni `minio`.
 
 ## Datos de demostración
 
@@ -109,6 +113,35 @@ No publiques puertos de los microservicios ni de PostgreSQL, Redis, Kafka o MinI
 debe usar el gateway publicado en `8080`; los servicios se comunican por nombre dentro de
 `medicalsys-interna`. CORS se limita con `GATEWAY_ALLOWED_ORIGINS` a una lista de orígenes exactos.
 
+El gateway comprueba en Redis que la sesión del token siga abierta: tras `POST /auth/logout` el mismo
+token recibe 401 en toda la plataforma. El webhook de WhatsApp responde 401 a todo payload sin firma
+HMAC válida, así que sin `WHATSAPP_APP_SECRET` no acepta ninguno, y con `NOTIFICATION_PROVIDER=meta`
+el servicio no arranca si falta ese secreto.
+
+### Publicación por túnel de Cloudflare
+
+El servicio `cloudflared` está detrás del perfil `publico` y no arranca por defecto. Con el token del
+túnel en `CLOUDFLARE_TUNNEL_TOKEN` y el origen público del frontend en `GATEWAY_ALLOWED_ORIGINS`:
+
+```bash
+docker compose --profile publico up -d
+```
+
+El túnel sale desde dentro de `medicalsys-interna` hacia `http://ms-gateway:8080`, de modo que no hace
+falta publicar ningún puerto adicional. Los pasos completos están en `docs/seguridad/DEP-01-publicacion.md`.
+
+### Escaneos y evidencia de seguridad
+
+```bash
+bash docs/seguridad/escaneos/escanear.sh despues          # Trivy (pom.xml e imágenes) y OWASP ZAP
+python docs/seguridad/escaneos/resumen.py docs/seguridad/escaneos/despues
+bash docs/seguridad/evidencias/capturar-evidencia.sh despues   # pruebas antes/después de HARD-01..04
+bash docs/seguridad/evidencias/smoke-test.sh              # una lectura por servicio a través del gateway
+```
+
+Para correrlos sin la base de Aiven, `docs/seguridad/evidencias/compose.evidencia.yaml` añade un MySQL
+desechable. El procedimiento completo es `docs/seguridad/politicas/PR-04.md`.
+
 ## Pruebas
 
 ```bash
@@ -125,4 +158,5 @@ Varias suites usan Testcontainers y se saltan solas si Docker no está disponibl
 - `docs/CORRECCIONES_POST_DEMO.md` — revisión técnica por microservicio.
 - `docs/contracts` y `docs/demo` — contratos y guion de la demostración.
 - `services/<servicio>/README.md` y `services/<servicio>/docs/` — detalle de cada servicio.
-- `docs/seguridad/` — procedimientos, política, OWASP Top 10 y reportes de escaneo.
+- `docs/seguridad/` — OWASP Top 10 (sección 11), reporte de escaneo (sección 13), reportes y evidencia.
+- `docs/seguridad/politicas/` — políticas y procedimientos (PO-02, PO-07, PR-04).

@@ -1,0 +1,51 @@
+# Override usado SOLO para capturar la evidencia antes/despues (HARD-01, HARD-02, HARD-03).
+# Sustituye el MySQL administrado de Aiven por un contenedor desechable, para que las pruebas
+# no dependan de credenciales reales ni toquen datos compartidos. No publica ningun puerto.
+#
+# Uso (desde la raiz del repositorio):
+#   docker compose --env-file .env --env-file docs/seguridad/evidencias/evidencia.env \
+#     -f compose.yaml -f docs/seguridad/evidencias/compose.evidencia.yaml up -d --build
+x-mysql-local: &espera-mysql
+  mysql-local:
+    condition: service_healthy
+
+services:
+  mysql-local:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AIVEN_MYSQL_PASSWORD}
+    volumes:
+      - ${EVIDENCIA_SQL_DIR:-./infra/aiven}/create-databases.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    tmpfs:
+      - /var/lib/mysql
+
+  ms-identidad:
+    depends_on: *espera-mysql
+  ms-tenencia:
+    depends_on: *espera-mysql
+  ms-catalogos:
+    depends_on: *espera-mysql
+  ms-criptografia:
+    depends_on: *espera-mysql
+  ms-pacientes:
+    depends_on: *espera-mysql
+  ms-profesionales:
+    depends_on: *espera-mysql
+  ms-historial:
+    depends_on: *espera-mysql
+  ms-documental:
+    depends_on: *espera-mysql
+  ms-facturacion:
+    depends_on: *espera-mysql
+  ms-marketing:
+    depends_on: *espera-mysql
+  ms-auditoria:
+    depends_on: *espera-mysql
+  ms-notificaciones:
+    depends_on: *espera-mysql
