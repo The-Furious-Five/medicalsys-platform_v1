@@ -1,5 +1,7 @@
 package com.medicalsys.identidad.service;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
@@ -23,7 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Inicio de sesión (IAM-03). La contraseña se valida contra Keycloak, que aplica la política, el
  * vencimiento y el bloqueo al 3er intento. Si es válida, ms-identidad emite su propio JWT con roles y
- * permisos: el contrato de /auth/login no cambia.
+ * permisos: el contrato de /auth/login no cambia. Cada desenlace queda en la bitácora de ms-auditoria
+ * (LOG-01).
  */
 @Service
 public class AuthService {
@@ -39,10 +42,11 @@ public class AuthService {
     private final AccountAccessService accountAccess;
     private final KeycloakClient keycloak;
     private final KeycloakAccountLinker linker;
+    private final AuditTrail auditTrail;
 
     public AuthService(UserAccountRepository users, TokenService tokenService, SessionStore sessionStore,
                        IdentityMapper mapper, AccountAccessService accountAccess, KeycloakClient keycloak,
-                       KeycloakAccountLinker linker) {
+                       KeycloakAccountLinker linker, AuditTrail auditTrail) {
         this.users = users;
         this.tokenService = tokenService;
         this.sessionStore = sessionStore;
@@ -50,38 +54,54 @@ public class AuthService {
         this.accountAccess = accountAccess;
         this.keycloak = keycloak;
         this.linker = linker;
+        this.auditTrail = auditTrail;
     }
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
         Instant now = Instant.now();
-        Optional<UserAccount> found = users.findByEmailIgnoreCase(request.email().trim());
+        String email = request.email().trim();
+        Optional<UserAccount> found = users.findByEmailIgnoreCase(email);
         if (found.isEmpty()) {
             // Mismo mensaje que una contrasena incorrecta: no revelamos si el correo existe.
+            auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", null, email, null, 401,
+                    "Correo no registrado"));
             throw ApiException.unauthorized(INVALID_CREDENTIALS);
         }
 
         UserAccount user = found.get();
         if (user.getStatus() == UserStatus.INACTIVE) {
+            recordFailure(user, 403, "La cuenta esta inactiva");
             throw ApiException.forbidden("La cuenta esta inactiva");
         }
         if (user.getStatus() == UserStatus.PENDING_ACTIVATION) {
+            recordFailure(user, 403, "La cuenta aun no fue activada");
             throw ApiException.forbidden("La cuenta aun no fue activada");
         }
 
         String keycloakUserId = keycloakUserId(user);
         switch (keycloak.checkPassword(user.getEmail(), request.password())) {
             case VALID -> { }
-            case PASSWORD_CHANGE_REQUIRED -> throw ApiException.passwordChangeRequired();
-            case DISABLED -> throw ApiException.forbidden("La cuenta esta inactiva");
+            case PASSWORD_CHANGE_REQUIRED -> {
+                recordFailure(user, 403, "Contrasena vencida o temporal: debe cambiarse");
+                throw ApiException.passwordChangeRequired();
+            }
+            case DISABLED -> {
+                recordFailure(user, 403, "La cuenta esta deshabilitada en Keycloak");
+                throw ApiException.forbidden("La cuenta esta inactiva");
+            }
             case INVALID_CREDENTIALS -> {
                 // Keycloak responde lo mismo a una contrasena incorrecta y a una cuenta bloqueada.
                 if (keycloak.isLockedOut(keycloakUserId)) {
                     accountAccess.registerLockout(user.getId());
                     log.warn("Acceso rechazado: la cuenta {} esta bloqueada por intentos fallidos", user.getPublicId());
+                    auditTrail.record(AuditEventDraft.authentication("ACCOUNT_LOCKED", "DENIED", user.getPublicId(),
+                            user.getEmail(), user.getOrganizationPublicId(), 423,
+                            "Bloqueada en Keycloak por intentos fallidos"));
                     throw ApiException.accountLocked();
                 }
                 log.warn("Intento de acceso fallido para la cuenta {}", user.getPublicId());
+                recordFailure(user, 401, "Contrasena incorrecta");
                 throw ApiException.unauthorized(INVALID_CREDENTIALS);
             }
         }
@@ -91,6 +111,9 @@ public class AuthService {
         List<String> permissions = mapper.activePermissionCodes(user);
         IssuedToken token = tokenService.issue(user, roles, permissions);
         sessionStore.open(token.jti(), user.getPublicId(), token.expiresAt());
+
+        auditTrail.record(AuditEventDraft.authentication("LOGIN_SUCCESS", "SUCCESS", user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), 200, null));
 
         return new LoginResponse(
                 "Bearer",
@@ -110,8 +133,10 @@ public class AuthService {
         if (user.isLinkedToIdentityProvider()) {
             return user.getKeycloakUserId();
         }
-        String linked = linker.link(user.getId())
-                .orElseThrow(() -> ApiException.unauthorized(INVALID_CREDENTIALS));
+        String linked = linker.link(user.getId()).orElseThrow(() -> {
+            recordFailure(user, 401, "La cuenta no tiene credencial en Keycloak");
+            return ApiException.unauthorized(INVALID_CREDENTIALS);
+        });
         user.setKeycloakUserId(linked);
         user.setPasswordHash(null);
         return linked;
@@ -127,6 +152,15 @@ public class AuthService {
 
     public void logout(String jti, UUID publicId) {
         sessionStore.close(jti, publicId);
+        UserAccount user = users.findByPublicId(publicId).orElse(null);
+        auditTrail.record(AuditEventDraft.authentication("LOGOUT", "SUCCESS", publicId,
+                user == null ? null : user.getEmail(), user == null ? null : user.getOrganizationPublicId(),
+                200, null));
+    }
+
+    private void recordFailure(UserAccount user, int status, String reason) {
+        auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", user.getPublicId(),
+                user.getEmail(), user.getOrganizationPublicId(), status, reason));
     }
 
     private AuthenticatedUser describe(UserAccount user, List<String> roles, List<String> permissions) {

@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
@@ -26,9 +28,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 
-/** IAM-03: los cuatro casos del login delegado a Keycloak y el enlace de cuentas antiguas. */
+/**
+ * IAM-03: los cuatro casos del login delegado a Keycloak y el enlace de cuentas antiguas. LOG-01: cada
+ * desenlace deja su evento en la bitácora, sin la contraseña.
+ */
 class AuthServiceTests {
 
     private static final String EMAIL = "admin@medicalsys.demo";
@@ -41,9 +47,10 @@ class AuthServiceTests {
     private final AccountAccessService accountAccess = mock(AccountAccessService.class);
     private final KeycloakClient keycloak = mock(KeycloakClient.class);
     private final KeycloakAccountLinker linker = mock(KeycloakAccountLinker.class);
+    private final AuditTrail auditTrail = mock(AuditTrail.class);
 
     private final AuthService auth = new AuthService(users, tokenService, sessionStore, mapper, accountAccess,
-            keycloak, linker);
+            keycloak, linker, auditTrail);
 
     private UserAccount user;
 
@@ -163,5 +170,105 @@ class AuthServiceTests {
                 .isInstanceOfSatisfying(ApiException.class,
                         ex -> assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED));
         verify(keycloak, never()).checkPassword(anyString(), anyString());
+    }
+
+    // ---- LOG-01: bitácora de autenticación ----
+
+    @Test
+    @DisplayName("bitácora: correo inexistente deja LOGIN_FAILED 401 sin actor y sin la contraseña")
+    void auditsUnknownEmail() {
+        when(users.findByEmailIgnoreCase("nadie@medicalsys.demo")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> auth.login(new LoginRequest("nadie@medicalsys.demo", "cualquiera-9")));
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("LOGIN_FAILED");
+        assertThat(draft.outcome()).isEqualTo("DENIED");
+        assertThat(draft.responseStatus()).isEqualTo(401);
+        assertThat(draft.actorUserId()).isNull();
+        assertThat(draft.toString()).doesNotContain("cualquiera-9");
+    }
+
+    @Test
+    @DisplayName("bitácora: contraseña incorrecta deja LOGIN_FAILED 401 con la cuenta como actor")
+    void auditsWrongPassword() {
+        when(keycloak.checkPassword(EMAIL, "incorrecta-9")).thenReturn(PasswordCheck.INVALID_CREDENTIALS);
+
+        assertThatThrownBy(() -> auth.login(new LoginRequest(EMAIL, "incorrecta-9")));
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("LOGIN_FAILED");
+        assertThat(draft.responseStatus()).isEqualTo(401);
+        assertThat(draft.actorUserId()).isEqualTo(user.getPublicId());
+        assertThat(draft.toString()).doesNotContain("incorrecta-9");
+    }
+
+    @Test
+    @DisplayName("bitácora: el 3er intento deja ACCOUNT_LOCKED 423")
+    void auditsLockout() {
+        when(keycloak.checkPassword(anyString(), anyString())).thenReturn(PasswordCheck.INVALID_CREDENTIALS);
+        when(keycloak.isLockedOut(KEYCLOAK_ID)).thenReturn(true);
+
+        assertThatThrownBy(() -> auth.login(new LoginRequest(EMAIL, "incorrecta-9")));
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("ACCOUNT_LOCKED");
+        assertThat(draft.responseStatus()).isEqualTo(423);
+    }
+
+    @Test
+    @DisplayName("bitácora: contraseña vencida deja LOGIN_FAILED 403")
+    void auditsExpiredPassword() {
+        when(keycloak.checkPassword(EMAIL, "Temporal Vencida 9!")).thenReturn(PasswordCheck.PASSWORD_CHANGE_REQUIRED);
+
+        assertThatThrownBy(() -> auth.login(new LoginRequest(EMAIL, "Temporal Vencida 9!")));
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("LOGIN_FAILED");
+        assertThat(draft.responseStatus()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("bitácora: cuenta sin credencial en Keycloak también deja LOGIN_FAILED 401")
+    void auditsAccountWithoutCredential() {
+        user.setKeycloakUserId(null);
+        when(linker.link(user.getId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> auth.login(new LoginRequest(EMAIL, "cualquiera-9")));
+
+        assertThat(captureDraft().action()).isEqualTo("LOGIN_FAILED");
+    }
+
+    @Test
+    @DisplayName("bitácora: login correcto deja LOGIN_SUCCESS 200")
+    void auditsSuccessfulLogin() {
+        when(keycloak.checkPassword(EMAIL, "Contraseña Valida 9!")).thenReturn(PasswordCheck.VALID);
+
+        auth.login(new LoginRequest(EMAIL, "Contraseña Valida 9!"));
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("LOGIN_SUCCESS");
+        assertThat(draft.outcome()).isEqualTo("SUCCESS");
+        assertThat(draft.responseStatus()).isEqualTo(200);
+        assertThat(draft.toString()).doesNotContain("Contraseña Valida 9!");
+    }
+
+    @Test
+    @DisplayName("bitácora: logout deja LOGOUT de la propia cuenta")
+    void auditsLogout() {
+        when(users.findByPublicId(user.getPublicId())).thenReturn(Optional.of(user));
+
+        auth.logout("jti-1", user.getPublicId());
+
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("LOGOUT");
+        assertThat(draft.actorUserId()).isEqualTo(user.getPublicId());
+        verify(sessionStore).close("jti-1", user.getPublicId());
+    }
+
+    private AuditEventDraft captureDraft() {
+        ArgumentCaptor<AuditEventDraft> captor = ArgumentCaptor.forClass(AuditEventDraft.class);
+        verify(auditTrail).record(captor.capture());
+        return captor.getValue();
     }
 }

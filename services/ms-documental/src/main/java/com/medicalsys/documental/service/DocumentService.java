@@ -26,6 +26,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -36,6 +38,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class DocumentService {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
+
     private final DocumentRepository documentRepository;
     private final DocumentLinkRepository linkRepository;
     private final ObjectStorage storage;
@@ -44,10 +48,12 @@ public class DocumentService {
     private final FilenameSanitizer filenameSanitizer;
     private final DocumentFilePolicy filePolicy;
     private final DocumentMapper mapper;
+    private final IntegrityAuditor integrityAuditor;
 
     public DocumentService(DocumentRepository documentRepository, DocumentLinkRepository linkRepository,
             ObjectStorage storage, StorageProperties storageProperties, HashingService hashingService,
-            FilenameSanitizer filenameSanitizer, DocumentFilePolicy filePolicy, DocumentMapper mapper) {
+            FilenameSanitizer filenameSanitizer, DocumentFilePolicy filePolicy, DocumentMapper mapper,
+            IntegrityAuditor integrityAuditor) {
         this.documentRepository = documentRepository;
         this.linkRepository = linkRepository;
         this.storage = storage;
@@ -56,6 +62,7 @@ public class DocumentService {
         this.filenameSanitizer = filenameSanitizer;
         this.filePolicy = filePolicy;
         this.mapper = mapper;
+        this.integrityAuditor = integrityAuditor;
     }
 
     @Transactional
@@ -175,9 +182,9 @@ public class DocumentService {
                 OutputStream output = Files.newOutputStream(temporaryFile)) {
             String actualHash = hashingService.copyAndSha256(input, output);
             long actualSize = Files.size(temporaryFile);
-            if (!document.getSha256Hash().equalsIgnoreCase(actualHash)
-                    || document.getSizeBytes() != actualSize) {
-                throw new ApiException(ErrorCode.DOCUMENT_INTEGRITY_FAILURE,
+            if (!matchesIntegrity(document, actualHash) || document.getSizeBytes() != actualSize) {
+                logIntegrityMismatch(document, actualHash);
+                throw new ApiException(ErrorCode.INTEGRITY_MISMATCH,
                         "El archivo almacenado no coincide con sus metadatos de integridad");
             }
             return new PreparedDownload(
@@ -194,6 +201,42 @@ public class DocumentService {
             deleteTemporary(temporaryFile);
             throw exception;
         }
+    }
+
+    /**
+     * Recalcula el SHA-256 del objeto almacenado y lo compara contra el que se registro al subirlo,
+     * sin materializar el contenido en disco. A diferencia de {@link #prepareDownload}, nunca lanza
+     * por una discrepancia: el llamador decide que hacer con el resultado (por ejemplo, el endpoint
+     * de diagnostico de integridad solo lo reporta).
+     */
+    @Transactional(readOnly = true)
+    public IntegrityCheckResult checkIntegrity(UUID documentId, UUID organizationId) {
+        StoredDocument document = find(documentId, organizationId);
+        String actualHash;
+        try (InputStream input = storage.get(document.getObjectKey())) {
+            actualHash = hashingService.sha256(input);
+        } catch (IOException exception) {
+            throw new ApiException(ErrorCode.STORAGE_UNAVAILABLE,
+                    "No fue posible leer el objeto almacenado para verificar su integridad", exception);
+        }
+        boolean matches = matchesIntegrity(document, actualHash);
+        if (!matches) {
+            logIntegrityMismatch(document, actualHash);
+        }
+        return new IntegrityCheckResult(documentId, document.getSha256Hash(), actualHash, matches);
+    }
+
+    private boolean matchesIntegrity(StoredDocument document, String actualHash) {
+        return document.getSha256Hash().equalsIgnoreCase(actualHash);
+    }
+
+    private void logIntegrityMismatch(StoredDocument document, String actualHash) {
+        log.warn("INTEGRITY_MISMATCH documentId={} organizationId={} objectKey={} "
+                        + "expectedSha256={} actualSha256={}",
+                document.getPublicId(), document.getOrganizationPublicId(), document.getObjectKey(),
+                document.getSha256Hash(), actualHash);
+        integrityAuditor.integrityMismatch(document.getPublicId(), document.getOrganizationPublicId(),
+                document.getSha256Hash(), actualHash);
     }
 
     private StoredDocument find(UUID documentId, UUID organizationId) {

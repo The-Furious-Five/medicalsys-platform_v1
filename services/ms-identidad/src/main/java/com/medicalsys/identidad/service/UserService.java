@@ -1,5 +1,7 @@
 package com.medicalsys.identidad.service;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleScope;
 import com.medicalsys.identidad.domain.UserAccount;
@@ -22,6 +24,7 @@ import com.medicalsys.identidad.web.dto.UserResponse;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -52,11 +55,13 @@ public class UserService {
     private final UserCodeGenerator userCodes;
     private final TemporaryPasswordGenerator temporaryPasswords;
     private final AccountAccessService accountAccess;
+    private final AuditTrail auditTrail;
 
     public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
                        IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance,
                        KeycloakClient keycloak, KeycloakAccountLinker linker, UserCodeGenerator userCodes,
-                       TemporaryPasswordGenerator temporaryPasswords, AccountAccessService accountAccess) {
+                       TemporaryPasswordGenerator temporaryPasswords, AccountAccessService accountAccess,
+                       AuditTrail auditTrail) {
         this.users = users;
         this.roles = roles;
         this.passwordEncoder = passwordEncoder;
@@ -68,6 +73,7 @@ public class UserService {
         this.userCodes = userCodes;
         this.temporaryPasswords = temporaryPasswords;
         this.accountAccess = accountAccess;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -99,6 +105,7 @@ public class UserService {
         user.setUserCode(code.code());
         users.saveAndFlush(user);
         userCodes.assign(code, user.getId());
+        record("USER_CREATED", actorPublicId, user, null, Map.of("userCode", user.getUserCode()));
 
         UserResponse response = mapper.toUserResponse(user);
         return generated ? response.withTemporaryPassword(temporaryPassword) : response;
@@ -214,6 +221,7 @@ public class UserService {
             String[] names = KeycloakAccountLinker.splitName(user.getFullName());
             keycloak.updateProfile(user.getKeycloakUserId(), user.getEmail(), names[0], names[1]);
         }
+        record("USER_UPDATED", actorPublicId, user, null, Map.of());
         return mapper.toUserResponse(user);
     }
 
@@ -222,6 +230,7 @@ public class UserService {
         UserAccount user = require(publicId);
         governance.checkCanManageAccount(governance.resolve(actorPublicId), user);
         UserStatus target = request.status();
+        UserStatus previous = user.getStatus();
         long administrators = target == UserStatus.ACTIVE ? 0 : governance.roleAdministrators();
         if (target == UserStatus.LOCKED && user.getLockedUntil() == null) {
             user.setLockedUntil(Instant.now().plusSeconds(3600));
@@ -242,6 +251,11 @@ public class UserService {
             governance.checkRoleAdministrationSurvives(administrators);
             sessionStore.closeAll(user.getPublicId());
         }
+        String action = previous == UserStatus.LOCKED && target == UserStatus.ACTIVE
+                ? "ACCOUNT_UNLOCKED"
+                : target != UserStatus.ACTIVE ? "USER_DISABLED" : "USER_UPDATED";
+        record(action, actorPublicId, user, request.reason(),
+                Map.of("previousStatus", previous.name(), "newStatus", target.name()));
         return mapper.toUserResponse(user);
     }
 
@@ -303,6 +317,7 @@ public class UserService {
             user.setStatus(UserStatus.ACTIVE);
         }
         log.info("Cuenta {} desbloqueada por {}", user.getUserCode(), actorPublicId);
+        record("ACCOUNT_UNLOCKED", actorPublicId, user, null, Map.of());
         return mapper.toUserResponse(user);
     }
 
@@ -336,6 +351,8 @@ public class UserService {
         user.setPasswordUpdatedAt(Instant.now());
         sessionStore.closeAll(user.getPublicId());
         log.info("Contrasena temporal emitida para la cuenta {} por {}", user.getUserCode(), actorPublicId);
+        // La temporal nunca viaja en el evento: solo consta que se emitio y quien la pidio.
+        record("PASSWORD_RESET", actorPublicId, user, null, Map.of());
         return new TemporaryPasswordResponse(user.getPublicId(), user.getUserCode(), temporaryPassword);
     }
 
@@ -351,6 +368,8 @@ public class UserService {
         }
         user.setPasswordUpdatedAt(Instant.now());
         sessionStore.closeAll(user.getPublicId());
+        // Autoservicio: el actor es la propia cuenta; la contrasena nunca viaja en el evento.
+        record("PASSWORD_CHANGED", user.getPublicId(), user, null, Map.of());
     }
 
     private String keycloakUserId(UserAccount user) {
@@ -370,6 +389,7 @@ public class UserService {
         Actor actor = governance.resolve(actorPublicId);
         governance.checkCanManageAccount(actor, user);
         attachRole(user, request, actor);
+        record("ROLE_ASSIGNED", actorPublicId, user, null, Map.of("role", request.role()));
         return mapper.toUserResponse(user);
     }
 
@@ -392,6 +412,7 @@ public class UserService {
         user.getRoleAssignments().removeAll(revoked);
         governance.checkRoleAdministrationSurvives(administrators);
         sessionStore.closeAll(user.getPublicId());
+        record("ROLE_REVOKED", actorPublicId, user, null, Map.of("role", code));
         return mapper.toUserResponse(user);
     }
 
@@ -435,5 +456,11 @@ public class UserService {
                 .orElseThrow(() -> ApiException.notFound("No existe la cuenta " + publicId));
         user.getRoleAssignments().forEach(assignment -> assignment.getRole().getPermissions().size());
         return user;
+    }
+
+    /** LOG-02: evento de ABM, contrasenas o roles en la bitacora de ms-auditoria. */
+    private void record(String action, UUID actorPublicId, UserAccount user, String reason, Map<String, String> metadata) {
+        auditTrail.record(AuditEventDraft.userManagement(action, actorPublicId, user.getPublicId(), user.getEmail(),
+                user.getOrganizationPublicId(), reason, metadata));
     }
 }

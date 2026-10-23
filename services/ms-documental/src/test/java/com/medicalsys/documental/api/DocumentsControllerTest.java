@@ -15,6 +15,7 @@ import com.medicalsys.documental.common.CorrelationIdFilter;
 import com.medicalsys.documental.exception.GlobalExceptionHandler;
 import com.medicalsys.documental.security.PermissionAuthorizationInterceptor;
 import com.medicalsys.documental.service.DocumentService;
+import com.medicalsys.documental.service.IntegrityCheckResult;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -131,6 +132,22 @@ class DocumentsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void reportsIntegrityMismatchWithoutFailingTheRequest() throws Exception {
+        when(service.checkIntegrity(eq(DOCUMENT_ID), eq(UUID.fromString(ORGANIZATION_ID))))
+                .thenReturn(new IntegrityCheckResult(DOCUMENT_ID, "a".repeat(64), "b".repeat(64), false));
+
+        mvc.perform(get("/api/v1/documents/" + DOCUMENT_ID + "/integrity")
+                        .header("X-Organization-Id", ORGANIZATION_ID)
+                        .header("X-User-Id", USER_ID)
+                        .header("X-Roles", "PHYSICIAN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.documentId").value(DOCUMENT_ID.toString()))
+                .andExpect(jsonPath("$.matches").value(false))
+                .andExpect(jsonPath("$.expectedHash").value("a".repeat(64)))
+                .andExpect(jsonPath("$.actualHash").value("b".repeat(64)));
     }
 
     private DocumentResponse response() {

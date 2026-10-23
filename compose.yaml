@@ -10,6 +10,9 @@ x-service-healthcheck: &medicalsys-healthcheck
   retries: 30
   start_period: 40s
 
+# Politica de retencion de logs (OWASP A09 - LOG-03): rotacion local a 10 MB por archivo,
+# maximo 3 archivos por contenedor (~30 MB por servicio). Aplicada a todos los servicios via
+# este ancla para evitar que los logs llenen el disco del host sin perder trazabilidad reciente.
 x-logging: &medicalsys-logging
   driver: local
   options:
@@ -252,6 +255,8 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-platform.admin@medicalsys.demo}
       PLATFORM_ADMIN_FULL_NAME: ${PLATFORM_ADMIN_FULL_NAME:-Administrador de MedicalSys}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
+      # LOG-01/LOG-02: login, ABM, contrasenas, roles y denegaciones hacia la bitacora. Vacio lo desactiva.
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
       # IAM-03: las credenciales se validan contra Keycloak (cliente confidencial ms-identidad).
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:?falta KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET en .env}
@@ -432,6 +437,8 @@ services:
       DOCUMENT_MAX_SIZE_BYTES: ${DOCUMENT_MAX_SIZE_BYTES:-104857600}
       PATIENTS_SERVICE_URL: http://ms-pacientes:8085
       NOTIFICATIONS_SERVICE_URL: http://ms-notificaciones:8091
+      # CRY-02/LOG-02: eventos de verificacion de integridad hacia la bitacora.
+      AUDIT_SERVICE_URL: http://ms-auditoria:8091
     depends_on:
       mysql-init:
         condition: service_completed_successfully

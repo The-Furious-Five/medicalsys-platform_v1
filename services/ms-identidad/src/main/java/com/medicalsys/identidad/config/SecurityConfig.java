@@ -1,10 +1,14 @@
 package com.medicalsys.identidad.config;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.security.JwtAuthenticationFilter;
 import com.medicalsys.identidad.security.SecurityProblemWriter;
 import com.medicalsys.identidad.security.SessionStore;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,9 +19,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -64,7 +71,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtDecoder jwtDecoder, SessionStore sessionStore,
-                                           SecurityProblemWriter problemWriter) throws Exception {
+                                           SecurityProblemWriter problemWriter, AuditTrail auditTrail)
+            throws Exception {
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtDecoder, sessionStore);
         http
                 .csrf(csrf -> csrf.disable())
@@ -112,9 +120,25 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> problemWriter.write(
                                 request, response, HttpStatus.UNAUTHORIZED, "Credenciales invalidas",
                                 "Se requiere un token de acceso valido"))
-                        .accessDeniedHandler((request, response, deniedException) -> problemWriter.write(
-                                request, response, HttpStatus.FORBIDDEN, "Acceso denegado",
-                                "El token no tiene el permiso requerido para esta operacion")));
+                        .accessDeniedHandler((request, response, deniedException) -> {
+                            recordAccessDenied(auditTrail, request.getRequestURI());
+                            problemWriter.write(request, response, HttpStatus.FORBIDDEN, "Acceso denegado",
+                                    "El token no tiene el permiso requerido para esta operacion");
+                        }));
         return http.build();
+    }
+
+    /** El filtro de autorizacion ya rechazo la solicitud; aqui solo se deja constancia del hecho. */
+    private void recordAccessDenied(AuditTrail auditTrail, String requestPath) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UUID actorId = null;
+        List<String> actorRoles = List.of();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            actorId = UUID.fromString(jwt.getSubject());
+            List<String> permissions = jwt.getClaimAsStringList("roles");
+            actorRoles = permissions == null ? List.of() : permissions;
+        }
+        auditTrail.record(AuditEventDraft.accessDenied(actorId, actorRoles, requestPath,
+                "Permiso insuficiente para " + requestPath));
     }
 }

@@ -39,6 +39,8 @@ spring:
         write-dates-as-timestamps: false
 
 medicalsys:
+  audit:
+    base-url: ${AUDIT_SERVICE_URL:}
   storage:
     endpoint: ${MINIO_ENDPOINT:http://localhost:19000}
     access-key: ${MINIO_ACCESS_KEY:medicalsys-demo}
