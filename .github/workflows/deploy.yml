@@ -2,13 +2,11 @@ name: CI/CD - Deploy al VPS
 
 # Push a main: pruebas -> imagenes en GHCR -> despliegue en el VPS por SSH.
 # Tambien se puede lanzar a mano desde la pestana Actions (Run workflow).
+# PAUSADO (oct 2026): el push a main ya no despliega solo, para no gastar minutos ni desplegar
+# sin el secreto ENV_FILE listo. Se lanza a mano desde Actions -> CI/CD - Deploy al VPS. Para
+# reactivarlo, devolver:
+#   push: { branches: [main], paths-ignore: ["**.md", "docs/**", "etica docs/**"] }
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - "etica docs/**"
   workflow_dispatch:
     inputs:
       skip_tests:

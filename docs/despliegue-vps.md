@@ -1,6 +1,11 @@
 # Despliegue en el VPS (CI/CD)
 
-Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml). Cada push a `main`:
+Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
+
+> **Pausado:** por ahora el workflow solo se lanza a mano (**Actions → CI/CD - Deploy al VPS → Run workflow**)
+> para no gastar minutos de GitHub Actions. Al reactivar el disparador `push`, cada push a `main` vuelve a desplegar.
+
+Cada ejecucion:
 
 1. **test**: `mvn test` de los 14 microservicios en paralelo. Los que usan Testcontainers
    levantan MySQL con el Docker del runner.

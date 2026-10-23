@@ -2,11 +2,11 @@
 # cambiaron (scripts/ci/changed_services.py): el repo es privado y los minutos son limitados.
 name: CI backend
 
+# PAUSADO (oct 2026) para no agotar los minutos de GitHub Actions: solo se lanza a mano desde
+# Actions -> CI backend -> Run workflow. Para reactivarlo, devolver estos disparadores:
+#   pull_request: { branches: [develop, main] }
+#   push: { branches: [develop, main] }
 on:
-  pull_request:
-    branches: [develop, main]
-  push:
-    branches: [develop, main]
   workflow_dispatch:
 
 permissions:
