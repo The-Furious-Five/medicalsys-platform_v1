@@ -17,10 +17,19 @@
 .DS_Store
 Thumbs.db
 
-# Variables y secretos
+# Variables y secretos (.env.example si se versiona: es la plantilla sin secretos)
 .env
 .env.*
 !.env.example
+
+# Node: dependencias de scripts sueltos o de herramientas de IA. Sin barra final para que tambien
+# cubra un symlink llamado node_modules (asi se colo uno que apuntaba a la Mac de otro integrante).
+node_modules
+node_modules/
+
+# Python: cache de bytecode de los scripts de CI
+__pycache__/
+*.py[cod]
 
 # Logs
 *.log
