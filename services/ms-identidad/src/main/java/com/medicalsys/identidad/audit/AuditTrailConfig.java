@@ -23,12 +23,14 @@ public class AuditTrailConfig {
      * pool de auditoria bloqueados hasta agotar la cola, y la contrapresion terminaria alcanzando
      * al hilo que atiende el login o el ABM.
      */
+    // RestClient.builder() y no un RestClient.Builder inyectado: en el contenedor (Spring Boot 4) no hay un
+    // builder autoconfigurado y el servicio no arrancaba. Los tests no lo veian porque su classpath si lo trae.
     @Bean
-    RestClient auditRestClient(RestClient.Builder builder, AuditTrailProperties properties) {
+    RestClient auditRestClient(AuditTrailProperties properties) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.connectTimeout());
         requestFactory.setReadTimeout(properties.readTimeout());
-        return builder
+        return RestClient.builder()
                 .baseUrl(properties.isEnabled() ? properties.baseUrl() : "http://localhost")
                 .requestFactory(requestFactory)
                 .build();
