@@ -7,6 +7,7 @@ import com.medicalsys.facturacion.web.dto.CreateInvoiceRequest;
 import com.medicalsys.facturacion.web.dto.InvoiceResponse;
 import com.medicalsys.facturacion.web.dto.InvoiceSummaryResponse;
 import com.medicalsys.facturacion.web.dto.PageResponse;
+import com.medicalsys.facturacion.web.dto.VoidInvoiceRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
@@ -51,6 +52,13 @@ public class InvoiceController {
     @RequiresPermission("billing.invoice.read")
     public InvoiceResponse get(@PathVariable UUID invoiceId) {
         return service.get(RequestContextHolder.require(), invoiceId);
+    }
+
+    @PostMapping("/{invoiceId}/anulacion")
+    @RequiresPermission("billing.invoice.void")
+    public InvoiceResponse voidInvoice(@PathVariable UUID invoiceId,
+            @Valid @RequestBody VoidInvoiceRequest request) {
+        return service.voidInvoice(RequestContextHolder.require(), invoiceId, request.reasonCode());
     }
 
     /**

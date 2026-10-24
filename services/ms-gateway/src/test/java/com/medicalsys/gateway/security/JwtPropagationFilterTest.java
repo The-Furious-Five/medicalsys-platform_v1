@@ -38,7 +38,7 @@ class JwtPropagationFilterTest {
     @Test
     @DisplayName("propaga los permisos del token en X-Permissions y reemplaza los que mando el cliente")
     void propagatesTokenPermissions() throws Exception {
-        when(redis.hasKey("identity:session:test-jti")).thenReturn(true);
+        when(redis.hasKey("identity:session:v10:test-jti")).thenReturn(true);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer token");
         request.addHeader("X-Permissions", "identity.role.manage");
@@ -69,7 +69,7 @@ class JwtPropagationFilterTest {
     @Test
     @DisplayName("si Redis no responde, falla cerrado con 503 en vez de dejar pasar el token")
     void failsClosedWhenRedisIsUnavailable() throws Exception {
-        when(redis.hasKey("identity:session:test-jti")).thenThrow(new QueryTimeoutException("timeout"));
+        when(redis.hasKey("identity:session:v10:test-jti")).thenThrow(new QueryTimeoutException("timeout"));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer token");
         MockHttpServletResponse response = new MockHttpServletResponse();

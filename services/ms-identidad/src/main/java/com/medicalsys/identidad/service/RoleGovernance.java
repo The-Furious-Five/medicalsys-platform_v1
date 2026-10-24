@@ -98,7 +98,7 @@ public class RoleGovernance {
         Set<String> assignable = new HashSet<>();
         boolean platform = false;
         for (Role role : effectiveRoles(account, today)) {
-            role.getPermissions().stream().filter(account::clears)
+            role.getPermissions().stream().filter(permission -> role.permits(account, permission))
                     .forEach(permission -> permissions.add(permission.getCode()));
             role.getAssignableRoles().forEach(delegated -> assignable.add(delegated.getCode()));
             platform |= role.getScope() == RoleScope.PLATFORM;
@@ -305,7 +305,8 @@ public class RoleGovernance {
 
     static Collection<Permission> effectivePermissions(UserAccount account, LocalDate today) {
         Map<String, Permission> byCode = new LinkedHashMap<>();
-        effectiveRoles(account, today).forEach(role -> role.getPermissions().stream().filter(account::clears)
+        effectiveRoles(account, today).forEach(role -> role.getPermissions().stream()
+                .filter(permission -> role.permits(account, permission))
                 .forEach(permission -> byCode.putIfAbsent(permission.getCode(), permission)));
         return byCode.values();
     }

@@ -1,5 +1,8 @@
 # ISO-01 · Roles por función, OSI y control de acceso RBAC + MAC + DAC
 
+> Esta página describe V9. La matriz vigente de 15 roles y los cambios de V10 están en
+> [Matriz de Roles aprobada](matriz-roles/README.md).
+
 Migración `services/ms-identidad/src/main/resources/db/migration/V9__iso_roles_mac_dac.sql`.
 Matriz aprobada: `tmp/docs/anexos/Matriz_Roles_MedicalSys.xlsx` (hojas *Matriz de Roles*,
 *Detalle permisos* y *Modelos de control*), generada con los mismos datos que la migración.

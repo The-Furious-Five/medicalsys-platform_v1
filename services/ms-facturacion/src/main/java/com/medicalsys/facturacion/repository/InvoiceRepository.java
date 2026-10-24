@@ -7,6 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
 
 /**
  * Acceso a facturas.
@@ -19,6 +22,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     /** Carga la factura con su detalle en una sola consulta; la respuesta siempre lo incluye. */
     @EntityGraph(attributePaths = "items")
     Optional<Invoice> findByOrganizationPublicIdAndPublicId(UUID organizationPublicId, UUID publicId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from Invoice i where i.organizationPublicId = :organizationId and i.publicId = :publicId")
+    Optional<Invoice> findForCancellation(UUID organizationId, UUID publicId);
 
     Page<Invoice> findByOrganizationPublicIdOrderByIssuedAtDesc(UUID organizationPublicId, Pageable pageable);
 

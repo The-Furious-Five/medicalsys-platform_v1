@@ -109,7 +109,7 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             }
 
             try {
-                if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:" + jwt.getId()))) {
+                if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:v10:" + jwt.getId()))) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"title\":\"Sesion revocada\",\"detail\":\"La sesion ya no esta activa\"}");

@@ -43,7 +43,10 @@ public class InvoiceMapper {
                 invoice.getPaymentMethodCode(),
                 DateTimes.toOffset(invoice.getIssuedAt()),
                 DateTimes.toOffset(invoice.getValidatedAt()),
-                items);
+                items,
+                invoice.getCancellationReasonCode(),
+                DateTimes.toOffset(invoice.getVoidedAt()),
+                invoice.getVoidedByUserPublicId());
     }
 
     /** Proyeccion minima para listados y para otros microservicios. */

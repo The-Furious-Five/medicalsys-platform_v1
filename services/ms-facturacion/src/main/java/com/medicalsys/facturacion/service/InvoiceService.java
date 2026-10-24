@@ -135,6 +135,25 @@ public class InvoiceService {
         return mapper.toResponse(requireByPublicId(context, invoiceId));
     }
 
+    @Transactional
+    public InvoiceResponse voidInvoice(RequestContext context, UUID invoiceId, int reasonCode) {
+        Invoice invoice = invoices.findForCancellation(context.organizationId(), invoiceId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.INVOICE_NOT_FOUND,
+                        "La factura solicitada no existe o no pertenece a esta organizacion"));
+        // El proyecto opera con un adaptador fiscal simulado: una factura real requiere
+        // confirmacion del sistema fiscal, no basta cambiar su estado local.
+        if (!taxAuthority.isSimulated() || !invoice.isDemo()) {
+            throw new ConflictException(ErrorCode.INVOICE_CANCELLATION_NOT_ALLOWED,
+                    "La anulacion requiere una factura del adaptador fiscal simulado");
+        }
+        try {
+            invoice.voidInvoice(reasonCode, context.userId(), clock.instant().truncatedTo(ChronoUnit.SECONDS));
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            throw new ConflictException(ErrorCode.INVOICE_CANCELLATION_NOT_ALLOWED, exception.getMessage());
+        }
+        return mapper.toResponse(invoices.saveAndFlush(invoice));
+    }
+
     /** Proyeccion minima para otros microservicios. */
     @Transactional(readOnly = true)
     public InvoiceSummaryResponse getSummary(RequestContext context, UUID invoiceId) {
