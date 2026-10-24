@@ -62,13 +62,12 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
 
     private final JwtDecoder jwtDecoder;
     private final StringRedisTemplate redis;
-    private final AccessDeniedAuditor accessDeniedAuditor;
+    private final GatewayAuditor auditor;
 
-    public JwtPropagationFilter(JwtDecoder jwtDecoder, StringRedisTemplate redis,
-                                AccessDeniedAuditor accessDeniedAuditor) {
+    public JwtPropagationFilter(JwtDecoder jwtDecoder, StringRedisTemplate redis, GatewayAuditor auditor) {
         this.jwtDecoder = jwtDecoder;
         this.redis = redis;
-        this.accessDeniedAuditor = accessDeniedAuditor;
+        this.auditor = auditor;
     }
 
     @Override
@@ -110,6 +109,8 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
 
             try {
                 if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:" + jwt.getId()))) {
+                    auditor.recordRevokedSession(jwt, request, overrides.get(CLIENT_IP_HEADER),
+                            overrides.get(CORRELATION_HEADER));
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"title\":\"Sesion revocada\",\"detail\":\"La sesion ya no esta activa\"}");
@@ -145,9 +146,9 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             MDC.remove("correlationId");
         }
 
-        if (AccessDeniedAuditor.shouldRecord(jwt, response.getStatus(), request.getRequestURI())) {
-            accessDeniedAuditor.record(jwt, request, overrides.get(CLIENT_IP_HEADER), overrides.get(CORRELATION_HEADER));
-        }
+        // LOG-02: cada accion del usuario queda en la bitacora; GatewayAuditor decide cuales se asientan.
+        auditor.record(jwt, request, response.getStatus(), overrides.get(CLIENT_IP_HEADER),
+                overrides.get(CORRELATION_HEADER));
     }
 
     /**

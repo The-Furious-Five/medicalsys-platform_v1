@@ -29,7 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Consulta de la bitacora para la pantalla de auditoria.
  *
- * <p>Solo lectura, y solo para quien administra la organizacion. Un medico o una recepcionista no
+ * <p>Solo lectura, y solo para quien audita: el auditor de la organizacion, o el OSI con alcance de
+ * plataforma ({@code AuditScope}), que puede pasar {@code organizationId} o ver todas. Un medico o una recepcionista no
  * necesitan ver quien mas abrio un expediente; darles esa vista convertiria la bitacora en una
  * fuente nueva de exposicion en lugar de un control.
  *
@@ -61,6 +62,7 @@ public class AuditQueryController {
     @GetMapping("/events")
     @RequiresPermission("audit.log.read")
     public PageResponse<AuditEventResponse> search(
+            @RequestParam(required = false) UUID organizationId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) AuditCategory category,
@@ -76,7 +78,7 @@ public class AuditQueryController {
             @RequestParam(required = false) @Size(max = 160) String q,
             @PageableDefault(size = 25, sort = "occurredAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        AuditEventFilter filter = new AuditEventFilter(from, to, category, outcome, severity, serviceName,
+        AuditEventFilter filter = new AuditEventFilter(organizationId, from, to, category, outcome, severity, serviceName,
                 action, resourceType, actorUserId, patientId, resourceId, correlationId, q);
         return PageResponse.of(auditEvents.search(filter, pageable).map(AuditEventResponse::from));
     }
@@ -91,15 +93,17 @@ public class AuditQueryController {
     @GetMapping("/summary")
     @RequiresPermission("audit.log.read")
     public AuditSummaryResponse summary(
+            @RequestParam(required = false) UUID organizationId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-        return summaries.summarize(from, to);
+        return summaries.summarize(organizationId, from, to);
     }
 
     /** Recalculo de la cadena de hashes sobre los ultimos eventos de la organizacion. */
     @GetMapping("/integrity")
     @RequiresPermission("audit.log.verify")
-    public AuditIntegrityResponse integrity(@RequestParam(required = false) Integer window) {
-        return integrityService.verifyLatest(window);
+    public AuditIntegrityResponse integrity(@RequestParam(required = false) UUID organizationId,
+            @RequestParam(required = false) Integer window) {
+        return integrityService.verifyLatest(organizationId, window);
     }
 }

@@ -139,6 +139,38 @@ class AuditTrailTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test
+    void takesTheActorAndTheOrganizationFromTheCallerToken() throws InterruptedException {
+        stubPost();
+        AuditTrail auditTrail = newAuditTrail();
+        UUID osi = UUID.randomUUID();
+        UUID organizationId = UUID.randomUUID();
+        org.springframework.security.oauth2.jwt.Jwt jwt = org.springframework.security.oauth2.jwt.Jwt
+                .withTokenValue("t").header("alg", "HS256").subject(osi.toString())
+                .claim("email", "osi@example.com").claim("roles", List.of("OSI"))
+                .claim("organizationId", organizationId.toString()).build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.TestingAuthenticationToken(jwt, null));
+        try {
+            auditTrail.record(AuditEventDraft.userManagement("CLEARANCE_CHANGED", osi, UUID.randomUUID(),
+                    "medico@example.com", UUID.randomUUID(), "Habilitacion", Map.of()));
+            auditTrail.record(AuditEventDraft.accessDenied(osi, List.of(), "/api/v1/identity/users", "sin permiso"));
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+        synchronousExecutor.shutdown();
+        synchronousExecutor.awaitTermination(2, TimeUnit.SECONDS);
+
+        ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+        org.mockito.Mockito.verify(requestBodyUriSpec, org.mockito.Mockito.times(2)).body(bodyCaptor.capture());
+        Map<String, Object> clearance = bodyCaptor.getAllValues().get(0);
+        assertEquals("osi@example.com", clearance.get("actorDisplayName"));
+        assertEquals(List.of("OSI"), clearance.get("actorRoles"));
+        assertEquals("WARNING", clearance.get("severity"));
+        assertEquals(organizationId, bodyCaptor.getAllValues().get(1).get("organizationId"));
+    }
+
+    @SuppressWarnings("unchecked")
     private void stubPost() {
         when(restClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);

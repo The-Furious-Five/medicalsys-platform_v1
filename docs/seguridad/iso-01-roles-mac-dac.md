@@ -51,3 +51,15 @@ MARKETING_MANAGER–PHYSICIAN · MARKETING_MANAGER–NURSE.
 
 `ADMINISTRATOR` ya no se delega a sí mismo: asigna PHYSICIAN, NURSE, LAB_TECHNICIAN, RECEPTIONIST,
 BILLING_CLERK, MARKETING_MANAGER y PATIENT. Los demás roles los asigna la plataforma o el OSI.
+
+## Bitácora (LOG-02/LOG-04)
+
+- **Todo queda asentado.** El gateway (`GatewayAuditor`) registra en ms-auditoria cada escritura
+  (POST/PUT/PATCH/DELETE) de cualquier servicio, cada lectura de pacientes, historia clínica y documentos,
+  cada 403 (`ACCESS_DENIED`) y cada uso de un token con la sesión cerrada (`REVOKED_SESSION_USED`), con
+  actor, roles, IP, servicio y desenlace. ms-identidad audita lo suyo con más detalle (login, ABM, roles,
+  `CLEARANCE_CHANGED`), y ahora con el correo y los roles de quien actúa, así que una acción del OSI se ve
+  como del OSI.
+- **El OSI ve toda la plataforma.** `audit.log.read_platform` (V10, `RESTRICTED`, solo OSI): la pantalla de
+  auditoría muestra todas las organizaciones o la que elija (`organizationId`). Para el resto pedir otra
+  organización es un 403.

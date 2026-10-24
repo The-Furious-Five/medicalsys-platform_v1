@@ -2,6 +2,7 @@ package com.medicalsys.identidad.audit;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -55,10 +56,15 @@ public record AuditEventDraft(
                 Map.of());
     }
 
-    /** ABM de cuentas, contrasenas o roles ejecutado por un administrador sobre un usuario objetivo. */
+    /** Cambios que alteran el acceso real de la cuenta: nivel MAC, roles, baja y contrasena temporal. */
+    private static final Set<String> ACCESS_CHANGES = Set.of(
+            "CLEARANCE_CHANGED", "ROLE_ASSIGNED", "ROLE_REVOKED", "USER_DISABLED", "PASSWORD_RESET");
+
+    /** ABM de cuentas, contrasenas o roles ejecutado por un administrador u OSI sobre un usuario objetivo. */
     public static AuditEventDraft userManagement(String action, UUID actorUserId, UUID targetPublicId,
             String targetEmail, UUID organizationId, String reason, Map<String, String> metadata) {
-        return new AuditEventDraft(action, "CONFIGURATION", "NOTICE", "SUCCESS", actorUserId, null, List.of(),
+        String severity = ACCESS_CHANGES.contains(action) ? "WARNING" : "NOTICE";
+        return new AuditEventDraft(action, "CONFIGURATION", severity, "SUCCESS", actorUserId, null, List.of(),
                 "USER_ACCOUNT", targetPublicId, targetEmail, organizationId, null, reason, metadata);
     }
 

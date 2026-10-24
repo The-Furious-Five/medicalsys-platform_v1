@@ -20,6 +20,10 @@ public final class TestRequestContext {
         RequestContextHolder.set(new RequestContext(organizationId, userId, Set.of(roles)));
     }
 
+    public static void withPermissions(UUID organizationId, UUID userId, String... permissions) {
+        RequestContextHolder.set(new RequestContext(organizationId, userId, Set.of(), Set.of(permissions)));
+    }
+
     public static void clear() {
         RequestContextHolder.clear();
     }
