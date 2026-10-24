@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -48,7 +47,6 @@ public class UserService {
 
     private final UserAccountRepository users;
     private final RoleRepository roles;
-    private final PasswordEncoder passwordEncoder;
     private final IdentityMapper mapper;
     private final SessionStore sessionStore;
     private final RoleGovernance governance;
@@ -59,14 +57,13 @@ public class UserService {
     private final AccountAccessService accountAccess;
     private final AuditTrail auditTrail;
 
-    public UserService(UserAccountRepository users, RoleRepository roles, PasswordEncoder passwordEncoder,
-                       IdentityMapper mapper, SessionStore sessionStore, RoleGovernance governance,
+    public UserService(UserAccountRepository users, RoleRepository roles, IdentityMapper mapper,
+                       SessionStore sessionStore, RoleGovernance governance,
                        KeycloakClient keycloak, KeycloakAccountLinker linker, UserCodeGenerator userCodes,
                        TemporaryPasswordGenerator temporaryPasswords, AccountAccessService accountAccess,
                        AuditTrail auditTrail) {
         this.users = users;
         this.roles = roles;
-        this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
         this.governance = governance;
@@ -114,21 +111,72 @@ public class UserService {
     }
 
     /**
-     * Cuentas de demostración y de plataforma, cuya contraseña sale de la configuración y no cumple
-     * necesariamente la política: se guardan con hash local y KeycloakAccountMigration las importa a
-     * Keycloak al arrancar, igual que las cuentas anteriores a IAM-03.
+     * Cuentas sembradas al arrancar: las de demostración y las dos de arranque (PLATFORM_ADMIN y OSI),
+     * con su identificador público fijo. Se crean directo en Keycloak, así que la política de IAM-02
+     * rige también para ellas (antes se importaba un hash local y la política no se aplicaba).
+     *
+     * <p>Sin {@code password}, la cuenta nace con una temporal aleatoria propia que no se devuelve ni se
+     * registra: para usarla, el OSI la reinicia (PR-02) y la persona elige la suya. Ninguna cuenta
+     * comparte contraseña con otra.
      */
     @Transactional
-    public UserResponse createSeedAccount(CreateUserRequest request) {
+    public UserResponse createSeedAccount(CreateUserRequest request, UUID publicId) {
         UserAccount user = newAccount(request, null);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setHashAlgorithm("argon2id");
-        user.setPasswordUpdatedAt(Instant.now());
+        user.setPublicId(publicId);
+        ensureSeedCredential(user, request.password());
         UserCodeGenerator.IssuedCode code = userCodes.next();
         user.setUserCode(code.code());
         users.saveAndFlush(user);
         userCodes.assign(code, user.getId());
         return mapper.toUserResponse(user);
+    }
+
+    /**
+     * Garantiza que la cuenta sembrada tenga credencial en Keycloak (por ejemplo, si se recreó su base);
+     * si ya la tiene, no la toca. Con {@code password} vacío usa una temporal aleatoria. Devuelve true
+     * si tuvo que crearla o reponerla.
+     */
+    @Transactional
+    public boolean ensureSeedCredential(UserAccount user, String password) {
+        if (user.isLinkedToIdentityProvider() && keycloak.userExists(user.getKeycloakUserId())) {
+            return false;
+        }
+        boolean temporary = !StringUtils.hasText(password);
+        String credential = temporary ? temporaryPasswords.generate() : password;
+        String keycloakUserId;
+        try {
+            keycloakUserId = keycloak.findUserIdByEmail(user.getEmail()).orElse(null);
+            if (keycloakUserId == null) {
+                String[] names = KeycloakAccountLinker.splitName(user.getFullName());
+                keycloakUserId = keycloak.createUserWithPassword(new KeycloakClient.NewUser(
+                        user.getPublicId().toString(), user.getEmail(), names[0], names[1],
+                        user.getStatus() != UserStatus.INACTIVE), credential, temporary);
+                undoKeycloakAccountOnRollback(keycloakUserId);
+            } else {
+                keycloak.setPassword(keycloakUserId, credential, temporary);
+            }
+        } catch (PasswordPolicyException ex) {
+            throw ApiException.passwordPolicy(ex.getMessage());
+        }
+        user.setKeycloakUserId(keycloakUserId);
+        user.setPasswordHash(null);
+        user.setPasswordUpdatedAt(Instant.now());
+        return true;
+    }
+
+    /**
+     * Rotación de una cuenta demo (IDENTITY_DEMO_ROTATE_PASSWORDS): temporal aleatoria nueva, cambio
+     * obligatorio en el próximo ingreso y sesiones cerradas. Corrige las bases sembradas con la
+     * contraseña común de versiones anteriores. La temporal no se devuelve ni se registra.
+     */
+    @Transactional
+    public void rotateSeedPassword(UserAccount user) {
+        if (!ensureSeedCredential(user, null)) {
+            keycloak.setPassword(user.getKeycloakUserId(), temporaryPasswords.generate(), true);
+            user.setPasswordUpdatedAt(Instant.now());
+        }
+        sessionStore.closeAll(user.getPublicId());
+        record("PASSWORD_RESET", null, user, "Rotacion de la contrasena comun de las cuentas demo", Map.of());
     }
 
     private UserAccount newAccount(CreateUserRequest request, UUID actorPublicId) {

@@ -79,11 +79,13 @@ CRYPTO_SERVICE_SHARED_SECRET=CAMBIAR
 IDENTITY_DEMO_ORGANIZATION=00000000-0000-4000-8000-0000000000a1
 
 # Cuentas demo del personal (admin@, recepcion@, doctor@medicalsys.demo...), para la presentacion.
-# La contrasena debe cumplir la politica de Keycloak (IAM-02): 12 a 64 caracteres, mayuscula,
-# minuscula, digito y caracter especial, y no estar en infra/keycloak/password-blacklists.
-# No uses la del README: es publica.
+# No llevan contrasena aqui: cada una nace con una temporal aleatoria propia que nadie ve. Para usar
+# una, el OSI entra, pulsa «Reiniciar contrasena» sobre esa cuenta y se la pasa a la persona, que
+# elige la suya en el primer ingreso (PR-02). Ninguna cuenta comparte contrasena con otra.
 IDENTITY_DEMO_USERS_ENABLED=true
-IDENTITY_DEMO_PASSWORD=CAMBIAR
+# Solo si el servidor ya tenia cuentas demo con la contrasena comun de versiones anteriores:
+# true durante UN despliegue (les da una temporal nueva y cierra sus sesiones) y luego false.
+IDENTITY_DEMO_ROTATE_PASSWORDS=false
 
 # Cuenta de plataforma: opera organizaciones, planes y cuentas (sin acceso clinico ni gestion de
 # permisos desde ISO-01). Su contrasena tambien debe cumplir la politica de IAM-02.

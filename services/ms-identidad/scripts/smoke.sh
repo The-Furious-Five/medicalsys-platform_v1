@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Pruebas de humo de ms-identidad contra una instancia en ejecucion.
 B=${1:-http://localhost:8081}
+# Sin contrasena comun: la que eligio admin@ tras el reinicio del OSI (PR-02).
+ADMIN_PASSWORD="${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD, la contrasena actual de admin@medicalsys.demo}"
 pass=0; fail=0
 check() { # check <descripcion> <esperado> <obtenido>
   if [ "$2" = "$3" ]; then echo "  OK   $1 ($3)"; pass=$((pass+1));
@@ -17,11 +19,11 @@ check "ping" 200 "$(code $B/api/v1/identity/ping)"
 check "health" 200 "$(code $B/actuator/health)"
 
 TOKEN=$(curl -s -X POST $B/api/v1/identity/auth/login -H "$JSON" \
-  -d '{"email":"admin@medicalsys.demo","password":"SanGabriel.Demo26!"}' | field accessToken)
+  -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{email: "admin@medicalsys.demo", password: $p}')" | field accessToken)
 AUTH="Authorization: Bearer $TOKEN"
 
 check "login con credenciales malas" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"admin@medicalsys.demo","password":"NoEsLaClave1"}')"
-check "login con email inexistente" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"nadie@medicalsys.demo","password":"SanGabriel.Demo26!"}')"
+check "login con email inexistente" 401 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"nadie@medicalsys.demo","password":"NoEsLaClave1"}')"
 check "login con cuerpo invalido" 400 "$(code -X POST $B/api/v1/identity/auth/login -H "$JSON" -d '{"email":"no-es-email","password":"x"}')"
 
 check "auth/me con token" 200 "$(code $B/api/v1/identity/auth/me -H "$AUTH")"

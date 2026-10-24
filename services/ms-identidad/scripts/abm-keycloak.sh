@@ -11,7 +11,8 @@ set -euo pipefail
 B="${1:-http://localhost:8081}/api/v1/identity"
 KC_URL="${KC_URL:-http://localhost:${KEYCLOAK_HOST_PORT:-18080}}"
 SECRET="${KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET:?falta KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET (source .env)}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-${IDENTITY_DEMO_PASSWORD:-SanGabriel.Demo26!}}"
+# Sin contrasena comun: la que eligio admin@ tras el reinicio del OSI (PR-02).
+ADMIN_PASSWORD="${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD, la contrasena actual de admin@medicalsys.demo}"
 JSON='Content-Type: application/json'
 stamp="$(date +%s)"
 EMAIL="iam04.alta.$stamp@medicalsys.demo"

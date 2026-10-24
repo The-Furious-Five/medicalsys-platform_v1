@@ -143,13 +143,20 @@ el correo (`loginWithEmailAllowed`), que sí se puede modificar.
 **Migración de cuentas.** Al arrancar, `KeycloakAccountMigration` enlaza las cuentas sin
 `keycloak_user_id`. Si Keycloak ya tiene ese correo, guarda el id. Si no, crea el usuario importando el hash
 Argon2id de `password_hash` tal cual (`LegacyArgon2Hash`), sin conocer la contraseña, y borra el hash
-local. La política rige para toda contraseña nueva o cambiada, y la heredada vence a los 90 días. Las
-cuentas demo usan `SanGabriel.Demo26!` (configurable con `IDENTITY_DEMO_PASSWORD`), que cumple la
-política: así ninguna cuenta de la demostración contradice IAM-02.
+local. La política rige para toda contraseña nueva o cambiada, y la heredada vence a los 90 días.
+
+**Cuentas sembradas.** Las cuentas demo y las dos de arranque (PLATFORM_ADMIN y OSI) se crean directo en
+Keycloak, así que la política también rige para ellas. Las demo no comparten contraseña: cada una nace con
+una temporal aleatoria propia (`TemporaryPasswordGenerator`) que no se devuelve ni se registra, con cambio
+obligatorio. Para usar una, el OSI la reinicia y la persona elige la suya (PR-02). Las de arranque usan la
+contraseña de `PLATFORM_ADMIN_PASSWORD` y `OSI_PASSWORD`; si no cumple la política, la cuenta no se crea y
+el motivo queda en el log. `IDENTITY_DEMO_ROTATE_PASSWORDS=true` da una temporal nueva a las cuentas demo
+que ya existen y cierra sus sesiones: se usa un solo arranque, para retirar la contraseña común de
+versiones anteriores.
 
 Si una cuenta enlazada ya no existe en Keycloak (por ejemplo, se recreó su base), se desenlaza al arrancar.
-Las cuentas demo y la de plataforma se reponen desde `IDENTITY_DEMO_PASSWORD` y `PLATFORM_ADMIN_PASSWORD`;
-las demás necesitan un reinicio de contraseña. Una cuenta que se crea después del arranque se enlaza en su
+Las cuentas demo se reponen con una temporal nueva y las de arranque con su contraseña configurada; las
+demás necesitan un reinicio de contraseña. Una cuenta que se crea después del arranque se enlaza en su
 primer login.
 
 Comprobación de punta a punta: `scripts/login-keycloak.sh` recorre los cuatro casos con curl (salida de
@@ -218,7 +225,7 @@ forzado y reutilizar una contraseña anterior se rechaza.
 | `KEYCLOAK_TIMEOUT` | no | `PT5S` | Conexión y lectura |
 | `IDENTITY_DEMO_USERS_ENABLED` | no | `true` | Crea las cuentas de demostración al arrancar |
 | `IDENTITY_DEMO_ORGANIZATION` | no | `11111111-…-111111111111` | Organización de la demo |
-| `IDENTITY_DEMO_PASSWORD` | no | `SanGabriel.Demo26!` | Contraseña de las cuentas de demostración |
+| `IDENTITY_DEMO_ROTATE_PASSWORDS` | no | `false` | Un solo arranque: temporal nueva para las cuentas demo existentes |
 
 ## Cuentas de demostración
 

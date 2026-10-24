@@ -15,7 +15,11 @@
 # Requires: bash, curl, jq.
 #
 # Usage:
-#   GATEWAY_BASE_URL=http://localhost:18080 ./run_demo_e2e.sh
+#   ADMIN_PASSWORD=... RECEPCION_PASSWORD=... DOCTOR_PASSWORD=... #   GATEWAY_BASE_URL=http://localhost:18080 ./run_demo_e2e.sh
+#
+# Demo accounts have no shared password: each one starts with its own random temporary
+# password. The OSI resets admin@, recepcion@ and doctor@ («Reiniciar contraseña») and each
+# person picks their own on first login; pass those here.
 #
 # Exits non-zero if any step fails unexpectedly. Steps intentionally expecting an
 # error (the 409 negative tests) are asserted explicitly and do not fail the run.
@@ -24,7 +28,11 @@ set -u
 set -o pipefail
 
 GATEWAY_BASE_URL="${GATEWAY_BASE_URL:-http://localhost:18080}"
-DEMO_PASSWORD="${DEMO_PASSWORD:-SanGabriel.Demo26!}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:?set ADMIN_PASSWORD (admin@medicalsys.demo)}"
+RECEPCION_PASSWORD="${RECEPCION_PASSWORD:?set RECEPCION_PASSWORD (recepcion@medicalsys.demo)}"
+DOCTOR_PASSWORD="${DOCTOR_PASSWORD:?set DOCTOR_PASSWORD (doctor@medicalsys.demo)}"
+# The professional created in step 5 gets a one-off password of its own.
+NEW_USER_PASSWORD="Demo $(openssl rand -hex 6) Ok9!"
 
 PASS=0
 FAIL=0
@@ -80,7 +88,7 @@ jqf() { echo "$BODY" | jq -r "$1"; }
 # Step 1 — Login as ADMINISTRATOR (POST /api/v1/identity/auth/login)
 # ---------------------------------------------------------------------------
 step 1 "Login as ADMINISTRATOR (admin@medicalsys.demo)"
-req POST /api/v1/identity/auth/login "$(jq -n --arg p "$DEMO_PASSWORD" '{email:"admin@medicalsys.demo",password:$p}')"
+req POST /api/v1/identity/auth/login "$(jq -n --arg p "$ADMIN_PASSWORD" '{email:"admin@medicalsys.demo",password:$p}')"
 expect 1 "Admin login" 200 "$STATUS"
 ADMIN_TOKEN=$(jqf '.accessToken')
 ADMIN_ORG_ID=$(jqf '.user.organizationPublicId')
@@ -123,7 +131,7 @@ echo "  X_RAY offeringId: ${XRAY_OFFERING_ID}"
 # Step 3 — Login as RECEPTIONIST and register a patient (POST /api/v1/patients)
 # ---------------------------------------------------------------------------
 step 3 "Login as RECEPTIONIST and register a patient"
-req POST /api/v1/identity/auth/login "$(jq -n --arg p "$DEMO_PASSWORD" '{email:"recepcion@medicalsys.demo",password:$p}')"
+req POST /api/v1/identity/auth/login "$(jq -n --arg p "$RECEPCION_PASSWORD" '{email:"recepcion@medicalsys.demo",password:$p}')"
 expect 3 "Receptionist login" 200 "$STATUS"
 RECEP_TOKEN=$(jqf '.accessToken')
 
@@ -163,7 +171,7 @@ expect 4 "Duplicate patient rejected" 409 "$STATUS"
 # ---------------------------------------------------------------------------
 step 5 "Register professional (identity user + ms-profesionales record)"
 DOC_EMAIL="doctor.demo.$(date +%s)@medicalsys.invalid"
-USER_BODY=$(jq -n --arg email "$DOC_EMAIL" --arg pw "$DEMO_PASSWORD" --arg org "$ADMIN_ORG_ID" '{
+USER_BODY=$(jq -n --arg email "$DOC_EMAIL" --arg pw "$NEW_USER_PASSWORD" --arg org "$ADMIN_ORG_ID" '{
   email: $email,
   fullName: "Profesional Demo E2E",
   password: $pw,
@@ -246,7 +254,7 @@ expect 8 "Complete appointment (ATTENDED)" 200 "$STATUS"
 # Step 9 — Login as PHYSICIAN and open a clinical encounter (ms-historial)
 # ---------------------------------------------------------------------------
 step 9 "Login as PHYSICIAN and open clinical encounter"
-req POST /api/v1/identity/auth/login "$(jq -n --arg p "$DEMO_PASSWORD" '{email:"doctor@medicalsys.demo",password:$p}')"
+req POST /api/v1/identity/auth/login "$(jq -n --arg p "$DOCTOR_PASSWORD" '{email:"doctor@medicalsys.demo",password:$p}')"
 expect 9 "Physician login" 200 "$STATUS"
 DOCTOR_TOKEN=$(jqf '.accessToken')
 

@@ -11,14 +11,15 @@
 # Variables:
 #   DC              comando compose del proyecto bajo prueba (por defecto "docker compose")
 #   BASE            URL del gateway (por defecto http://localhost:8080)
-#   DEMO_PASSWORD   contrasena de las cuentas demo (por defecto la de application.yaml)
+#   DEMO_PASSWORD   contrasena actual de doctor@medicalsys.demo (no hay contrasena comun: la elige la
+#                   persona tras el reinicio del OSI)
 #   WEBHOOK_SECRET  si se define, agrega las pruebas del webhook con firma valida e invalida
 set -uo pipefail
 
 FASE=${1:?Uso: capturar-evidencia.sh <antes|despues>}
 DC=${DC:-docker compose}
 BASE=${BASE:-http://localhost:8080}
-DEMO_PASSWORD=${DEMO_PASSWORD:-Demo1234!}
+DEMO_PASSWORD=${DEMO_PASSWORD:?Falta DEMO_PASSWORD, la contrasena actual de doctor@medicalsys.demo}
 OUT="$(cd "$(dirname "$0")" && pwd)/$FASE"
 # En Windows "python3" puede ser el alias de la tienda, que existe pero no ejecuta nada.
 if python3 -c "" 2>/dev/null; then PY=python3; else PY=python; fi

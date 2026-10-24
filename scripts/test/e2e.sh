@@ -6,12 +6,12 @@
 #
 #   docker compose up -d --wait
 #   bash scripts/test/e2e.sh
-#   ADMIN_PASSWORD='...' bash scripts/test/e2e.sh      # si las cuentas demo tienen otra contrasena
 #   SKIP_IAM=1 bash scripts/test/e2e.sh                # sin los recorridos largos de IAM-01..05
 #
 # Cada rol prueba lo suyo (ISO-01): el administrador sus modulos, el medico lo clinico y el OSI la
 # bitacora, los roles y los niveles MAC. Necesita la cuenta OSI del .env (OSI_SEED_ENABLED,
-# OSI_EMAIL, OSI_PASSWORD) para la bitacora y RBAC-02.
+# OSI_EMAIL, OSI_PASSWORD). Las cuentas demo no tienen contrasena conocida: el OSI reinicia las de
+# admin@ y doctor@ (PR-02) y cada una elige una aleatoria en el primer ingreso, como haria la persona.
 #
 # Cubre: salud del stack, HARD-01 (solo gateway y Keycloak publican puerto), HARD-04 (cabeceras),
 # suplantacion de cabeceras, login y JWT, RBAC por rol y segregacion de funciones (ISO-01), catalogos,
@@ -37,13 +37,10 @@ published="$(docker compose ps --format '{{.Service}} {{.Ports}}' | grep -- '->'
 [ "$published" = "keycloak ms-gateway " ] && ok "HARD-01: solo ms-gateway y keycloak publican puerto" \
   || fail "HARD-01: publican puerto: $published"
 
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(env_value IDENTITY_DEMO_PASSWORD)}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-SanGabriel.Demo26!}"
-
 MSYS_NO_PATHCONV=1 docker run --rm -i --network medicalsys-interna \
   -v "$(host_path "$ROOT"):/repo:ro" -w /repo \
   -e G=http://ms-gateway:8080 -e KC_URL=http://keycloak:8080 \
-  -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e SKIP_IAM="${SKIP_IAM:-}" \
+  -e SKIP_IAM="${SKIP_IAM:-}" \
   -e KEYCLOAK_ADMIN_USER="$(env_value KEYCLOAK_ADMIN_USER)" \
   -e KEYCLOAK_ADMIN_PASSWORD="$(env_value KEYCLOAK_ADMIN_PASSWORD)" \
   -e KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET="$(env_value KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET)" \
@@ -75,13 +72,26 @@ for h in 'X-Content-Type-Options: nosniff' 'X-Frame-Options: DENY' 'Strict-Trans
 done
 
 echo "== Login de cada rol (IAM-03)"
-ADMIN_TOKEN="$(login_token admin@medicalsys.demo "$ADMIN_PASSWORD")"
-DOCTOR_TOKEN="$(login_token doctor@medicalsys.demo "$ADMIN_PASSWORD")"
 OSI_TOKEN="$(login_token "${OSI_EMAIL:-}" "${OSI_PASSWORD:-}")"
-[ -n "$ADMIN_TOKEN" ] && ok "administrador del centro" || fail "login del administrador demo"
-[ -n "$DOCTOR_TOKEN" ] && ok "profesional de salud" || fail "login del medico demo"
 [ -n "$OSI_TOKEN" ] && ok "OSI (security officer)" || fail "login del OSI: falta OSI_SEED_ENABLED/OSI_PASSWORD en .env"
-ADMIN="Authorization: Bearer $ADMIN_TOKEN"; DOCTOR="Authorization: Bearer $DOCTOR_TOKEN"; OSI="Authorization: Bearer $OSI_TOKEN"
+OSI="Authorization: Bearer $OSI_TOKEN"
+# Cuenta demo lista para usar: el OSI la reinicia y la persona cambia la temporal por una propia.
+demo_password() {
+  local temp new
+  temp="$(curl -s -m 30 -X POST "$G/api/v1/identity/users/$2/reset-password" -H "$OSI" | jq -r '.temporaryPassword // empty')"
+  new="Demo e2e $(openssl rand -hex 6) Ok9!"
+  [ "$(code -X POST "$G/api/v1/identity/auth/change-password" -H "$J" \
+    -d "$(jq -n --arg e "$1" --arg c "$temp" --arg n "$new" '{email: $e, currentPassword: $c, newPassword: $n}')")" = 200 ] \
+    && printf '%s' "$new"
+}
+ADMIN_PASSWORD="$(demo_password admin@medicalsys.demo 00000000-0000-4000-8000-000000000901)"
+export ADMIN_PASSWORD
+DOCTOR_PASSWORD="$(demo_password doctor@medicalsys.demo 00000000-0000-4000-8000-000000000903)"
+ADMIN_TOKEN="$(login_token admin@medicalsys.demo "$ADMIN_PASSWORD")"
+DOCTOR_TOKEN="$(login_token doctor@medicalsys.demo "$DOCTOR_PASSWORD")"
+[ -n "$ADMIN_TOKEN" ] && ok "administrador del centro (reiniciado por el OSI)" || fail "login del administrador demo"
+[ -n "$DOCTOR_TOKEN" ] && ok "profesional de salud (reiniciado por el OSI)" || fail "login del medico demo"
+ADMIN="Authorization: Bearer $ADMIN_TOKEN"; DOCTOR="Authorization: Bearer $DOCTOR_TOKEN"
 
 echo "== Modulos por rol (RBAC) y segregacion de funciones (ISO-01)"
 for p in /api/v1/identity/auth/me /api/v1/identity/users /api/v1/tenancy/organizacion "/api/v1/patients/search?q=a" \
@@ -133,7 +143,7 @@ if [ -z "${SKIP_IAM:-}" ]; then
     n="$(audit_count "action=$action&serviceName=ms-identidad")"
     [ "${n:-0}" -gt 0 ] && ok "$action ($n)" || fail "no hay eventos $action"
   done
-  leaked="$(curl -s -m 20 -H "$OSI" "$G/api/v1/audit/events?serviceName=ms-identidad&size=200" | grep -c -E 'Clave|clave [a-f0-9]{6} ok|Prueba valida' || true)"
+  leaked="$(curl -s -m 20 -H "$OSI" "$G/api/v1/audit/events?serviceName=ms-identidad&size=200" | grep -c -E 'Clave|clave [a-f0-9]{6} ok|Prueba valida|Demo e2e' || true)"
   [ "${leaked:-0}" -eq 0 ] && ok "ninguna contrasena de las pruebas aparece en la bitacora" \
     || fail "la bitacora contiene contrasenas"
 fi

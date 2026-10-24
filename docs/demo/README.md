@@ -140,8 +140,11 @@ All calls go through the gateway at `${GATEWAY_BASE_URL}` (default
 `.env.example`'s own default is `8080` — check whichever `.env` is actually in
 use before running). Demo accounts and password come from
 `ms-identidad`'s `DemoUserSeeder`: `admin@medicalsys.demo`,
-`recepcion@medicalsys.demo`, `doctor@medicalsys.demo`, all with password
-`SanGabriel.Demo26!` unless `IDENTITY_DEMO_PASSWORD` was overridden.
+`recepcion@medicalsys.demo`, `doctor@medicalsys.demo`. They share no password: each
+one is created with its own random temporary password that nobody sees. Before running
+the script, the OSI resets those three accounts («Reiniciar contraseña», PR-02), each
+person picks their own password on first login, and the script receives them as
+`ADMIN_PASSWORD`, `RECEPCION_PASSWORD` and `DOCTOR_PASSWORD`.
 
 | # | Step | Endpoint | Expected |
 |---|------|----------|----------|
