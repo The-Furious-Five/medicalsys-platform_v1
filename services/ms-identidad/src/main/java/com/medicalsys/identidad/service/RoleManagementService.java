@@ -1,5 +1,8 @@
 package com.medicalsys.identidad.service;
 
+import com.medicalsys.identidad.audit.AuditEventDraft;
+import com.medicalsys.identidad.audit.AuditTrail;
+import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.Permission;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleIncompatibility;
@@ -21,6 +24,7 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -33,7 +37,7 @@ import org.springframework.util.StringUtils;
  * Alta, edicion, baja logica, permisos y delegacion de los roles, y pares de roles incompatibles
  * (RBAC-02). Toda operacion que quita acceso cierra las sesiones de las cuentas afectadas, igual
  * que revocar un rol: el cambio no espera a que el token expire. Y ninguna puede dejar a la
- * plataforma sin una cuenta activa que administre roles.
+ * plataforma sin una cuenta activa que administre roles. Cada cambio queda en la bitacora (LOG-02).
  */
 @Service
 public class RoleManagementService {
@@ -45,10 +49,13 @@ public class RoleManagementService {
     private final RoleGovernance governance;
     private final SessionStore sessionStore;
     private final IdentityMapper mapper;
+    private final AuditTrail auditTrail;
+    private final IdentityProperties properties;
 
     public RoleManagementService(RoleRepository roles, PermissionRepository permissions, UserRoleRepository userRoles,
                                  RoleIncompatibilityRepository incompatibilities, RoleGovernance governance,
-                                 SessionStore sessionStore, IdentityMapper mapper) {
+                                 SessionStore sessionStore, IdentityMapper mapper, AuditTrail auditTrail,
+                                 IdentityProperties properties) {
         this.roles = roles;
         this.permissions = permissions;
         this.userRoles = userRoles;
@@ -56,17 +63,21 @@ public class RoleManagementService {
         this.governance = governance;
         this.sessionStore = sessionStore;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
+        this.properties = properties;
     }
 
     @Transactional
     public RoleResponse create(CreateRoleRequest request, UUID actorPublicId) {
-        governance.resolve(actorPublicId);
+        Actor actor = governance.resolve(actorPublicId);
         if (roles.existsByCode(request.code())) {
             throw ApiException.conflict("Ya existe un rol con el codigo " + request.code());
         }
         Role role = Role.custom(request.code(), request.name().trim(), blankToNull(request.description()),
                 request.scope() == null ? RoleScope.ORGANIZATION : request.scope());
-        return mapper.toRoleResponse(roles.save(role));
+        Role saved = roles.save(role);
+        record("ROLE_CREATED", actor, actorPublicId, saved.getCode(), Map.of("scope", saved.getScope().name()));
+        return mapper.toRoleResponse(saved);
     }
 
     @Transactional
@@ -86,6 +97,8 @@ public class RoleManagementService {
         if (Boolean.TRUE.equals(request.active())) {
             role.setActive(true);
         }
+        record(Boolean.FALSE.equals(request.active()) ? "ROLE_DISABLED" : "ROLE_UPDATED", actor, actorPublicId,
+                role.getCode(), Map.of("active", String.valueOf(role.isActive())));
         return mapper.toRoleResponse(role);
     }
 
@@ -96,6 +109,7 @@ public class RoleManagementService {
         Role role = require(code);
         governance.checkCanEdit(actor, role);
         deactivate(role);
+        record("ROLE_DISABLED", actor, actorPublicId, role.getCode(), Map.of());
         return mapper.toRoleResponse(role);
     }
 
@@ -127,6 +141,11 @@ public class RoleManagementService {
             governance.checkRoleAdministrationSurvives(administrators);
             closeSessionsOfHolders(role);
         }
+        String removed = current.stream().filter(previous -> !foundCodes.contains(previous)).sorted()
+                .collect(Collectors.joining(","));
+        String granted = added.stream().map(Permission::getCode).sorted().collect(Collectors.joining(","));
+        record("ROLE_PERMISSIONS_CHANGED", actor, actorPublicId, role.getCode(),
+                Map.of("added", granted, "removed", removed));
         return mapper.toRoleResponse(role);
     }
 
@@ -164,6 +183,8 @@ public class RoleManagementService {
 
         role.getAssignableRoles().clear();
         found.stream().sorted(Comparator.comparing(Role::getCode)).forEach(role.getAssignableRoles()::add);
+        record("ROLE_ASSIGNABLE_ROLES_CHANGED", actor, actorPublicId, role.getCode(),
+                Map.of("assignableRoles", String.join(",", foundCodes.stream().sorted().toList())));
         return mapper.toRoleResponse(role);
     }
 
@@ -189,6 +210,8 @@ public class RoleManagementService {
         }
         RoleIncompatibility created = incompatibilities.save(new RoleIncompatibility(pair[0], pair[1],
                 request.reason().trim(), actor == null ? null : actor.account()));
+        record("ROLE_INCOMPATIBILITY_DECLARED", actor, actorPublicId, pair[0].getCode(),
+                Map.of("incompatibleWith", pair[1].getCode()));
         return mapper.toIncompatibilityResponse(created);
     }
 
@@ -202,6 +225,8 @@ public class RoleManagementService {
                 .orElseThrow(() -> ApiException.notFound("Los roles " + pair[0].getCode() + " y "
                         + pair[1].getCode() + " no estan declarados incompatibles"));
         incompatibilities.delete(existing);
+        record("ROLE_INCOMPATIBILITY_REMOVED", actor, actorPublicId, pair[0].getCode(),
+                Map.of("incompatibleWith", pair[1].getCode()));
     }
 
     private void deactivate(Role role) {
@@ -242,5 +267,16 @@ public class RoleManagementService {
 
     private static String blankToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    /**
+     * LOG-02. Los roles son globales: el evento se asienta en la organizacion de quien hizo el cambio (la de
+     * plataforma para PLATFORM_ADMIN), porque ms-auditoria exige una.
+     */
+    private void record(String action, Actor actor, UUID actorPublicId, String roleCode, Map<String, String> metadata) {
+        UUID organization = actor != null && actor.account() != null && actor.account().getOrganizationPublicId() != null
+                ? actor.account().getOrganizationPublicId()
+                : properties.getPlatformAdmin().getOrganizationPublicId();
+        auditTrail.record(AuditEventDraft.roleManagement(action, actorPublicId, roleCode, organization, metadata));
     }
 }

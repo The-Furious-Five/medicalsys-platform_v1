@@ -62,6 +62,18 @@ public record AuditEventDraft(
                 "USER_ACCOUNT", targetPublicId, targetEmail, organizationId, null, reason, metadata);
     }
 
+    /**
+     * Cambio en un rol o en sus permisos (LOG-02). El recurso es el rol, que se identifica por su codigo;
+     * cambiar permisos altera el acceso real de todas sus cuentas, por eso la relevancia es WARNING.
+     */
+    public static AuditEventDraft roleManagement(String action, UUID actorUserId, String roleCode,
+            UUID organizationId, Map<String, String> metadata) {
+        String severity = "ROLE_PERMISSIONS_CHANGED".equals(action) || "ROLE_DISABLED".equals(action)
+                ? "WARNING" : "NOTICE";
+        return new AuditEventDraft(action, "CONFIGURATION", severity, "SUCCESS", actorUserId, null, List.of(),
+                "ROLE", null, roleCode, organizationId, null, null, metadata);
+    }
+
     /** Denegacion de acceso detectada por el filtro de autorizacion. */
     public static AuditEventDraft accessDenied(UUID actorUserId, List<String> actorRoles, String requestPath,
             String reason) {
