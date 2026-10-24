@@ -1,0 +1,71 @@
+# Override para correr todo en local sin Aiven: anade un MySQL en Docker y apunta
+# los servicios a el. Uso: docker compose --env-file .env --env-file local.env -f compose.yaml -f compose.local.yaml up -d --build
+services:
+  mysql:
+    image: mysql:8.4
+    command: --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AIVEN_MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_HOST_PORT:-13306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/aiven/create-databases.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  ms-identidad:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-tenencia:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-catalogos:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-criptografia:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-pacientes:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-profesionales:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-historial:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-documental:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-facturacion:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-marketing:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-auditoria:
+    depends_on:
+      mysql:
+        condition: service_healthy
+  ms-notificaciones:
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
