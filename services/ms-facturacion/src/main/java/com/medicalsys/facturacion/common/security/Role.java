@@ -10,11 +10,20 @@ import java.util.Optional;
  */
 public enum Role {
     PLATFORM_ADMIN,
+    OSI,
+    AUDITOR,
+    EXTERNAL_AUDITOR,
     ADMINISTRATOR,
     PHYSICIAN,
+    MEDICAL_INTERN,
+    NURSE,
+    LAB_TECHNICIAN,
     RECEPTIONIST,
+    BILLING_CLERK,
+    BILLING_SUPERVISOR,
+    MARKETING_MANAGER,
     PATIENT,
-    BILLING_CLERK;
+    DEVOPS;
 
     /** Traduce un codigo recibido en el header; un rol desconocido se ignora en vez de fallar. */
     public static Optional<Role> parse(String code) {

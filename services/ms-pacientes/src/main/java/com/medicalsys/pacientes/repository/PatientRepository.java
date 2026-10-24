@@ -19,6 +19,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     Optional<Patient> findByPublicId(UUID publicId);
 
+    Optional<Patient> findByUserAccountPublicId(UUID userAccountPublicId);
+
     boolean existsByDocumentTypeAndDocumentNumberAndDocumentComplement(DocumentType documentType,
             String documentNumber, String documentComplement);
 

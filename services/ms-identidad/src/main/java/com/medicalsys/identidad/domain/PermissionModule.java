@@ -14,5 +14,6 @@ public enum PermissionModule {
     ADMINISTRATION,
     NOTIFICATIONS,
     AUDIT,
-    MARKETING
+    MARKETING,
+    INFRASTRUCTURE
 }

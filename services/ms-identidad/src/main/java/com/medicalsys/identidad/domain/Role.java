@@ -49,6 +49,10 @@ public class Role {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "access_model", nullable = false, length = 4)
+    private AccessModel accessModel = AccessModel.MAC;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "role_permission",
@@ -116,6 +120,14 @@ public class Role {
 
     public boolean isActive() {
         return active;
+    }
+
+    public AccessModel getAccessModel() {
+        return accessModel;
+    }
+
+    public boolean permits(UserAccount user, Permission permission) {
+        return accessModel != AccessModel.MAC || user.clears(permission);
     }
 
     public void setActive(boolean active) {

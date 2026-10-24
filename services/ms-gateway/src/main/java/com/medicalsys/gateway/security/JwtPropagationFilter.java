@@ -108,7 +108,7 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             }
 
             try {
-                if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:" + jwt.getId()))) {
+                if (jwt.getId() == null || !Boolean.TRUE.equals(redis.hasKey("identity:session:v11:" + jwt.getId()))) {
                     auditor.recordRevokedSession(jwt, request, overrides.get(CLIENT_IP_HEADER),
                             overrides.get(CORRELATION_HEADER));
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
