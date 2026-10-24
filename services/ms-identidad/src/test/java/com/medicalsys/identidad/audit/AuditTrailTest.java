@@ -21,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -94,6 +95,57 @@ class AuditTrailTest {
                 401, "no existe"));
 
         org.mockito.Mockito.verifyNoInteractions(restClient);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void sendsADenialImmediatelyEvenInsideATransactionThatWillRollBack() throws InterruptedException {
+        stubPost();
+        AuditTrail auditTrail = newAuditTrail();
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            // Asi termina un login fallido: el evento se registra y la transaccion se revierte.
+            auditTrail.record(AuditEventDraft.authentication("ACCOUNT_LOCKED", "DENIED", UUID.randomUUID(),
+                    "user@example.com", null, 423, "Bloqueada en Keycloak"));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+        synchronousExecutor.shutdown();
+        synchronousExecutor.awaitTermination(2, TimeUnit.SECONDS);
+
+        ArgumentCaptor<Map<String, Object>> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+        org.mockito.Mockito.verify(requestBodyUriSpec).body(bodyCaptor.capture());
+        assertEquals("ACCOUNT_LOCKED", bodyCaptor.getValue().get("action"));
+    }
+
+    @Test
+    void defersASuccessUntilTheTransactionCommits() throws InterruptedException {
+        stubPost();
+        AuditTrail auditTrail = newAuditTrail();
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            auditTrail.record(AuditEventDraft.userManagement("USER_CREATED", UUID.randomUUID(), UUID.randomUUID(),
+                    "nuevo@example.com", null, null, Map.of()));
+            org.mockito.Mockito.verifyNoInteractions(restClient);
+
+            TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+        synchronousExecutor.shutdown();
+        synchronousExecutor.awaitTermination(2, TimeUnit.SECONDS);
+
+        org.mockito.Mockito.verify(restClient).post();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubPost() {
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodyUriSpec);
+        org.mockito.Mockito.lenient().when(requestBodyUriSpec.header(anyString(), anyString())).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.body(any(Map.class))).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.toBodilessEntity()).thenReturn(ResponseEntity.ok().build());
     }
 
     private AuditTrail newAuditTrail() {

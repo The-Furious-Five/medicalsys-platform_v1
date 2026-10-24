@@ -98,6 +98,16 @@ if [ -z "${SKIP_IAM:-}" ]; then
     out="$(bash "$script" "$G" 2>&1)"; rc=$?
     if [ $rc -eq 0 ] && ! grep -q 'FALLA' <<<"$out"; then ok "$name"; else fail "$name"; tail -15 <<<"$out" | sed 's/^/        /'; fi
   done
+
+  # LOG-02: los recorridos de IAM-03..05 hicieron ABM, bloqueos, desbloqueos y reinicios reales.
+  echo "== LOG-02: eventos de ABM y contrasenas en la bitacora"
+  sleep 3
+  for action in USER_CREATED USER_UPDATED USER_DISABLED ACCOUNT_LOCKED ACCOUNT_UNLOCKED PASSWORD_RESET PASSWORD_CHANGED; do
+    n="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=$action&serviceName=ms-identidad&size=1" | jq -r '.totalElements // 0')"
+    [ "${n:-0}" -gt 0 ] && ok "LOG-02: $action ($n)" || fail "LOG-02: no hay eventos $action"
+  done
+  leaked="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?serviceName=ms-identidad&size=200" | grep -c -E 'Clave|clave [a-f0-9]{6} ok|Prueba valida' || true)"
+  [ "${leaked:-0}" -eq 0 ] && ok "LOG-02: ninguna contrasena de las pruebas aparece en la bitacora"     || fail "LOG-02: la bitacora contiene contrasenas"
 fi
 
 echo "== Resultado"

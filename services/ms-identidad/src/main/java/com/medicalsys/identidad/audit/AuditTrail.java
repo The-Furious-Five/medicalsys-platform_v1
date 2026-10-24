@@ -26,9 +26,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * ms-pacientes:
  *
  * <ul>
- *   <li><b>Se publica despues del commit.</b> Un evento que anuncia un cambio de estado que
- *       despues se revierte contradice la base de datos. Cuando hay transaccion abierta, el envio
- *       se agenda en {@code afterCommit} y no se ejecuta si la operacion falla.</li>
+ *   <li><b>Un exito se publica despues del commit; una denegacion, de inmediato.</b> Un evento que
+ *       anuncia un cambio de estado que despues se revierte contradice la base de datos, asi que un
+ *       evento {@code SUCCESS} dentro de una transaccion se agenda en {@code afterCommit}. Un intento
+ *       fallido, un bloqueo o un acceso denegado es un hecho aunque la operacion termine en error (de
+ *       hecho, el login los produce justamente lanzando una excepcion que revierte la transaccion):
+ *       esos se envian sin esperar el commit, o se perderian todos.</li>
  *   <li><b>El fallo de la bitacora no tumba la operacion de identidad.</b> Un login o un ABM de
  *       usuario no puede devolver 500 porque ms-auditoria esta caido. El envio ocurre fuera del
  *       hilo de la solicitud y un error se registra como advertencia; si la bitacora esta caida,
@@ -71,7 +74,9 @@ public class AuditTrail {
         }
         try {
             Map<String, Object> body = toBody(draft, currentRequest(), currentCorrelationId());
-            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            boolean deferUntilCommit = "SUCCESS".equals(draft.outcome())
+                    && TransactionSynchronizationManager.isSynchronizationActive();
+            if (deferUntilCommit) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
