@@ -65,16 +65,19 @@ login="$(curl -s -m 30 "$G/api/v1/identity/auth/login" -H "$J" \
   -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{email: "admin@medicalsys.demo", password: $p}')")"
 TOKEN="$(jq -r '.accessToken // empty' <<<"$login")"
 if [ -n "$TOKEN" ]; then ok "login del administrador demo"; else fail "login del administrador demo: $(head -c 200 <<<"$login")"; fi
-expect "contrasena incorrecta" 401 "$(code "$G/api/v1/identity/auth/login" -H "$J" \
-  -d '{"email":"nadie@medicalsys.demo","password":"no-existe-123"}')"
 AUTH="Authorization: Bearer $TOKEN"
+failed_count() { curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=LOGIN_FAILED&size=1" | jq -r '.totalElements // 0'; }
+before="$(failed_count)"
+expect "correo inexistente" 401 "$(code "$G/api/v1/identity/auth/login" -H "$J" \
+  -d '{"email":"nadie@medicalsys.demo","password":"no-existe-123"}')"
 sleep 3
 events="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=LOGIN_SUCCESS&serviceName=ms-identidad&size=5")"
 n="$(jq -r '.totalElements // (.content | length) // 0' <<<"$events" 2>/dev/null || echo 0)"
 [ "${n:-0}" -gt 0 ] && ok "LOG-01: el LOGIN_SUCCESS de ms-identidad esta en la bitacora ($n)" \
   || fail "LOG-01: no hay LOGIN_SUCCESS de ms-identidad en la bitacora: $(head -c 200 <<<"$events")"
-failed_events="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=LOGIN_FAILED&size=5" | jq -r '.totalElements // 0')"
-[ "${failed_events:-0}" -gt 0 ] && ok "LOG-01: los LOGIN_FAILED tambien llegan ($failed_events)" || fail "LOG-01: no hay LOGIN_FAILED"
+after="$(failed_count)"
+[ "${after:-0}" -gt "${before:-0}" ] && ok "LOG-01: el intento con un correo inexistente quedo como LOGIN_FAILED" \
+  || fail "LOG-01: el intento con un correo inexistente no llego a la bitacora ($before -> $after)"
 
 echo "== Modulos con el JWT (RBAC)"
 for p in /api/v1/identity/auth/me /api/v1/identity/users /api/v1/tenancy/organizacion "/api/v1/patients/search?q=a" \

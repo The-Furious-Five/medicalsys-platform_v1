@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.medicalsys.identidad.audit.AuditEventDraft;
 import com.medicalsys.identidad.audit.AuditTrail;
+import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
@@ -25,6 +26,7 @@ import com.medicalsys.identidad.web.dto.LoginResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,9 +50,11 @@ class AuthServiceTests {
     private final KeycloakClient keycloak = mock(KeycloakClient.class);
     private final KeycloakAccountLinker linker = mock(KeycloakAccountLinker.class);
     private final AuditTrail auditTrail = mock(AuditTrail.class);
+    private static final UUID PLATFORM_ORG = UUID.fromString("00000000-0000-4000-8000-0000000000a1");
+    private final IdentityProperties properties = platformProperties();
 
     private final AuthService auth = new AuthService(users, tokenService, sessionStore, mapper, accountAccess,
-            keycloak, linker, auditTrail);
+            keycloak, linker, auditTrail, properties);
 
     private UserAccount user;
 
@@ -186,6 +190,8 @@ class AuthServiceTests {
         assertThat(draft.outcome()).isEqualTo("DENIED");
         assertThat(draft.responseStatus()).isEqualTo(401);
         assertThat(draft.actorUserId()).isNull();
+        // ms-auditoria rechaza eventos sin organizacion: el de una cuenta inexistente va a la de plataforma.
+        assertThat(draft.organizationId()).isEqualTo(PLATFORM_ORG);
         assertThat(draft.toString()).doesNotContain("cualquiera-9");
     }
 
@@ -264,6 +270,12 @@ class AuthServiceTests {
         assertThat(draft.action()).isEqualTo("LOGOUT");
         assertThat(draft.actorUserId()).isEqualTo(user.getPublicId());
         verify(sessionStore).close("jti-1", user.getPublicId());
+    }
+
+    private static IdentityProperties platformProperties() {
+        IdentityProperties properties = new IdentityProperties();
+        properties.getPlatformAdmin().setOrganizationPublicId(PLATFORM_ORG);
+        return properties;
     }
 
     private AuditEventDraft captureDraft() {

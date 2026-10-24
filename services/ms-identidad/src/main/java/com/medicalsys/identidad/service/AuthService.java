@@ -2,6 +2,7 @@ package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.audit.AuditEventDraft;
 import com.medicalsys.identidad.audit.AuditTrail;
+import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
@@ -43,10 +44,12 @@ public class AuthService {
     private final KeycloakClient keycloak;
     private final KeycloakAccountLinker linker;
     private final AuditTrail auditTrail;
+    private final IdentityProperties properties;
 
     public AuthService(UserAccountRepository users, TokenService tokenService, SessionStore sessionStore,
                        IdentityMapper mapper, AccountAccessService accountAccess, KeycloakClient keycloak,
-                       KeycloakAccountLinker linker, AuditTrail auditTrail) {
+                       KeycloakAccountLinker linker, AuditTrail auditTrail,
+                       IdentityProperties properties) {
         this.users = users;
         this.tokenService = tokenService;
         this.sessionStore = sessionStore;
@@ -55,6 +58,7 @@ public class AuthService {
         this.keycloak = keycloak;
         this.linker = linker;
         this.auditTrail = auditTrail;
+        this.properties = properties;
     }
 
     @Transactional
@@ -64,8 +68,10 @@ public class AuthService {
         Optional<UserAccount> found = users.findByEmailIgnoreCase(email);
         if (found.isEmpty()) {
             // Mismo mensaje que una contrasena incorrecta: no revelamos si el correo existe.
-            auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", null, email, null, 401,
-                    "Correo no registrado"));
+            // La cuenta no existe, asi que no tiene organizacion; ms-auditoria exige una. El intento se asienta
+            // en la organizacion de la plataforma, que es la que ve los ataques de enumeracion de cuentas.
+            auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", null, email,
+                    properties.getPlatformAdmin().getOrganizationPublicId(), 401, "Correo no registrado"));
             throw ApiException.unauthorized(INVALID_CREDENTIALS);
         }
 
