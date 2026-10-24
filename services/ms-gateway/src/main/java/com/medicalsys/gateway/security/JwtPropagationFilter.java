@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -15,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -54,13 +57,18 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
     static final String ROLES_HEADER = "X-Roles";
     static final String PERMISSIONS_HEADER = "X-Permissions";
     static final String CORRELATION_HEADER = "X-Correlation-Id";
+    static final String FORWARDED_FOR_HEADER = "X-Forwarded-For";
+    static final String CLIENT_IP_HEADER = "X-Client-Ip";
 
     private final JwtDecoder jwtDecoder;
     private final StringRedisTemplate redis;
+    private final AccessDeniedAuditor accessDeniedAuditor;
 
-    public JwtPropagationFilter(JwtDecoder jwtDecoder, StringRedisTemplate redis) {
+    public JwtPropagationFilter(JwtDecoder jwtDecoder, StringRedisTemplate redis,
+                                AccessDeniedAuditor accessDeniedAuditor) {
         this.jwtDecoder = jwtDecoder;
         this.redis = redis;
+        this.accessDeniedAuditor = accessDeniedAuditor;
     }
 
     @Override
@@ -81,11 +89,15 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
         overrides.put(CORRELATION_HEADER, (correlationId == null || correlationId.isBlank())
                 ? UUID.randomUUID().toString()
                 : correlationId.trim());
+        // LOG-01: la bitacora necesita la IP del usuario, no la del ultimo salto. Va en una cabecera propia
+        // que solo pone el gateway (la del cliente se descarta, como X-User-Id): X-Forwarded-For lo reescribe
+        // el propio proxy y un cliente tambien podria mandarlo.
+        overrides.put(CLIENT_IP_HEADER, clientIp(request));
 
+        Jwt jwt = null;
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7).trim();
-            Jwt jwt;
             try {
                 jwt = jwtDecoder.decode(token);
             } catch (JwtException ex) {
@@ -125,7 +137,46 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
             }
         }
 
-        chain.doFilter(new TenantHeaderRequestWrapper(request, overrides), response);
+        // LOG-03: el correlation id acompana cada linea de log de esta solicitud.
+        MDC.put("correlationId", overrides.get(CORRELATION_HEADER));
+        try {
+            chain.doFilter(new TenantHeaderRequestWrapper(request, overrides), response);
+        } finally {
+            MDC.remove("correlationId");
+        }
+
+        if (AccessDeniedAuditor.shouldRecord(jwt, response.getStatus(), request.getRequestURI())) {
+            accessDeniedAuditor.record(jwt, request, overrides.get(CLIENT_IP_HEADER), overrides.get(CORRELATION_HEADER));
+        }
+    }
+
+    /**
+     * IP del usuario. X-Forwarded-For solo se cree si la conexion llega de un proxy de la red interna
+     * (nginx del frontend o Caddy, que reescribe la cabecera con la IP real): un cliente que entra
+     * directo desde internet no puede inventarse una IP mandando la cabecera el mismo.
+     */
+    static String clientIp(HttpServletRequest request) {
+        String remote = request.getRemoteAddr();
+        String forwarded = request.getHeader(FORWARDED_FOR_HEADER);
+        if (forwarded != null && !forwarded.isBlank() && isInternal(remote)) {
+            String first = forwarded.split(",")[0].trim();
+            if (!first.isEmpty()) {
+                return first;
+            }
+        }
+        return remote;
+    }
+
+    private static boolean isInternal(String address) {
+        if (address == null || address.isBlank()) {
+            return false;
+        }
+        try {
+            InetAddress inet = InetAddress.getByName(address);
+            return inet.isLoopbackAddress() || inet.isSiteLocalAddress() || inet.isLinkLocalAddress();
+        } catch (UnknownHostException ex) {
+            return false;
+        }
     }
 
     /**
@@ -139,7 +190,8 @@ public class JwtPropagationFilter extends OncePerRequestFilter {
                 USER_HEADER.toLowerCase(Locale.ROOT),
                 ROLES_HEADER.toLowerCase(Locale.ROOT),
                 PERMISSIONS_HEADER.toLowerCase(Locale.ROOT),
-                CORRELATION_HEADER.toLowerCase(Locale.ROOT));
+                CORRELATION_HEADER.toLowerCase(Locale.ROOT),
+                CLIENT_IP_HEADER.toLowerCase(Locale.ROOT));
 
         private final Map<String, String> overridesByLowerName = new LinkedHashMap<>();
 
