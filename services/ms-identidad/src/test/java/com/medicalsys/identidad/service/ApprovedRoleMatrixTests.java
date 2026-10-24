@@ -97,7 +97,7 @@ class ApprovedRoleMatrixTests {
     }
 
     private static String migration() throws Exception {
-        try (var input = ApprovedRoleMatrixTests.class.getResourceAsStream("/db/migration/V10__approved_role_matrix.sql")) {
+        try (var input = ApprovedRoleMatrixTests.class.getResourceAsStream("/db/migration/V11__approved_role_matrix.sql")) {
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
     }

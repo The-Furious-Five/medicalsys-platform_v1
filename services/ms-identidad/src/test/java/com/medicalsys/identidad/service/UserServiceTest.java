@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,20 +18,22 @@ import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
 import com.medicalsys.identidad.keycloak.KeycloakClient.PasswordCheck;
+import com.medicalsys.identidad.keycloak.PasswordPolicyException;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
 import com.medicalsys.identidad.web.dto.ChangePasswordRequest;
 import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
+import com.medicalsys.identidad.web.dto.CreateUserRequest;
 import com.medicalsys.identidad.web.dto.TemporaryPasswordResponse;
 import com.medicalsys.identidad.web.dto.UpdateUserRequest;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * LOG-02: cada operación de ABM, contraseñas y desbloqueo sobre una cuenta deja su evento en la
@@ -48,9 +51,11 @@ class UserServiceTest {
     private final TemporaryPasswordGenerator temporaryPasswords = mock(TemporaryPasswordGenerator.class);
     private final AuditTrail auditTrail = mock(AuditTrail.class);
 
+    private final UserCodeGenerator userCodes = mock(UserCodeGenerator.class);
+
     private final UserService service = new UserService(users, mock(RoleRepository.class),
-            mock(PasswordEncoder.class), mock(IdentityMapper.class), sessionStore, governance, keycloak,
-            mock(KeycloakAccountLinker.class), mock(UserCodeGenerator.class), temporaryPasswords,
+            mock(IdentityMapper.class), sessionStore, governance, keycloak,
+            mock(KeycloakAccountLinker.class), userCodes, temporaryPasswords,
             mock(AccountAccessService.class), auditTrail);
 
     private UserAccount target;
@@ -153,6 +158,72 @@ class UserServiceTest {
                 .isInstanceOf(ApiException.class);
 
         verify(auditTrail, never()).record(any());
+    }
+
+    @Test
+    @DisplayName("cuentas demo: cada una nace en Keycloak con su propia temporal, con cambio obligatorio")
+    void seedAccountsGetTheirOwnTemporaryPassword() {
+        when(userCodes.next()).thenReturn(new UserCodeGenerator.IssuedCode(1, "MS-26-00001"),
+                new UserCodeGenerator.IssuedCode(2, "MS-26-00002"));
+        when(temporaryPasswords.generate()).thenReturn("Kq7m-Xw3p-Rt9v-Hn4c", "Pz4n-Hb8s-Wd2k-Ym6f");
+        when(keycloak.createUserWithPassword(any(), anyString(), anyBoolean())).thenReturn(KEYCLOAK_ID);
+        UUID doctor = UUID.fromString("00000000-0000-4000-8000-000000000903");
+
+        service.createSeedAccount(seedRequest("doctor@medicalsys.demo", null), doctor);
+        service.createSeedAccount(seedRequest("caja@medicalsys.demo", null), UUID.randomUUID());
+
+        ArgumentCaptor<KeycloakClient.NewUser> created = ArgumentCaptor.forClass(KeycloakClient.NewUser.class);
+        verify(keycloak).createUserWithPassword(created.capture(), eq("Kq7m-Xw3p-Rt9v-Hn4c"), eq(true));
+        verify(keycloak).createUserWithPassword(any(), eq("Pz4n-Hb8s-Wd2k-Ym6f"), eq(true));
+        // El usuario de Keycloak es el identificador fijo, no uno sorteado.
+        assertThat(created.getValue().username()).isEqualTo(doctor.toString());
+        ArgumentCaptor<UserAccount> saved = ArgumentCaptor.forClass(UserAccount.class);
+        verify(users, times(2)).saveAndFlush(saved.capture());
+        assertThat(saved.getAllValues()).allSatisfy(user -> assertThat(user.getPasswordHash()).isNull());
+    }
+
+    @Test
+    @DisplayName("cuentas de arranque: la contraseña configurada va a Keycloak, que aplica la política")
+    void bootstrapAccountsUseTheConfiguredPasswordThroughThePolicy() {
+        when(userCodes.next()).thenReturn(new UserCodeGenerator.IssuedCode(1, "MS-26-00001"));
+        when(keycloak.createUserWithPassword(any(), anyString(), anyBoolean()))
+                .thenThrow(new PasswordPolicyException("invalidPasswordMinLengthMessage"));
+
+        assertThatThrownBy(() -> service.createSeedAccount(seedRequest("osi@medicalsys.demo", "corta"), UUID.randomUUID()))
+                .isInstanceOf(ApiException.class);
+        verify(keycloak).createUserWithPassword(any(), eq("corta"), eq(false));
+        verify(users, never()).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("rotación demo: temporal nueva, sesiones cerradas y PASSWORD_RESET sin la contraseña")
+    void rotationGivesANewTemporaryPasswordAndClosesSessions() {
+        when(keycloak.userExists(KEYCLOAK_ID)).thenReturn(true);
+        when(temporaryPasswords.generate()).thenReturn("Kq7m-Xw3p-Rt9v-Hn4c");
+
+        service.rotateSeedPassword(target);
+
+        verify(keycloak).setPassword(KEYCLOAK_ID, "Kq7m-Xw3p-Rt9v-Hn4c", true);
+        verify(sessionStore).closeAll(target.getPublicId());
+        AuditEventDraft draft = captureDraft();
+        assertThat(draft.action()).isEqualTo("PASSWORD_RESET");
+        assertThat(draft.actorUserId()).isNull();
+        assertThat(draft.toString()).doesNotContain("Kq7m-Xw3p-Rt9v-Hn4c");
+    }
+
+    @Test
+    @DisplayName("arranque normal: una cuenta sembrada que ya está en Keycloak no se toca")
+    void existingSeedCredentialIsLeftAlone() {
+        when(keycloak.userExists(KEYCLOAK_ID)).thenReturn(true);
+
+        assertThat(service.ensureSeedCredential(target, null)).isFalse();
+
+        verify(keycloak, never()).setPassword(anyString(), anyString(), anyBoolean());
+        verify(keycloak, never()).createUserWithPassword(any(), anyString(), anyBoolean());
+    }
+
+    private static CreateUserRequest seedRequest(String email, String password) {
+        return new CreateUserRequest(email, "Cuenta Sembrada", password, null, null, "es-BO", true, List.of());
     }
 
     private AuditEventDraft captureDraft() {

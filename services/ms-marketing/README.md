@@ -284,7 +284,7 @@ docker compose up -d mysql redis ms-identidad ms-marketing ms-gateway
 
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/identity/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@medicalsys.demo","password":"SanGabriel.Demo26!"}' | jq -r .accessToken)
+  -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{email: "admin@medicalsys.demo", password: $p}')" | jq -r .accessToken)
 
 curl -s http://localhost:8080/api/v1/campanas -H "Authorization: Bearer $TOKEN"
 

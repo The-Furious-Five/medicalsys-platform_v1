@@ -71,7 +71,7 @@ class PermissionCatalogMigrationTests {
     @Test
     @DisplayName("el CHECK de la columna module admite exactamente los valores del enum")
     void moduleCheckMatchesEnum() throws IOException {
-        Matcher check = MODULE_CHECK.matcher(resource("/db/migration/V10__approved_role_matrix.sql"));
+        Matcher check = MODULE_CHECK.matcher(resource("/db/migration/V11__approved_role_matrix.sql"));
         assertThat(check.find()).isTrue();
 
         List<String> allowed = Arrays.stream(check.group(1).split(","))

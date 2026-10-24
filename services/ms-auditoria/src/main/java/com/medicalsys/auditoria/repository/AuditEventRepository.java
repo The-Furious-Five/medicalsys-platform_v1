@@ -19,12 +19,14 @@ import org.springframework.data.repository.query.Param;
  * entidad marca todas sus columnas como {@code updatable = false}.
  *
  * <p>Toda consulta lleva {@code organizationId}: un auditor de una clinica no puede ver ni contar
- * los eventos de otra.
+ * los eventos de otra. Solo llega nulo con alcance de plataforma (OSI, {@code AuditScope}): todas.
  */
 public interface AuditEventRepository
         extends JpaRepository<AuditEvent, Long>, JpaSpecificationExecutor<AuditEvent> {
 
     Optional<AuditEvent> findByOrganizationIdAndPublicId(UUID organizationId, UUID publicId);
+
+    Optional<AuditEvent> findByPublicId(UUID publicId);
 
     boolean existsByPublicId(UUID publicId);
 
@@ -41,7 +43,7 @@ public interface AuditEventRepository
     @Query("""
             SELECT e.category, COUNT(e)
             FROM AuditEvent e
-            WHERE e.organizationId = :organizationId
+            WHERE (:organizationId IS NULL OR e.organizationId = :organizationId)
               AND e.occurredAt >= :from AND e.occurredAt < :to
             GROUP BY e.category
             """)
@@ -51,7 +53,7 @@ public interface AuditEventRepository
     @Query("""
             SELECT e.outcome, COUNT(e)
             FROM AuditEvent e
-            WHERE e.organizationId = :organizationId
+            WHERE (:organizationId IS NULL OR e.organizationId = :organizationId)
               AND e.occurredAt >= :from AND e.occurredAt < :to
             GROUP BY e.outcome
             """)
@@ -61,7 +63,7 @@ public interface AuditEventRepository
     @Query("""
             SELECT e.severity, COUNT(e)
             FROM AuditEvent e
-            WHERE e.organizationId = :organizationId
+            WHERE (:organizationId IS NULL OR e.organizationId = :organizationId)
               AND e.occurredAt >= :from AND e.occurredAt < :to
             GROUP BY e.severity
             """)
@@ -71,7 +73,7 @@ public interface AuditEventRepository
     @Query("""
             SELECT e.serviceName, COUNT(e)
             FROM AuditEvent e
-            WHERE e.organizationId = :organizationId
+            WHERE (:organizationId IS NULL OR e.organizationId = :organizationId)
               AND e.occurredAt >= :from AND e.occurredAt < :to
             GROUP BY e.serviceName
             """)
@@ -87,7 +89,7 @@ public interface AuditEventRepository
     @Query("""
             SELECT e.actorUserId, e.actorDisplayName, COUNT(e) AS total
             FROM AuditEvent e
-            WHERE e.organizationId = :organizationId
+            WHERE (:organizationId IS NULL OR e.organizationId = :organizationId)
               AND e.actorUserId IS NOT NULL
               AND e.occurredAt >= :from AND e.occurredAt < :to
             GROUP BY e.actorUserId, e.actorDisplayName

@@ -17,7 +17,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 /**
@@ -26,7 +26,9 @@ import org.springframework.util.StringUtils;
  * que sin él nadie podría corregir los roles después de V9.
  *
  * <p>Está deshabilitada por defecto. La contraseña llega exclusivamente por variable de entorno y
- * solo se utiliza al crear la cuenta por primera vez. Reiniciar el servicio es seguro: el seeder es
+ * solo se utiliza al crear la cuenta por primera vez (o si falta en Keycloak). Se crea directo en
+ * Keycloak, así que debe cumplir la política de IAM-02: si no la cumple, la cuenta no se crea y el
+ * motivo queda en el log, pero el servicio arranca. Reiniciar el servicio es seguro: el seeder es
  * idempotente y no duplica ni la cuenta ni su rol.
  */
 @Component
@@ -39,22 +41,32 @@ public class PlatformAdminSeeder implements ApplicationRunner {
     private final UserAccountRepository users;
     private final RoleRepository roles;
     private final UserService userService;
-    private final KeycloakAccountLinker linker;
+    private final TransactionTemplate transactions;
 
     public PlatformAdminSeeder(IdentityProperties properties, UserAccountRepository users,
-            RoleRepository roles, UserService userService, KeycloakAccountLinker linker) {
+            RoleRepository roles, UserService userService, TransactionTemplate transactions) {
         this.properties = properties;
         this.users = users;
         this.roles = roles;
         this.userService = userService;
-        this.linker = linker;
+        this.transactions = transactions;
     }
 
     @Override
-    @Transactional
     public void run(ApplicationArguments args) {
-        seed(properties.getPlatformAdmin(), RoleCode.PLATFORM_ADMIN, SecurityLevel.CONFIDENTIAL, "PLATFORM_ADMIN");
-        seed(properties.getSecurityOfficer(), RoleCode.OSI, SecurityLevel.RESTRICTED, "OSI");
+        seedInOwnTransaction(properties.getPlatformAdmin(), RoleCode.PLATFORM_ADMIN, SecurityLevel.CONFIDENTIAL,
+                "PLATFORM_ADMIN");
+        seedInOwnTransaction(properties.getSecurityOfficer(), RoleCode.OSI, SecurityLevel.RESTRICTED, "OSI");
+    }
+
+    private void seedInOwnTransaction(IdentityProperties.PlatformAdmin config, RoleCode roleCode,
+                                      SecurityLevel clearance, String envPrefix) {
+        try {
+            transactions.executeWithoutResult(status -> seed(config, roleCode, clearance, envPrefix));
+        } catch (ApiException ex) {
+            // Política de contraseñas o Keycloak caído: la cuenta no se crea, el resto del servicio sí.
+            log.error("No se pudo sembrar la cuenta {} ({}): {}", roleCode, config.getEmail(), ex.getMessage());
+        }
     }
 
     private void seed(IdentityProperties.PlatformAdmin config, RoleCode roleCode, SecurityLevel clearance,
@@ -75,13 +87,12 @@ public class PlatformAdminSeeder implements ApplicationRunner {
             userService.createSeedAccount(new CreateUserRequest(
                     config.getEmail(), config.getFullName(), config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
-                    List.of(new RoleAssignmentRequest(roleCode.name(), null, null, null, null))));
+                    List.of(new RoleAssignmentRequest(roleCode.name(), null, null, null, null))),
+                    config.getPublicId());
             log.info("Cuenta {} creada: {}", roleCode, config.getEmail());
         }
 
         UserAccount user = users.findByEmailIgnoreCase(config.getEmail()).orElseThrow();
-        // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la contraseña configurada.
-        linker.restoreConfiguredCredential(user, config.getPassword());
         boolean changed = false;
         // MAC: el bootstrap nunca queda por debajo del nivel que su rol necesita.
         if (!user.getClearance().covers(clearance)) {
@@ -94,6 +105,11 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
         if (!config.getOrganizationPublicId().equals(user.getOrganizationPublicId())) {
             user.setOrganizationPublicId(config.getOrganizationPublicId());
+            changed = true;
+        }
+        // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la contraseña configurada.
+        if (userService.ensureSeedCredential(user, config.getPassword())) {
+            log.warn("La cuenta {} no tenía credencial en Keycloak; se repuso desde la configuración", roleCode);
             changed = true;
         }
         boolean hasPlatformRole = false;

@@ -16,8 +16,8 @@ import com.medicalsys.identidad.service.ApiException;
 @Component
 public class SessionStore {
 
-    private static final String SESSION_PREFIX = "identity:session:v10:";
-    private static final String USER_INDEX_PREFIX = "identity:user-sessions:v10:";
+    private static final String SESSION_PREFIX = "identity:session:v11:";
+    private static final String USER_INDEX_PREFIX = "identity:user-sessions:v11:";
 
     private final StringRedisTemplate redis;
 

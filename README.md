@@ -38,14 +38,10 @@ El primer arranque tarda varios minutos porque cada servicio se compila dentro d
 Compose espera a que cada dependencia responda `/actuator/health` antes de arrancar a quien la
 consume, así que cuando `docker compose ps` muestre todo `healthy` el sistema está listo.
 
-Comprobación rápida (requiere `IDENTITY_DEMO_USERS_ENABLED=true` en `.env`: las cuentas demo vienen
-desactivadas por defecto; su contraseña cumple la política de Keycloak de IAM-02):
-
-```bash
-curl -s localhost:8080/api/v1/identity/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@medicalsys.demo","password":"SanGabriel.Demo26!"}'
-```
+Comprobación rápida: `bash scripts/test/e2e.sh`. Requiere `IDENTITY_DEMO_USERS_ENABLED=true` (las
+cuentas demo vienen desactivadas por defecto) y la cuenta OSI del `.env` (`OSI_SEED_ENABLED`). Las
+cuentas demo no tienen contraseña conocida: cada una nace con una temporal aleatoria propia. Para usar
+una, el OSI la reinicia («Reiniciar contraseña») y la persona elige la suya en el primer ingreso.
 
 Para empezar de cero —por ejemplo tras cambiar una migración— hay que borrar los volúmenes:
 
@@ -158,6 +154,6 @@ Varias suites usan Testcontainers y se saltan solas si Docker no está disponibl
 - `docs/CORRECCIONES_POST_DEMO.md` — revisión técnica por microservicio.
 - `docs/contracts` y `docs/demo` — contratos y guion de la demostración.
 - `services/<servicio>/README.md` y `services/<servicio>/docs/` — detalle de cada servicio.
-- [`docs/seguridad/matriz-roles/README.md`](docs/seguridad/matriz-roles/README.md) — matriz aprobada de 15 roles, permisos y aplicación de V10.
+- [`docs/seguridad/matriz-roles/README.md`](docs/seguridad/matriz-roles/README.md) — matriz aprobada de 15 roles, permisos y aplicación de V11.
 - `docs/seguridad/` — OWASP Top 10 (sección 11), reporte de escaneo (sección 13), reportes y evidencia.
 - `docs/seguridad/politicas/` — políticas y procedimientos (PO-02, PO-07, PR-04).

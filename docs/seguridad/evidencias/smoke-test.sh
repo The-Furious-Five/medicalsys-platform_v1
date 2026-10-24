@@ -5,7 +5,7 @@
 # Uso: BASE=http://localhost:8080 bash docs/seguridad/evidencias/smoke-test.sh
 set -uo pipefail
 BASE=${BASE:-http://localhost:8080}
-DEMO_PASSWORD=${DEMO_PASSWORD:-Demo1234!}
+DEMO_PASSWORD=${DEMO_PASSWORD:?Falta DEMO_PASSWORD, la contrasena actual de admin@medicalsys.demo}
 if python3 -c "" 2>/dev/null; then PY=python3; else PY=python; fi
 
 TOKEN=$(curl -sS -m 15 -X POST "$BASE/api/v1/identity/auth/login" -H 'Content-Type: application/json' \

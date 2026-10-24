@@ -87,10 +87,15 @@ public class IdentityProperties {
         public void setTimeout(Duration timeout) { this.timeout = timeout; }
     }
 
+    /**
+     * Cuentas del centro de demostracion. No hay contrasena comun: cada una nace con una temporal
+     * aleatoria propia. {@code rotatePasswords} se usa una vez, para retirar la contrasena comun de
+     * bases sembradas por versiones anteriores.
+     */
     public static class DemoUsers {
         private boolean enabled = true;
         private UUID organizationPublicId;
-        private String password = "SanGabriel.Demo26!";
+        private boolean rotatePasswords;
 
         public boolean isEnabled() {
             return enabled;
@@ -108,12 +113,12 @@ public class IdentityProperties {
             this.organizationPublicId = organizationPublicId;
         }
 
-        public String getPassword() {
-            return password;
+        public boolean isRotatePasswords() {
+            return rotatePasswords;
         }
 
-        public void setPassword(String password) {
-            this.password = password;
+        public void setRotatePasswords(boolean rotatePasswords) {
+            this.rotatePasswords = rotatePasswords;
         }
     }
 

@@ -50,7 +50,7 @@ https://app.<dominio>                        → pantalla de inicio de sesión
 
 ## Usuarios de prueba por rol
 
-Las cuentas las siembra `DemoUserSeeder` cuando `IDENTITY_DEMO_USERS_ENABLED=true`. La contraseña es la de `IDENTITY_DEMO_PASSWORD`: definir una propia para el despliegue público y guardarla en la bóveda; aquí no se escribe.
+Las cuentas las siembra `DemoUserSeeder` cuando `IDENTITY_DEMO_USERS_ENABLED=true`. No comparten contraseña: cada una nace en Keycloak con una temporal aleatoria propia que nadie ve. Para entregar una, el OSI la reinicia («Reiniciar contraseña», PR-02) y la persona elige la suya en el primer ingreso. Si el servidor tenía cuentas con la contraseña común de versiones anteriores, se despliega una vez con `IDENTITY_DEMO_ROTATE_PASSWORDS=true` y luego se vuelve a `false`.
 
 | Rol | Cuenta | Nombre ficticio |
 |---|---|---|

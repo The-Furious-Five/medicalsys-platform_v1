@@ -39,4 +39,4 @@ Nota: el enum `EncryptionKey.Algorithm` de ms-criptografia admite `AES_256_CBC` 
 4. `JWT_SECRET` simetrico compartido; sin rotacion.
 5. Hash de consentimientos y OTP: solo esquema, sin codigo.
 6. Cadena de auditoria y sellos de encuentro son hashes sin clave (detectan error, no a un atacante con acceso a la base).
-7. Contrasena demo por defecto (`IDENTITY_DEMO_PASSWORD:Demo1234!`) con usuarios demo habilitados por defecto.
+7. ~~Contrasena demo por defecto (`IDENTITY_DEMO_PASSWORD:Demo1234!`) con usuarios demo habilitados por defecto.~~ Corregido: los usuarios demo vienen desactivados y ya no hay contrasena comun; cada cuenta nace en Keycloak con una temporal aleatoria propia (politica de IAM-02) y el OSI la reinicia para entregarla.

@@ -8,7 +8,8 @@
 set -euo pipefail
 
 B="${1:-http://localhost:8081}/api/v1/identity"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-${IDENTITY_DEMO_PASSWORD:-SanGabriel.Demo26!}}"
+# Sin contrasena comun: la que eligio admin@ tras el reinicio del OSI (PR-02).
+ADMIN_PASSWORD="${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD, la contrasena actual de admin@medicalsys.demo}"
 JSON='Content-Type: application/json'
 EMAIL="iam05.prueba.$(date +%s)@medicalsys.demo"
 FIRST="Primera clave $(openssl rand -hex 3) ok!"

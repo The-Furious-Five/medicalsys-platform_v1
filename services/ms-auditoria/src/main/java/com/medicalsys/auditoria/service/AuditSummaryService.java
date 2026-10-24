@@ -2,7 +2,6 @@ package com.medicalsys.auditoria.service;
 
 import com.medicalsys.auditoria.common.error.BusinessRuleException;
 import com.medicalsys.auditoria.common.error.ErrorCode;
-import com.medicalsys.auditoria.common.tenant.RequestContextHolder;
 import com.medicalsys.auditoria.domain.enums.AuditOutcome;
 import com.medicalsys.auditoria.domain.enums.AuditSeverity;
 import com.medicalsys.auditoria.repository.AuditEventRepository;
@@ -45,8 +44,8 @@ public class AuditSummaryService {
     }
 
     @Transactional(readOnly = true)
-    public AuditSummaryResponse summarize(Instant from, Instant to) {
-        UUID organizationId = RequestContextHolder.require().organizationId();
+    public AuditSummaryResponse summarize(UUID requestedOrganizationId, Instant from, Instant to) {
+        UUID organizationId = AuditScope.resolve(requestedOrganizationId);
         Instant end = to == null ? clock.instant() : to;
         Instant start = from == null ? end.minus(DEFAULT_WINDOW) : from;
         validate(start, end);

@@ -9,10 +9,12 @@ import java.util.UUID;
 /**
  * Criterios de busqueda de la pantalla de auditoria.
  *
- * <p>Todos son opcionales y se combinan con Y logico. El tenant no esta aqui: sale del contexto de
- * la solicitud y no se puede pedir por parametro, que es justamente lo que impide que un
- * administrador de una clinica consulte la bitacora de otra.
+ * <p>Todos son opcionales y se combinan con Y logico. El tenant sale del contexto de la solicitud:
+ * {@code organizationId} solo lo respeta el alcance de plataforma del OSI ({@code AuditScope}); para
+ * cualquier otro, pedir una organizacion ajena es un 403, y asi un administrador de una clinica no
+ * consulta la bitacora de otra.
  *
+ * @param organizationId organizacion a consultar; nula significa la propia (o todas para el OSI)
  * @param from          limite inferior inclusivo de {@code occurredAt}
  * @param to            limite superior exclusivo de {@code occurredAt}
  * @param actorUserId   usuario que ejecuto la accion
@@ -21,6 +23,7 @@ import java.util.UUID;
  * @param q             texto libre sobre accion, recurso, actor y motivo
  */
 public record AuditEventFilter(
+        UUID organizationId,
         Instant from,
         Instant to,
         AuditCategory category,

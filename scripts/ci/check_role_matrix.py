@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Verifica el Excel original, su traducción a permisos y la migración V10.
+"""Verifica el Excel original, su traducción a permisos y la migración V11.
 
-python3 scripts/ci/check_role_matrix.py --write  # regenerar V10 tras revisar matriz.json
+python3 scripts/ci/check_role_matrix.py --write  # regenerar V11 tras revisar matriz.json
 python3 scripts/ci/check_role_matrix.py          # comprobar sin escribir
 """
 import argparse
@@ -15,7 +15,7 @@ import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DIRECTORY = ROOT / 'docs/seguridad/matriz-roles'
-MIGRATION = ROOT / 'services/ms-identidad/src/main/resources/db/migration/V10__approved_role_matrix.sql'
+MIGRATION = ROOT / 'services/ms-identidad/src/main/resources/db/migration/V11__approved_role_matrix.sql'
 NEW_PERMISSIONS = [
     ('identity.role.assign_initial', 'IDENTITY', 'Asignar un rol delegado exclusivamente al crear una cuenta', 'CONFIDENTIAL'),
     ('billing.invoice.void', 'BILLING', 'Anular una factura; separado de la emision (Cajero 2)', 'CONFIDENTIAL'),
@@ -120,7 +120,7 @@ def main():
     if args.write:
         MIGRATION.write_text(sql)
     else:
-        assert MIGRATION.read_text() == sql, 'V10 no coincide: ejecutar --write y revisar el diff'
+        assert MIGRATION.read_text() == sql, 'V11 no coincide: ejecutar --write y revisar el diff'
     print('Excel y migracion coinciden: 15 roles, nombres y modelos exactos, 30 recursos y permisos conocidos.')
     return 0
 

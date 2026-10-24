@@ -17,6 +17,7 @@ import java.util.UUID;
  */
 public record AuditEventResponse(
         UUID eventId,
+        UUID organizationId,
         long sequenceNumber,
         Instant occurredAt,
         Instant recordedAt,
@@ -45,6 +46,7 @@ public record AuditEventResponse(
     public static AuditEventResponse from(AuditEvent event) {
         return new AuditEventResponse(
                 event.getPublicId(),
+                event.getOrganizationId(),
                 event.getSequenceNumber(),
                 event.getOccurredAt(),
                 event.getRecordedAt(),

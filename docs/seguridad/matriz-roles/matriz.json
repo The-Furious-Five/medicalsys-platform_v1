@@ -340,7 +340,8 @@
       "name": "Bitácora",
       "permissions": [
         "audit.log.read",
-        "audit.log.verify"
+        "audit.log.verify",
+        "audit.log.read_platform"
       ]
     },
     {
@@ -410,7 +411,8 @@
         "identity.user.read",
         "identity.user.reset",
         "identity.user.unlock",
-        "identity.user.update"
+        "identity.user.update",
+        "audit.log.read_platform"
       ],
       "dependencies": []
     },

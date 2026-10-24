@@ -47,11 +47,11 @@ SELECT r.id, p.id FROM `role` r JOIN permission p WHERE r.code = 'PLATFORM_ADMIN
 -- Oficial Seguridad (OSI) (MAC)
 INSERT INTO role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM `role` r JOIN permission p WHERE r.code = 'OSI' AND p.code IN (
-    'audit.log.read', 'audit.log.verify', 'identity.clearance.manage',
-    'identity.permission.grant', 'identity.role.assign', 'identity.role.assign_initial',
-    'identity.role.manage', 'identity.role.read', 'identity.user.change_status',
-    'identity.user.create', 'identity.user.read', 'identity.user.reset',
-    'identity.user.unlock', 'identity.user.update');
+    'audit.log.read', 'audit.log.read_platform', 'audit.log.verify',
+    'identity.clearance.manage', 'identity.permission.grant', 'identity.role.assign',
+    'identity.role.assign_initial', 'identity.role.manage', 'identity.role.read',
+    'identity.user.change_status', 'identity.user.create', 'identity.user.read',
+    'identity.user.reset', 'identity.user.unlock', 'identity.user.update');
 
 -- Auditor interno (MAC)
 INSERT INTO role_permission (role_id, permission_id)

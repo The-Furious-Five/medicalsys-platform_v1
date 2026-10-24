@@ -8,7 +8,6 @@ import com.medicalsys.identidad.repository.UserAccountRepository;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,35 +28,10 @@ public class KeycloakAccountLinker {
 
     private final KeycloakClient keycloak;
     private final UserAccountRepository users;
-    private final PasswordEncoder passwordEncoder;
 
-    public KeycloakAccountLinker(KeycloakClient keycloak, UserAccountRepository users,
-                                 PasswordEncoder passwordEncoder) {
+    public KeycloakAccountLinker(KeycloakClient keycloak, UserAccountRepository users) {
         this.keycloak = keycloak;
         this.users = users;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    /**
-     * Para las cuentas cuya contraseña sale de la configuración (demostración y bootstrap): si no
-     * tienen credencial en Keycloak ni hash local, por ejemplo porque se recreó la base de Keycloak,
-     * la repone desde la configuración para que {@link KeycloakAccountMigration} la vuelva a crear.
-     * Se llama dentro de la transacción del seeder, sobre la entidad que este administra.
-     */
-    public void restoreConfiguredCredential(UserAccount user, String password) {
-        try {
-            boolean missing = user.isLinkedToIdentityProvider()
-                    ? !keycloak.userExists(user.getKeycloakUserId())
-                    : !StringUtils.hasText(user.getPasswordHash());
-            if (missing) {
-                user.setKeycloakUserId(null);
-                user.setPasswordHash(passwordEncoder.encode(password));
-                log.warn("La cuenta {} no tenía credencial en Keycloak; se repone desde la configuración",
-                        user.getPublicId());
-            }
-        } catch (ApiException ex) {
-            log.warn("Keycloak no disponible: no se pudo revisar la credencial de {}", user.getPublicId());
-        }
     }
 
     /** Id de Keycloak de la cuenta, enlazándola si hace falta; vacío si no hay con qué crearla. */

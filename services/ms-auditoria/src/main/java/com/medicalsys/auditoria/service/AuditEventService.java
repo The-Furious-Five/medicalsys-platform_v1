@@ -145,8 +145,9 @@ public class AuditEventService {
 
     @Transactional(readOnly = true)
     public AuditEventResponse get(UUID eventId) {
-        UUID organizationId = RequestContextHolder.require().organizationId();
-        return events.findByOrganizationIdAndPublicId(organizationId, eventId)
+        UUID organizationId = AuditScope.resolve(null);
+        return (organizationId == null ? events.findByPublicId(eventId)
+                : events.findByOrganizationIdAndPublicId(organizationId, eventId))
                 .map(AuditEventResponse::from)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.AUDIT_EVENT_NOT_FOUND,
                         "El evento de auditoria solicitado no existe en esta organizacion"));
@@ -154,7 +155,7 @@ public class AuditEventService {
 
     @Transactional(readOnly = true)
     public Page<AuditEvent> search(AuditEventFilter filter, Pageable pageable) {
-        UUID organizationId = RequestContextHolder.require().organizationId();
+        UUID organizationId = AuditScope.resolve(filter.organizationId());
         validateRange(filter.from(), filter.to());
         return events.findAll(AuditEventSpecifications.of(organizationId, filter), pageable);
     }

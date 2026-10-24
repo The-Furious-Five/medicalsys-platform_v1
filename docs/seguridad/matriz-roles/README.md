@@ -4,7 +4,7 @@
 `matriz.json` conserva las 30 columnas, las X, los 15 nombres exactos y el modelo principal
 MAC/DAC/RBAC de cada fila. También explica la traducción de cada recurso a los permisos existentes.
 
-La migración **V10 de ms-identidad** actualiza los roles existentes conservando sus códigos y
+La migración **V11 de ms-identidad** actualiza los roles existentes conservando sus códigos y
 asignaciones. Agrega `EXTERNAL_AUDITOR`, `MEDICAL_INTERN`, `BILLING_SUPERVISOR` y `DEVOPS`.
 Reemplaza los permisos de los 15 roles base; los roles personalizados permanecen intactos.
 No se modifican migraciones ya aplicadas ni se borran volúmenes.
@@ -50,7 +50,8 @@ Leer un documento o una plantilla para usarlo no habilita su administración.
   para anularlas. No se filtran por nivel MAC. Los dos roles son incompatibles, y una
   persona no puede anular una factura que emitió aunque se le cambie el rol después.
 
-El OSI conserva la gestión de roles/permisos dentro de «Cambio perfil». El administrador
+El OSI conserva la lectura de auditoría de todas las organizaciones (`audit.log.read_platform`, V10)
+como parte de Bitácora, y la gestión de roles/permisos dentro de «Cambio perfil». El administrador
 solo tiene «Altas»: `identity.role.assign_initial` permite asignar un rol operativo delegado
 al crear una cuenta; no permite cambiar roles de cuentas existentes ni dar bajas.
 El administrador de plataforma solo tiene organización, sucursales/tarifario y suscripción.
@@ -85,12 +86,13 @@ por HTTP ni se reutiliza el rol de administrador de plataforma para ello.
 
 1. Actualizar juntos ms-identidad, ms-gateway, ms-pacientes, ms-facturacion y el frontend;
    recompilar los demás servicios que reconocen los códigos de roles para trazabilidad.
-2. Arrancar normalmente: Flyway aplica V10 de identidad y V3 de facturación sin borrar datos.
-3. Volver a iniciar sesión. El espacio Redis `identity:session:v10:` invalida los tokens
+2. Arrancar normalmente: Flyway aplica V11 de identidad y V3 de facturación sin borrar datos.
+3. Volver a iniciar sesión. El espacio Redis `identity:session:v11:` invalida los tokens
    emitidos por la política anterior, sin borrar claves ajenas. Gateway e identidad deben
    desplegarse juntos.
 4. Para demostración, activar `IDENTITY_DEMO_USERS_ENABLED=true`: hay cuentas para los
-   15 roles, con la misma contraseña configurada por `IDENTITY_DEMO_PASSWORD`. El paciente
+   15 roles, con contraseña temporal individual generada por Keycloak. Para usar una cuenta,
+   el OSI reinicia su contraseña y la persona define la suya. El paciente
    `paciente@medicalsys.demo` queda vinculado a una ficha solo si se incluye `db/demo`
    en ms-pacientes. El seeder no aumenta niveles de cuentas demo ya existentes.
 
@@ -105,5 +107,5 @@ cd services/ms-identidad && ./mvnw clean test
 
 `check_role_matrix.py` compara el SHA-256 del Excel, sus nombres/modelos/X, el catálogo,
 las dependencias de lectura y el SQL generado. CI ejecuta este control. Para revisar
-una nueva traducción antes de aplicar V10: `python3 scripts/ci/check_role_matrix.py --write`.
-Una vez aplicada V10, cualquier cambio posterior necesita otra migración.
+una nueva traducción antes de aplicar V11: `python3 scripts/ci/check_role_matrix.py --write`.
+Una vez aplicada V11, cualquier cambio posterior necesita otra migración.

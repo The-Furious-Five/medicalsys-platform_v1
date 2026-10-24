@@ -32,13 +32,13 @@ class JwtPropagationFilterTest {
             .build();
 
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
-    private final AccessDeniedAuditor auditor = org.mockito.Mockito.mock(AccessDeniedAuditor.class);
+    private final GatewayAuditor auditor = org.mockito.Mockito.mock(GatewayAuditor.class);
     private final JwtPropagationFilter filter = new JwtPropagationFilter(token -> TOKEN, redis, auditor);
 
     @Test
     @DisplayName("propaga los permisos del token en X-Permissions y reemplaza los que mando el cliente")
     void propagatesTokenPermissions() throws Exception {
-        when(redis.hasKey("identity:session:v10:test-jti")).thenReturn(true);
+        when(redis.hasKey("identity:session:v11:test-jti")).thenReturn(true);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer token");
         request.addHeader("X-Permissions", "identity.role.manage");
@@ -69,7 +69,7 @@ class JwtPropagationFilterTest {
     @Test
     @DisplayName("si Redis no responde, falla cerrado con 503 en vez de dejar pasar el token")
     void failsClosedWhenRedisIsUnavailable() throws Exception {
-        when(redis.hasKey("identity:session:v10:test-jti")).thenThrow(new QueryTimeoutException("timeout"));
+        when(redis.hasKey("identity:session:v11:test-jti")).thenThrow(new QueryTimeoutException("timeout"));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer token");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -123,8 +123,8 @@ class JwtPropagationFilterTest {
     }
 
     @Test
-    @DisplayName("LOG-02: un 403 de un servicio a un usuario autenticado se registra como ACCESS_DENIED")
-    void recordsAccessDeniedFromDownstreamServices() throws Exception {
+    @DisplayName("LOG-02: cada solicitud atendida se entrega al auditor con su estado")
+    void handsEveryResponseToTheAuditor() throws Exception {
         when(redis.hasKey(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/facturas");
         request.addHeader("Authorization", "Bearer token");
@@ -133,16 +133,20 @@ class JwtPropagationFilterTest {
                 (req, res) -> ((jakarta.servlet.http.HttpServletResponse) res).setStatus(403));
 
         org.mockito.Mockito.verify(auditor).record(org.mockito.ArgumentMatchers.eq(TOKEN),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(403),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    @DisplayName("LOG-02: no se registran los 403 de identidad (los audita ese servicio) ni las respuestas 200")
-    void skipsIdentityDenialsAndSuccessfulResponses() {
-        assertThat(AccessDeniedAuditor.shouldRecord(TOKEN, 403, "/api/v1/identity/roles")).isFalse();
-        assertThat(AccessDeniedAuditor.shouldRecord(TOKEN, 200, "/api/v1/facturas")).isFalse();
-        assertThat(AccessDeniedAuditor.shouldRecord(null, 403, "/api/v1/facturas")).isFalse();
-        assertThat(AccessDeniedAuditor.shouldRecord(TOKEN, 403, "/api/v1/facturas")).isTrue();
+    @DisplayName("LOG-02: el uso de un token con la sesion cerrada queda en la bitacora")
+    void recordsRevokedSessionUse() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/facturas");
+        request.addHeader("Authorization", "Bearer token");
+
+        filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> { });
+
+        org.mockito.Mockito.verify(auditor).recordRevokedSession(org.mockito.ArgumentMatchers.eq(TOKEN),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
