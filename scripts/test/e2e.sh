@@ -41,7 +41,7 @@ MSYS_NO_PATHCONV=1 docker run --rm -i --network medicalsys-interna \
   -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e SKIP_IAM="${SKIP_IAM:-}" \
   -e KEYCLOAK_ADMIN_USER="$(env_value KEYCLOAK_ADMIN_USER)" \
   -e KEYCLOAK_ADMIN_PASSWORD="$(env_value KEYCLOAK_ADMIN_PASSWORD)" \
-  -e KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET="$(env_value KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET)" \
+  -e KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET="$(env_value KEYCLOAK_MS_IDENTIDAD_CLIENT_SECRET)"   -e PLATFORM_ADMIN_EMAIL="$(env_value PLATFORM_ADMIN_EMAIL)" -e PLATFORM_ADMIN_PASSWORD="$(env_value PLATFORM_ADMIN_PASSWORD)" \
   alpine:3.22 sh -c 'apk add -q --no-cache bash curl jq openssl >/dev/null && bash -s' <<'INNER'
 set -uo pipefail
 failures=0
@@ -79,6 +79,13 @@ after="$(failed_count)"
 [ "${after:-0}" -gt "${before:-0}" ] && ok "LOG-01: el intento con un correo inexistente quedo como LOGIN_FAILED" \
   || fail "LOG-01: el intento con un correo inexistente no llego a la bitacora ($before -> $after)"
 
+echo "== LOG-01: IP real del usuario en la bitacora"
+gateway_ip="$(getent hosts ms-gateway | awk '{print $1}')"
+curl -s -m 20 -o /dev/null "$G/api/v1/identity/auth/login" -H "$J" -H 'X-Forwarded-For: 203.0.113.50'   -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{email: "admin@medicalsys.demo", password: $p}')"
+sleep 3
+ip="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=LOGIN_SUCCESS&size=1" | jq -r '.content[0].actorIp // empty')"
+[ "$ip" = "203.0.113.50" ] && ok "LOG-01: detras de un proxy interno se guarda la IP del cliente ($ip)"   || fail "LOG-01: se guardo $ip en vez de 203.0.113.50 (el gateway es $gateway_ip)"
+
 echo "== Modulos con el JWT (RBAC)"
 for p in /api/v1/identity/auth/me /api/v1/identity/users /api/v1/tenancy/organizacion "/api/v1/patients/search?q=a" \
          /api/v1/professionals /api/v1/scheduling/appointments /api/v1/expedientes /api/v1/encuentros /api/v1/facturas \
@@ -111,6 +118,31 @@ if [ -z "${SKIP_IAM:-}" ]; then
   done
   leaked="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?serviceName=ms-identidad&size=200" | grep -c -E 'Clave|clave [a-f0-9]{6} ok|Prueba valida' || true)"
   [ "${leaked:-0}" -eq 0 ] && ok "LOG-02: ninguna contrasena de las pruebas aparece en la bitacora"     || fail "LOG-02: la bitacora contiene contrasenas"
+fi
+
+if [ -n "${PLATFORM_ADMIN_PASSWORD:-}" ]; then
+  echo "== RBAC-02 + LOG-02: rol nuevo creado desde la API, sin tocar codigo ni la base"
+  PA="Authorization: Bearer $(curl -s -m 30 "$G/api/v1/identity/auth/login" -H "$J"     -d "$(jq -n --arg e "$PLATFORM_ADMIN_EMAIL" --arg p "$PLATFORM_ADMIN_PASSWORD" '{email: $e, password: $p}')" | jq -r '.accessToken // empty')"
+  role="E2E_$(date +%s)"; email="e2e.$(date +%s)@medicalsys.demo"; pass="E2e prueba $(openssl rand -hex 4) Ok9!"
+  expect "PLATFORM_ADMIN crea el rol $role" 201 "$(code -X POST "$G/api/v1/identity/roles" -H "$PA" -H "$J"     -d "{\"code\":\"$role\",\"name\":\"Rol e2e\",\"scope\":\"ORGANIZATION\"}")"
+  expect "le asigna solo audit.log.read" 200 "$(code -X PUT "$G/api/v1/identity/roles/$role/permissions" -H "$PA" -H "$J"     -d '{"permissions":["audit.log.read"]}')"
+  created="$(curl -s -m 30 -X POST "$G/api/v1/identity/users" -H "$PA" -H "$J"     -d "$(jq -n --arg e "$email" --arg r "$role" '{email: $e, fullName: "Prueba E2E Rol", activateImmediately: true, organizationPublicId: "00000000-0000-4000-8000-0000000000a1", roles: [{role: $r}]}')")"
+  temp="$(jq -r '.temporaryPassword // empty' <<<"$created")"
+  [ -n "$temp" ] && ok "alta de una cuenta con el rol nuevo" || fail "alta con el rol nuevo: $(head -c 200 <<<"$created")"
+  expect "cambio de la contrasena temporal" 200 "$(code -X POST "$G/api/v1/identity/auth/change-password" -H "$J"     -d "$(jq -n --arg e "$email" --arg c "$temp" --arg n "$pass" '{email: $e, currentPassword: $c, newPassword: $n}')")"
+  U="Authorization: Bearer $(curl -s -m 30 "$G/api/v1/identity/auth/login" -H "$J"     -d "$(jq -n --arg e "$email" --arg p "$pass" '{email: $e, password: $p}')" | jq -r '.accessToken // empty')"
+  expect "con el rol nuevo: bitacora" 200 "$(code -H "$U" "$G/api/v1/audit/events")"
+  expect "con el rol nuevo: pacientes (sin permiso)" 403 "$(code -H "$U" "$G/api/v1/patients/search?q=a")"
+  sleep 3
+  for action in ROLE_CREATED ROLE_PERMISSIONS_CHANGED; do
+    n="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=$action&size=1" | jq -r '.totalElements // 0')"
+    [ "${n:-0}" -gt 0 ] && ok "LOG-02: $action en la bitacora" || fail "LOG-02: falta $action"
+  done
+  denied="$(curl -s -m 20 -H "$AUTH" "$G/api/v1/audit/events?action=ACCESS_DENIED&serviceName=ms-gateway&size=1")"
+  [ "$(jq -r '.content[0].requestPath // empty' <<<"$denied")" = "/api/v1/patients/search" ]     && ok "LOG-02: el 403 de ms-pacientes quedo como ACCESS_DENIED (registrado por el gateway)"     || fail "LOG-02: no hay ACCESS_DENIED del 403 de pacientes: $(head -c 200 <<<"$denied")"
+  code -X DELETE "$G/api/v1/identity/roles/$role" -H "$PA" >/dev/null
+else
+  echo "== RBAC-02: omitido (sin PLATFORM_ADMIN_PASSWORD en .env)"
 fi
 
 echo "== Resultado"
