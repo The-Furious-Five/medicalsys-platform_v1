@@ -1,0 +1,93 @@
+# CI/CD del backend: en cada push a main construye una imagen por microservicio, la publica en GHCR
+# y despliega en el VPS por SSH. Secrets del repo: VPS_HOST, VPS_USER, VPS_SSH_KEY.
+name: Deploy backend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/the-furious-five
+
+jobs:
+  build:
+    name: Imagen ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        service:
+          - ms-identidad
+          - ms-tenencia
+          - ms-catalogos
+          - ms-criptografia
+          - ms-pacientes
+          - ms-profesionales
+          - ms-agenda
+          - ms-historial
+          - ms-documental
+          - ms-facturacion
+          - ms-marketing
+          - ms-auditoria
+          - ms-notificaciones
+          - ms-gateway
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/medicalsys-${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/medicalsys-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    name: Desplegar en el VPS
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Preparar SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copiar compose, Caddyfile e infra
+        run: |
+          tar czf - compose.yaml compose.local.yaml compose.prod.yaml deploy infra/kafka infra/aiven \
+            | ssh -i ~/.ssh/id_deploy "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+                'tar xzf - -C /opt/medicalsys'
+
+      - name: Pull y up
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s <<'REMOTE'
+          set -euo pipefail
+          cd /opt/medicalsys
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker compose pull
+          docker compose up -d --remove-orphans
+          docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+          docker image prune -f
+          docker compose ps
+          REMOTE

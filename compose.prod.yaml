@@ -1,0 +1,111 @@
+# Capa de produccion sobre compose.yaml + compose.local.yaml (MySQL en Docker).
+# - Las imagenes vienen de GHCR (las construye el workflow deploy.yml), no se compilan en el VPS.
+# - Ningun puerto de servicio se publica: solo Caddy expone 80/443 y reenvia al frontend.
+# El VPS define COMPOSE_FILE en .env, asi que alli basta `docker compose ...`.
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ms-identidad:
+    image: ghcr.io/the-furious-five/medicalsys-ms-identidad:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-tenencia:
+    image: ghcr.io/the-furious-five/medicalsys-ms-tenencia:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-catalogos:
+    image: ghcr.io/the-furious-five/medicalsys-ms-catalogos:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-criptografia:
+    image: ghcr.io/the-furious-five/medicalsys-ms-criptografia:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-pacientes:
+    image: ghcr.io/the-furious-five/medicalsys-ms-pacientes:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-profesionales:
+    image: ghcr.io/the-furious-five/medicalsys-ms-profesionales:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-agenda:
+    image: ghcr.io/the-furious-five/medicalsys-ms-agenda:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-historial:
+    image: ghcr.io/the-furious-five/medicalsys-ms-historial:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-documental:
+    image: ghcr.io/the-furious-five/medicalsys-ms-documental:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-facturacion:
+    image: ghcr.io/the-furious-five/medicalsys-ms-facturacion:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-marketing:
+    image: ghcr.io/the-furious-five/medicalsys-ms-marketing:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-auditoria:
+    image: ghcr.io/the-furious-five/medicalsys-ms-auditoria:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-notificaciones:
+    image: ghcr.io/the-furious-five/medicalsys-ms-notificaciones:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  ms-gateway:
+    image: ghcr.io/the-furious-five/medicalsys-ms-gateway:latest
+    build: !reset null
+    restart: unless-stopped
+    ports: !reset []
+  postgres:
+    restart: unless-stopped
+    ports: !reset []
+  redis:
+    restart: unless-stopped
+    ports: !reset []
+  minio:
+    restart: unless-stopped
+    ports: !reset []
+  kafka:
+    restart: unless-stopped
+    ports: !reset []
+  mysql:
+    restart: unless-stopped
+    ports: !reset []
+
+volumes:
+  caddy_data:
+  caddy_config:

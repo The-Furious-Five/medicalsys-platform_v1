@@ -1,0 +1,6 @@
+# TLS automatico (Let's Encrypt). El DNS debe apuntar ya al VPS.
+medicalsys.los5furiosos.cloud {
+	encode gzip
+	# El contenedor "frontend" (Nginx) sirve el SPA y reenvia /api al ms-gateway.
+	reverse_proxy frontend:80
+}
