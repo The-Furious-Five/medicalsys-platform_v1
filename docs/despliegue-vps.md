@@ -2,10 +2,8 @@
 
 Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
 
-> **Pausado:** por ahora el workflow solo se lanza a mano (**Actions → CI/CD - Deploy al VPS → Run workflow**)
-> para no gastar minutos de GitHub Actions. Al reactivar el disparador `push`, cada push a `main` vuelve a desplegar.
-
-Cada ejecucion:
+Se ejecuta en cada push a `main` (salvo cambios solo de documentacion) y tambien a mano desde
+**Actions → CI/CD - Deploy al VPS → Run workflow**. Cada ejecucion:
 
 1. **test**: `mvn test` de los 14 microservicios en paralelo. Los que usan Testcontainers
    levantan MySQL con el Docker del runner.
@@ -87,6 +85,12 @@ IDENTITY_DEMO_ORGANIZATION=00000000-0000-4000-8000-0000000000a1
 IDENTITY_DEMO_USERS_ENABLED=true
 IDENTITY_DEMO_PASSWORD=CAMBIAR
 
+# Cuenta de plataforma: la unica con identity.role.manage, necesaria para crear roles y editar la
+# matriz de accesos (RBAC-02/RBAC-05). Su contrasena tambien debe cumplir la politica de IAM-02.
+PLATFORM_ADMIN_SEED_ENABLED=true
+PLATFORM_ADMIN_EMAIL=CAMBIAR
+PLATFORM_ADMIN_PASSWORD=CAMBIAR
+
 # MySQL
 MYSQL_ROOT_PASSWORD=CAMBIAR
 IDENTIDAD_DB_PASSWORD=CAMBIAR
@@ -116,8 +120,8 @@ MINIO_ROOT_USER=medicalsys
 MINIO_ROOT_PASSWORD=CAMBIAR_minimo_8_caracteres
 MINIO_BUCKET=medicalsys-documents
 
-# Gateway: origenes del frontend separados por coma, p. ej. https://medicalsys.vercel.app
-GATEWAY_ALLOWED_ORIGINS=CAMBIAR
+# Gateway: origenes del frontend separados por coma (nunca *). El frontend del VPS:
+GATEWAY_ALLOWED_ORIGINS=https://medicalsys.los5furiosos.cloud
 
 # Datos de demostracion (para la presentacion)
 AUDITORIA_DEMO_SEED=true
@@ -133,6 +137,18 @@ WHATSAPP_APP_SECRET=
 
 `IMAGE_REGISTRY` e `IMAGE_TAG` no van en el secreto: el workflow los agrega al `.env` del VPS
 en cada despliegue.
+
+## Frontend (repo medicalsys_frontend)
+
+El frontend se despliega con su propio workflow (`Deploy frontend`) en `/opt/medicalsys-frontend`, con
+Caddy publicando 80/443 y el dominio con HTTPS. Se une a la red `medicalsys-interna` que crea este
+compose, asi que **el backend se despliega primero**. Ese repo necesita sus propios secretos
+`VPS_HOST`, `VPS_USER` y `VPS_SSH_KEY` (o secretos de organizacion), y el usuario de deploy tiene que
+poder escribir en `/opt/medicalsys-frontend`:
+
+```bash
+sudo mkdir -p /opt/medicalsys-frontend && sudo chown deploy: /opt/medicalsys-frontend
+```
 
 ## Volver a una version anterior
 
