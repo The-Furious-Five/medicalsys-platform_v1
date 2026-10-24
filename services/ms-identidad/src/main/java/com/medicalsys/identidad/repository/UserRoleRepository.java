@@ -30,11 +30,16 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
     long countHoldersOfBoth(@Param("first") Role first, @Param("second") Role second,
                             @Param("today") LocalDate today);
 
-    /** Cuentas activas que hoy ejercen el permiso por algun rol activo con asignacion vigente. */
+    /**
+     * Cuentas activas que hoy ejercen el permiso por algun rol activo con asignacion vigente y con un
+     * nivel MAC que lo cubre. ponytail: compara contra RESTRICTED porque solo se usa con
+     * identity.role.manage, que es RESTRICTED; si se usa con otro permiso, comparar por nivel.
+     */
     @Query("""
             select count(distinct ur.userAccount.id) from UserRole ur join ur.role r join r.permissions p
             where p.code = :permission
               and r.active = true
+              and ur.userAccount.clearance = com.medicalsys.identidad.domain.SecurityLevel.RESTRICTED
               and ur.userAccount.status = :status
               and ur.validFrom <= :today
               and (ur.validUntil is null or ur.validUntil >= :today)

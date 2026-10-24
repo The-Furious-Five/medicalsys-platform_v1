@@ -5,6 +5,7 @@ import com.medicalsys.identidad.domain.PermissionModule;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleIncompatibility;
 import com.medicalsys.identidad.domain.RoleScope;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.domain.UserStatus;
@@ -48,6 +49,12 @@ public class RoleGovernance {
     /** Sin al menos una cuenta activa con este permiso, nadie podria volver a corregir los roles. */
     static final String ROLE_ADMINISTRATION = "identity.role.manage";
 
+    /**
+     * ISO-01: el OSI otorga permisos sin ejercerlos. Quien lo tiene queda fuera de la regla de no
+     * escalada; las demas (no tocarse a si mismo, no editar un rol que tiene) le siguen aplicando.
+     */
+    static final String PERMISSION_GRANT = "identity.permission.grant";
+
     private final UserAccountRepository users;
     private final UserRoleRepository userRoles;
     private final RoleIncompatibilityRepository incompatibilities;
@@ -70,6 +77,10 @@ public class RoleGovernance {
         public boolean holds(String permission) {
             return permissions.contains(permission);
         }
+
+        public boolean grantsPermissions() {
+            return holds(PERMISSION_GRANT);
+        }
     }
 
     /** {@code null} solo para procesos internos; una sesion que no corresponde a una cuenta es un 403. */
@@ -87,7 +98,8 @@ public class RoleGovernance {
         Set<String> assignable = new HashSet<>();
         boolean platform = false;
         for (Role role : effectiveRoles(account, today)) {
-            role.getPermissions().forEach(permission -> permissions.add(permission.getCode()));
+            role.getPermissions().stream().filter(account::clears)
+                    .forEach(permission -> permissions.add(permission.getCode()));
             role.getAssignableRoles().forEach(delegated -> assignable.add(delegated.getCode()));
             platform |= role.getScope() == RoleScope.PLATFORM;
         }
@@ -190,6 +202,26 @@ public class RoleGovernance {
         });
     }
 
+    // ------------------------------------------------------------------ MAC
+
+    /**
+     * Quien fija el nivel de autorizacion de una cuenta (ISO-01): la ve, no es el mismo y no concede
+     * un nivel por encima del suyo. El permiso identity.clearance.manage lo exige SecurityConfig.
+     */
+    public void checkCanSetClearance(Actor actor, UserAccount target, SecurityLevel level) {
+        checkCanSee(actor, target);
+        if (actor == null) {
+            return;
+        }
+        if (Objects.equals(actor.account().getPublicId(), target.getPublicId())) {
+            throw ApiException.forbidden("Segregacion de funciones: nadie fija su propio nivel de autorizacion");
+        }
+        if (!actor.account().getClearance().covers(level)) {
+            throw ApiException.forbidden("No puede conceder el nivel " + level + ": el suyo es "
+                    + actor.account().getClearance());
+        }
+    }
+
     // ------------------------------------------------------------------ definicion de roles
 
     /**
@@ -213,7 +245,7 @@ public class RoleGovernance {
 
     /** Al editar un rol solo se agregan permisos que quien edita ya tiene. Quitar nunca escala. */
     public void checkCanGrant(Actor actor, Collection<Permission> added) {
-        if (actor == null) {
+        if (actor == null || actor.grantsPermissions()) {
             return;
         }
         List<String> missing = added.stream()
@@ -252,6 +284,9 @@ public class RoleGovernance {
     // ------------------------------------------------------------------ auxiliares
 
     static List<String> missingGovernancePermissions(Actor actor, Collection<Permission> granted) {
+        if (actor.grantsPermissions()) {
+            return List.of();
+        }
         return granted.stream()
                 .filter(permission -> GOVERNANCE_MODULES.contains(permission.getModule()))
                 .map(Permission::getCode)
@@ -270,7 +305,7 @@ public class RoleGovernance {
 
     static Collection<Permission> effectivePermissions(UserAccount account, LocalDate today) {
         Map<String, Permission> byCode = new LinkedHashMap<>();
-        effectiveRoles(account, today).forEach(role -> role.getPermissions()
+        effectiveRoles(account, today).forEach(role -> role.getPermissions().stream().filter(account::clears)
                 .forEach(permission -> byCode.putIfAbsent(permission.getCode(), permission)));
         return byCode.values();
     }

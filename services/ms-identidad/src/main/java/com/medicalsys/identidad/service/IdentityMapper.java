@@ -28,6 +28,7 @@ public class IdentityMapper {
                 user.getPhoneE164(),
                 user.getLanguage(),
                 user.getStatus(),
+                user.getClearance(),
                 user.isMfaEnabled(),
                 user.getFailedAttempts() == null ? 0 : user.getFailedAttempts(),
                 user.getLockedUntil(),
@@ -77,7 +78,8 @@ public class IdentityMapper {
                 permission.getCode(),
                 permission.getModule(),
                 permission.getDescription(),
-                permission.isSensitive());
+                permission.isSensitive(),
+                permission.getClassification());
     }
 
     public RoleIncompatibilityResponse toIncompatibilityResponse(RoleIncompatibility pair) {
@@ -104,11 +106,13 @@ public class IdentityMapper {
                 .toList();
     }
 
+    /** RBAC concede y MAC filtra: los permisos de los roles vigentes que el nivel de la cuenta cubre. */
     public List<String> activePermissionCodes(UserAccount user) {
         LocalDate today = LocalDate.now();
         return user.getRoleAssignments().stream()
                 .filter(assignment -> isEffective(assignment, today))
                 .flatMap(assignment -> assignment.getRole().getPermissions().stream())
+                .filter(user::clears)
                 .map(Permission::getCode)
                 .distinct()
                 .sorted()

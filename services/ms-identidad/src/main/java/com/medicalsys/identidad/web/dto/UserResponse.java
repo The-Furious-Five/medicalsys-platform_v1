@@ -1,6 +1,7 @@
 package com.medicalsys.identidad.web.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserStatus;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +16,7 @@ public record UserResponse(
         String phoneE164,
         String language,
         UserStatus status,
+        SecurityLevel clearance,
         boolean mfaEnabled,
         int failedAttempts,
         Instant lockedUntil,
@@ -28,6 +30,6 @@ public record UserResponse(
 
     public UserResponse withTemporaryPassword(String password) {
         return new UserResponse(publicId, userCode, organizationPublicId, email, fullName, phoneE164, language,
-                status, mfaEnabled, failedAttempts, lockedUntil, lastAccessAt, createdAt, updatedAt, roles, password);
+                status, clearance, mfaEnabled, failedAttempts, lockedUntil, lastAccessAt, createdAt, updatedAt, roles, password);
     }
 }

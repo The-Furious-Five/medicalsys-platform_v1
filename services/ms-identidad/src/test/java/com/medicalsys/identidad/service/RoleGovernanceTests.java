@@ -9,6 +9,7 @@ import com.medicalsys.identidad.domain.PermissionModule;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleIncompatibility;
 import com.medicalsys.identidad.domain.RoleScope;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.service.RoleGovernance.Actor;
@@ -224,6 +225,48 @@ class RoleGovernanceTests {
         former.getRoleAssignments().add(new UserRole(former, billing, CLINIC, null,
                 TODAY.minusYears(1), TODAY.minusDays(1), null));
         assertThat(RoleGovernance.firstConflict(former, physician, List.of(pair), TODAY)).isEmpty();
+    }
+
+    // ------------------------------------------------------------------ ISO-01: OSI y MAC
+
+    @Test
+    @DisplayName("MAC: el rol concede, pero el nivel de la cuenta filtra los permisos que no cubre")
+    void clearanceFiltersRolePermissions() {
+        Permission narrative = permission("clinical.narrative.read", PermissionModule.CLINICAL);
+        narrative.setClassification(SecurityLevel.RESTRICTED);
+        UserAccount nurse = account(CLINIC, role("NURSE", RoleScope.ORGANIZATION, BRANCH_READ, narrative));
+        nurse.setClearance(SecurityLevel.CONFIDENTIAL);
+
+        assertThat(actor(nurse).permissions()).containsExactly("tenancy.branch.read");
+
+        nurse.setClearance(SecurityLevel.RESTRICTED);
+        assertThat(actor(nurse).permissions()).contains("clinical.narrative.read");
+    }
+
+    @Test
+    @DisplayName("el OSI otorga permisos que no ejerce; sin identity.permission.grant rige la no escalada")
+    void securityOfficerGrantsWithoutHolding() {
+        Permission grant = permission("identity.permission.grant", PermissionModule.IDENTITY);
+        UserAccount osi = account(CLINIC, role("OSI", RoleScope.PLATFORM, ROLE_MANAGE, grant));
+
+        assertThatCode(() -> governance.checkCanGrant(actor(osi), List.of(ENCOUNTER_SIGN, ORG_CREATE)))
+                .doesNotThrowAnyException();
+        assertForbidden(() -> governance.checkCanGrant(actor(admin), List.of(ENCOUNTER_SIGN)),
+                "clinical.encounter.sign");
+    }
+
+    @Test
+    @DisplayName("MAC: nadie fija su propio nivel ni concede uno por encima del suyo")
+    void clearanceRules() {
+        UserAccount osi = account(CLINIC, role("OSI", RoleScope.PLATFORM, ROLE_MANAGE));
+        osi.setClearance(SecurityLevel.CONFIDENTIAL);
+
+        assertForbidden(() -> governance.checkCanSetClearance(actor(osi), osi, SecurityLevel.INTERNAL),
+                "su propio nivel");
+        assertForbidden(() -> governance.checkCanSetClearance(actor(osi), doctor, SecurityLevel.RESTRICTED),
+                "el suyo es CONFIDENTIAL");
+        assertThatCode(() -> governance.checkCanSetClearance(actor(osi), doctor, SecurityLevel.CONFIDENTIAL))
+                .doesNotThrowAnyException();
     }
 
     private static void assertForbidden(ThrowingCallable call, String detail) {

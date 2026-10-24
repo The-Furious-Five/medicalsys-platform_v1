@@ -260,6 +260,11 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-platform.admin@medicalsys.demo}
       PLATFORM_ADMIN_FULL_NAME: ${PLATFORM_ADMIN_FULL_NAME:-Administrador de MedicalSys}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
+      # ISO-01: primera cuenta OSI, la unica que otorga permisos y fija niveles MAC.
+      OSI_SEED_ENABLED: ${OSI_SEED_ENABLED:-false}
+      OSI_ORGANIZATION: ${OSI_ORGANIZATION:-00000000-0000-4000-8000-0000000000a1}
+      OSI_EMAIL: ${OSI_EMAIL:-security.officer@medicalsys.demo}
+      OSI_PASSWORD: ${OSI_PASSWORD:-}
       # LOG-01/LOG-02: login, ABM, contrasenas, roles y denegaciones hacia la bitacora. Vacio lo desactiva.
       AUDIT_SERVICE_URL: http://ms-auditoria:8091
       # IAM-03: las credenciales se validan contra Keycloak (cliente confidencial ms-identidad).

@@ -176,6 +176,7 @@ public class AuthService {
                 user.getFullName(),
                 user.getOrganizationPublicId(),
                 user.getStatus(),
+                user.getClearance(),
                 user.getLanguage(),
                 roles,
                 permissions);

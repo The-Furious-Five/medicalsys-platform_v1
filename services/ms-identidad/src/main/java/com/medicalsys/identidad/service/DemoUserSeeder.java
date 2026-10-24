@@ -2,6 +2,8 @@ package com.medicalsys.identidad.service;
 
 import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.RoleCode;
+import com.medicalsys.identidad.domain.RoleScope;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
 import com.medicalsys.identidad.web.dto.RoleAssignmentRequest;
@@ -35,8 +37,21 @@ public class DemoUserSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoUserSeeder.class);
 
-    /** Una cuenta del centro. El identificador publico se fija aqui, no se sortea. */
-    private record DemoAccount(String publicId, String email, String fullName, String phone, RoleCode role) { }
+    /**
+     * Una cuenta del centro. El identificador publico se fija aqui, no se sortea. El nivel MAC
+     * (ISO-01) es el que el OSI le daria al rol: sin el, la cuenta entraria con INTERNAL y su rol no
+     * le aportaria los permisos confidenciales.
+     */
+    private record DemoAccount(String publicId, String email, String fullName, String phone, RoleCode role) {
+
+        SecurityLevel clearance() {
+            return switch (role) {
+                case PHYSICIAN, OSI -> SecurityLevel.RESTRICTED;
+                case PATIENT -> SecurityLevel.INTERNAL;
+                default -> SecurityLevel.CONFIDENTIAL;
+            };
+        }
+    }
 
     private static final List<DemoAccount> ACCOUNTS = List.of(
             new DemoAccount("00000000-0000-4000-8000-000000000901", "admin@medicalsys.demo",
@@ -61,7 +76,18 @@ public class DemoUserSeeder implements ApplicationRunner {
             new DemoAccount("00000000-0000-4000-8000-000000000909", "nutricion@medicalsys.demo",
                     "Andrea Terceros Blanco", "+59174620358", RoleCode.PHYSICIAN),
             new DemoAccount("00000000-0000-4000-8000-00000000090a", "odontologia@medicalsys.demo",
-                    "Martin Ibanez Sosa", "+59179516024", RoleCode.PHYSICIAN));
+                    "Martin Ibanez Sosa", "+59179516024", RoleCode.PHYSICIAN),
+            // ISO-01: una cuenta por cada rol nuevo, para recorrer la interfaz con cada uno.
+            new DemoAccount("00000000-0000-4000-8000-00000000090b", "osi@medicalsys.demo",
+                    "Lucia Quiroga Vargas", "+59171839204", RoleCode.OSI),
+            new DemoAccount("00000000-0000-4000-8000-00000000090c", "auditor@medicalsys.demo",
+                    "Hugo Paredes Lima", "+59176203915", RoleCode.AUDITOR),
+            new DemoAccount("00000000-0000-4000-8000-00000000090d", "enfermeria@medicalsys.demo",
+                    "Carla Rojas Mamani", "+59172648130", RoleCode.NURSE),
+            new DemoAccount("00000000-0000-4000-8000-00000000090e", "laboratorio@medicalsys.demo",
+                    "Diego Choque Flores", "+59175092471", RoleCode.LAB_TECHNICIAN),
+            new DemoAccount("00000000-0000-4000-8000-00000000090f", "marketing@medicalsys.demo",
+                    "Valeria Gutierrez Soria", "+59178350619", RoleCode.MARKETING_MANAGER));
 
     private final IdentityProperties properties;
     private final UserAccountRepository users;
@@ -91,7 +117,8 @@ public class DemoUserSeeder implements ApplicationRunner {
 
     private void seed(DemoAccount account, UUID organization, String password) {
         UUID publicId = UUID.fromString(account.publicId());
-        if (!users.existsByEmailIgnoreCase(account.email())) {
+        boolean created = !users.existsByEmailIgnoreCase(account.email());
+        if (created) {
             userService.createSeedAccount(new CreateUserRequest(
                     account.email(), account.fullName(), password, account.phone(), organization, "es-BO", true,
                     List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))));
@@ -104,7 +131,11 @@ public class DemoUserSeeder implements ApplicationRunner {
                 .ifPresent(user -> {
                     // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la de la demo.
                     linker.restoreConfiguredCredential(user, password);
-                    boolean changed = false;
+                    // Solo al crearla: despues el nivel es decision del OSI y un reinicio no lo pisa.
+                    boolean changed = created;
+                    if (created) {
+                        user.setClearance(account.clearance());
+                    }
                     if (!publicId.equals(user.getPublicId())) {
                         user.setPublicId(publicId);
                         changed = true;
@@ -114,7 +145,9 @@ public class DemoUserSeeder implements ApplicationRunner {
                         changed = true;
                     }
                     for (var assignment : user.getRoleAssignments()) {
-                        if (!organization.equals(assignment.getOrganizationPublicId())) {
+                        // Un rol de plataforma (el OSI) no pertenece a ninguna organizacion.
+                        if (assignment.getRole().getScope() != RoleScope.PLATFORM
+                                && !organization.equals(assignment.getOrganizationPublicId())) {
                             assignment.setOrganizationPublicId(organization);
                             changed = true;
                         }

@@ -4,6 +4,7 @@ import com.medicalsys.identidad.audit.AuditEventDraft;
 import com.medicalsys.identidad.audit.AuditTrail;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleScope;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.domain.UserStatus;
@@ -13,6 +14,7 @@ import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
 import com.medicalsys.identidad.service.RoleGovernance.Actor;
+import com.medicalsys.identidad.web.dto.ChangeClearanceRequest;
 import com.medicalsys.identidad.web.dto.ChangePasswordRequest;
 import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
@@ -381,6 +383,25 @@ public class UserService {
         user.setKeycloakUserId(linked);
         user.setPasswordHash(null);
         return linked;
+    }
+
+    /**
+     * ISO-01 (MAC): el OSI fija el nivel de autorizacion. Las sesiones abiertas se cierran porque su
+     * token lleva los permisos calculados con el nivel anterior.
+     */
+    @Transactional
+    public UserResponse changeClearance(UUID publicId, ChangeClearanceRequest request, UUID actorPublicId) {
+        UserAccount user = require(publicId);
+        governance.checkCanSetClearance(governance.resolve(actorPublicId), user, request.clearance());
+        SecurityLevel previous = user.getClearance();
+        long administrators = governance.roleAdministrators();
+        user.setClearance(request.clearance());
+        users.saveAndFlush(user);
+        governance.checkRoleAdministrationSurvives(administrators);
+        sessionStore.closeAll(user.getPublicId());
+        record("CLEARANCE_CHANGED", actorPublicId, user, request.reason(),
+                Map.of("previousClearance", previous.name(), "newClearance", request.clearance().name()));
+        return mapper.toUserResponse(user);
     }
 
     @Transactional

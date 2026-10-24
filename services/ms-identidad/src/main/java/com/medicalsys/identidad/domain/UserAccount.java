@@ -78,6 +78,11 @@ public class UserAccount {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status = UserStatus.PENDING_ACTIVATION;
 
+    /** Nivel de autorizacion MAC (ISO-01). Solo lo cambia el OSI con identity.clearance.manage. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "clearance_level", nullable = false, length = 20)
+    private SecurityLevel clearance = SecurityLevel.INTERNAL;
+
     @Column(name = "failed_attempts", nullable = false)
     private Byte failedAttempts = 0;
 
@@ -126,6 +131,19 @@ public class UserAccount {
 
     public boolean isLinkedToIdentityProvider() {
         return keycloakUserId != null;
+    }
+
+    /** MAC: el rol concede el permiso, pero solo se ejerce si el nivel de la cuenta cubre su clasificacion. */
+    public boolean clears(Permission permission) {
+        return clearance.covers(permission.getClassification());
+    }
+
+    public SecurityLevel getClearance() {
+        return clearance;
+    }
+
+    public void setClearance(SecurityLevel clearance) {
+        this.clearance = clearance;
     }
 
     public Long getId() {

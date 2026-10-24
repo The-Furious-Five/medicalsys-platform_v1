@@ -75,3 +75,11 @@ medicalsys:
       email: ${PLATFORM_ADMIN_EMAIL:platform.admin@medicalsys.demo}
       full-name: ${PLATFORM_ADMIN_FULL_NAME:Administrador de MedicalSys}
       password: ${PLATFORM_ADMIN_PASSWORD:}
+    # ISO-01: primera cuenta OSI, la unica que puede otorgar permisos y fijar niveles MAC.
+    security-officer:
+      enabled: ${OSI_SEED_ENABLED:false}
+      public-id: ${OSI_PUBLIC_ID:00000000-0000-4000-8000-0000000009ff}
+      organization-public-id: ${OSI_ORGANIZATION:${IDENTITY_DEMO_ORGANIZATION:00000000-0000-4000-8000-0000000000a1}}
+      email: ${OSI_EMAIL:security.officer@medicalsys.demo}
+      full-name: ${OSI_FULL_NAME:Oficial de Seguridad de la Informacion}
+      password: ${OSI_PASSWORD:}
