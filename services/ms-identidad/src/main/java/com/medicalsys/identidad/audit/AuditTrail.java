@@ -126,7 +126,7 @@ public class AuditTrail {
         body.put("actorUserId", draft.actorUserId());
         body.put("actorDisplayName", draft.actorDisplayName());
         body.put("actorRoles", draft.actorRoles() == null ? List.of() : draft.actorRoles());
-        body.put("actorIp", request == null ? null : request.getRemoteAddr());
+        body.put("actorIp", clientIp(request));
         body.put("resourceType", draft.resourceType());
         body.put("resourcePublicId", draft.resourcePublicId());
         body.put("resourceLabel", draft.resourceLabel());
@@ -170,5 +170,18 @@ public class AuditTrail {
         Map<String, Object> copy = new LinkedHashMap<>(body);
         copy.remove("correlationIdHint");
         return copy;
+    }
+
+    /**
+     * IP del usuario (LOG-01). El gateway pone la IP real del cliente en X-Client-Ip y es el unico que
+     * llega a este servicio (HARD-01); getRemoteAddr() seria siempre la IP del gateway.
+     */
+    static String clientIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        // Solo X-Client-Ip, que pone el gateway y descarta si lo manda el cliente; X-Forwarded-For no es confiable.
+        String clientIp = request.getHeader("X-Client-Ip");
+        return clientIp != null && !clientIp.isBlank() ? clientIp.trim() : request.getRemoteAddr();
     }
 }

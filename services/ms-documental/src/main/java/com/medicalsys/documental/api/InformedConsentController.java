@@ -47,7 +47,7 @@ public class InformedConsentController {
     public InformedConsentResponse requestOtp(@PathVariable UUID consentId, HttpServletRequest servletRequest) {
         RequestIdentity identity = RequestIdentity.from(servletRequest);
         return service.requestOtp(consentId, identity.organizationId(), identity.userId(),
-                servletRequest.getRemoteAddr(), servletRequest.getHeader("User-Agent"));
+                clientIp(servletRequest), servletRequest.getHeader("User-Agent"));
     }
 
     @PostMapping("/{consentId}/firma")
@@ -56,7 +56,7 @@ public class InformedConsentController {
             @Valid @RequestBody SignInformedConsentRequest request, HttpServletRequest servletRequest) {
         RequestIdentity identity = RequestIdentity.from(servletRequest);
         return service.sign(consentId, identity.organizationId(), identity.userId(), request,
-                servletRequest.getRemoteAddr(), servletRequest.getHeader("User-Agent"));
+                clientIp(servletRequest), servletRequest.getHeader("User-Agent"));
     }
 
     @PostMapping("/{consentId}/rechazo")
@@ -78,5 +78,15 @@ public class InformedConsentController {
     public List<InformedConsentResponse> listByPatient(@RequestParam UUID patientId,
             HttpServletRequest servletRequest) {
         return service.listByPatient(patientId, RequestIdentity.from(servletRequest).organizationId());
+    }
+
+    /**
+     * IP de quien solicita el OTP o firma: queda como evidencia del consentimiento. El gateway pone la IP
+     * real del cliente en X-Client-Ip; getRemoteAddr() seria la del gateway.
+     */
+    static String clientIp(HttpServletRequest request) {
+        // Solo X-Client-Ip, que pone el gateway y descarta si lo manda el cliente; X-Forwarded-For no es confiable.
+        String clientIp = request.getHeader("X-Client-Ip");
+        return clientIp != null && !clientIp.isBlank() ? clientIp.trim() : request.getRemoteAddr();
     }
 }
