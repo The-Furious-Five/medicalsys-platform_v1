@@ -135,6 +135,17 @@ class DocumentsControllerTest {
     }
 
     @Test
+    void integrityCheckRequiresTheDocumentReadPermission() throws Exception {
+        // RBAC-03: el rol no basta; sin documents.document.read la verificacion de integridad es 403.
+        mvc.perform(get("/api/v1/documents/" + DOCUMENT_ID + "/integrity")
+                        .header("X-Organization-Id", ORGANIZATION_ID)
+                        .header("X-User-Id", USER_ID)
+                        .header("X-Roles", "PHYSICIAN")
+                        .header("X-Permissions", "documents.document.upload"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void reportsIntegrityMismatchWithoutFailingTheRequest() throws Exception {
         when(service.checkIntegrity(eq(DOCUMENT_ID), eq(UUID.fromString(ORGANIZATION_ID))))
                 .thenReturn(new IntegrityCheckResult(DOCUMENT_ID, "a".repeat(64), "b".repeat(64), false));
@@ -142,7 +153,7 @@ class DocumentsControllerTest {
         mvc.perform(get("/api/v1/documents/" + DOCUMENT_ID + "/integrity")
                         .header("X-Organization-Id", ORGANIZATION_ID)
                         .header("X-User-Id", USER_ID)
-                        .header("X-Roles", "PHYSICIAN"))
+                        .header("X-Permissions", "documents.document.read"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.documentId").value(DOCUMENT_ID.toString()))
                 .andExpect(jsonPath("$.matches").value(false))
