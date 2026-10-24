@@ -10,17 +10,20 @@ import java.util.Optional;
  */
 public enum Role {
     PLATFORM_ADMIN,
-    // ISO-01: sin estos, la exportacion del OSI o del auditor quedaba asentada sin roles.
     OSI,
     AUDITOR,
+    EXTERNAL_AUDITOR,
     ADMINISTRATOR,
     PHYSICIAN,
+    MEDICAL_INTERN,
     NURSE,
     LAB_TECHNICIAN,
     RECEPTIONIST,
-    PATIENT,
     BILLING_CLERK,
-    MARKETING_MANAGER;
+    BILLING_SUPERVISOR,
+    MARKETING_MANAGER,
+    PATIENT,
+    DEVOPS;
 
     /** Traduce un codigo recibido en el header; un rol desconocido se ignora en vez de fallar. */
     public static Optional<Role> parse(String code) {

@@ -62,5 +62,8 @@ public record InvoiceResponse(
         Integer paymentMethodCode,
         OffsetDateTime issuedAt,
         OffsetDateTime validatedAt,
-        List<InvoiceItemResponse> items) {
+        List<InvoiceItemResponse> items,
+        Integer cancellationReasonCode,
+        OffsetDateTime voidedAt,
+        UUID voidedByUserId) {
 }

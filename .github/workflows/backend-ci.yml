@@ -51,6 +51,8 @@ jobs:
           fi
       - name: Cada endpoint exige el permiso que dice la matriz (RBAC-01/RBAC-03)
         run: python3 scripts/ci/check_permissions.py
+      - name: Roles y modelos coinciden con la matriz aprobada
+        run: python3 scripts/ci/check_role_matrix.py
       - name: compose.yaml valido y sin variables faltantes en .env.example
         run: |
           docker compose --env-file .env.example -f compose.yaml config -q 2>&1 | tee compose.log

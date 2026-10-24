@@ -71,7 +71,7 @@ class PermissionCatalogMigrationTests {
     @Test
     @DisplayName("el CHECK de la columna module admite exactamente los valores del enum")
     void moduleCheckMatchesEnum() throws IOException {
-        Matcher check = MODULE_CHECK.matcher(migration());
+        Matcher check = MODULE_CHECK.matcher(resource("/db/migration/V11__approved_role_matrix.sql"));
         assertThat(check.find()).isTrue();
 
         List<String> allowed = Arrays.stream(check.group(1).split(","))
@@ -103,7 +103,11 @@ class PermissionCatalogMigrationTests {
     }
 
     private static String migration() throws IOException {
-        try (InputStream in = PermissionCatalogMigrationTests.class.getResourceAsStream(MIGRATION)) {
+        return resource(MIGRATION);
+    }
+
+    private static String resource(String path) throws IOException {
+        try (InputStream in = PermissionCatalogMigrationTests.class.getResourceAsStream(path)) {
             assertThat(in).as(MIGRATION).isNotNull();
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }

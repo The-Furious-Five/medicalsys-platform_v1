@@ -51,7 +51,7 @@ public class DemoUserSeeder implements ApplicationRunner {
 
         SecurityLevel clearance() {
             return switch (role) {
-                case PHYSICIAN, OSI -> SecurityLevel.RESTRICTED;
+                case PHYSICIAN, OSI, DEVOPS -> SecurityLevel.RESTRICTED;
                 case PATIENT -> SecurityLevel.INTERNAL;
                 default -> SecurityLevel.CONFIDENTIAL;
             };
@@ -92,7 +92,19 @@ public class DemoUserSeeder implements ApplicationRunner {
             new DemoAccount("00000000-0000-4000-8000-00000000090e", "laboratorio@medicalsys.demo",
                     "Diego Choque Flores", "+59175092471", RoleCode.LAB_TECHNICIAN),
             new DemoAccount("00000000-0000-4000-8000-00000000090f", "marketing@medicalsys.demo",
-                    "Valeria Gutierrez Soria", "+59178350619", RoleCode.MARKETING_MANAGER));
+                    "Valeria Gutierrez Soria", "+59178350619", RoleCode.MARKETING_MANAGER),
+            new DemoAccount("00000000-0000-4000-8000-000000000910", "auditor.externo@medicalsys.demo",
+                    "Andrea Vera Demo", "+59170000910", RoleCode.EXTERNAL_AUDITOR),
+            new DemoAccount("00000000-0000-4000-8000-000000000911", "pasante@medicalsys.demo",
+                    "Pablo Flores Demo", "+59170000911", RoleCode.MEDICAL_INTERN),
+            new DemoAccount("00000000-0000-4000-8000-000000000912", "caja2@medicalsys.demo",
+                    "Rosa Rios Demo", "+59170000912", RoleCode.BILLING_SUPERVISOR),
+            new DemoAccount("00000000-0000-4000-8000-000000000913", "paciente@medicalsys.demo",
+                    "Ana Paciente Demo", "+59170000913", RoleCode.PATIENT),
+            new DemoAccount("00000000-0000-4000-8000-000000000914", "devops@medicalsys.demo",
+                    "David Sistemas Demo", "+59170000914", RoleCode.DEVOPS),
+            new DemoAccount("00000000-0000-4000-8000-000000000915", "plataforma@medicalsys.demo",
+                    "Pedro Plataforma Demo", "+59170000915", RoleCode.PLATFORM_ADMIN));
 
     private final IdentityProperties properties;
     private final UserAccountRepository users;

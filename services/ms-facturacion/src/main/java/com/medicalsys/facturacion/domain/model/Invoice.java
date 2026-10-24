@@ -164,6 +164,12 @@ public class Invoice {
     @Column(name = "voided_at")
     private Instant voidedAt;
 
+    @Column(name = "voided_by_user_public_id", columnDefinition = "BINARY(16)")
+    private UUID voidedByUserPublicId;
+
+    @Column(name = "demo_emission", nullable = false)
+    private boolean demoEmission;
+
     @Column(name = "issued_by_user_public_id", updatable = false, columnDefinition = "BINARY(16)")
     private UUID issuedByUserPublicId;
 
@@ -279,6 +285,7 @@ public class Invoice {
         }
         this.cuf = Objects.requireNonNull(cuf, "cuf");
         this.status = Objects.requireNonNull(status, "status");
+        this.demoEmission = status.isDemo();
         this.taxReceiptCode = taxReceiptCode;
         this.caption = caption;
         this.qrUrl = qrUrl;
@@ -302,7 +309,28 @@ public class Invoice {
 
     /** Indica si el documento proviene del adaptador simulado y no de una autoridad fiscal real. */
     public boolean isDemo() {
-        return status.isDemo();
+        return demoEmission || status.isDemo();
+    }
+
+    /** Conserva el documento y sus importes; registra quien lo anulo y por que. */
+    public void voidInvoice(int reasonCode, UUID actorId, Instant at) {
+        if (status == InvoiceStatus.VOIDED || status == InvoiceStatus.REJECTED) {
+            throw new IllegalStateException("La factura no admite anulacion en su estado actual");
+        }
+        if (Objects.equals(actorId, issuedByUserPublicId)) {
+            throw new IllegalStateException("Quien emitio la factura no puede anularla");
+        }
+        if (reasonCode < 1 || reasonCode > 4) {
+            throw new IllegalArgumentException("Motivo de anulacion invalido");
+        }
+        this.cancellationReasonCode = reasonCode;
+        this.voidedAt = Objects.requireNonNull(at, "at");
+        this.voidedByUserPublicId = Objects.requireNonNull(actorId, "actorId");
+        this.status = InvoiceStatus.VOIDED;
+    }
+
+    public UUID getVoidedByUserPublicId() {
+        return voidedByUserPublicId;
     }
 
     public Long getId() {
