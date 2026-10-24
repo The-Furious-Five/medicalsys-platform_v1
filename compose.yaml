@@ -100,7 +100,11 @@ services:
     logging: *medicalsys-logging
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    # quay.io/minio/* dejo de ser descargable sin credenciales (401). Imagen oficial de MinIO
+    # reconstruida por Chainguard; la variante -dev trae shell y wget para el healthcheck.
+    image: cgr.dev/chainguard/minio:latest-dev
+    # La imagen corre como no-root por defecto y el volumen nuevo es de root.
+    user: "0:0"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -110,7 +114,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - curl --fail --silent http://localhost:9000/minio/health/live || exit 1
+        - wget -q -O /dev/null http://localhost:9000/minio/health/live || exit 1
       interval: 5s
       timeout: 5s
       retries: 20
@@ -118,7 +122,7 @@ services:
     logging: *medicalsys-logging
 
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: cgr.dev/chainguard/minio-client:latest-dev
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
