@@ -66,6 +66,7 @@ public class AuditExportController {
     @GetMapping(value = "/events/export", produces = "text/csv")
     @RequiresPermission("audit.log.export")
     public void export(
+            @RequestParam(required = false) UUID organizationId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) AuditCategory category,
@@ -80,7 +81,7 @@ public class AuditExportController {
             @RequestParam(required = false) @Size(max = 64) String correlationId,
             @RequestParam(required = false) @Size(max = 160) String q,
             HttpServletResponse response) throws IOException {
-        AuditEventFilter filter = new AuditEventFilter(from, to, category, outcome, severity, serviceName,
+        AuditEventFilter filter = new AuditEventFilter(organizationId, from, to, category, outcome, severity, serviceName,
                 action, resourceType, actorUserId, patientId, resourceId, correlationId, q);
 
         recordExportAttempt(filter);
@@ -119,6 +120,7 @@ public class AuditExportController {
      */
     private void recordExportAttempt(AuditEventFilter filter) {
         Map<String, String> metadata = new LinkedHashMap<>();
+        putIfPresent(metadata, "organizationId", filter.organizationId());
         putIfPresent(metadata, "from", filter.from());
         putIfPresent(metadata, "to", filter.to());
         putIfPresent(metadata, "category", filter.category());

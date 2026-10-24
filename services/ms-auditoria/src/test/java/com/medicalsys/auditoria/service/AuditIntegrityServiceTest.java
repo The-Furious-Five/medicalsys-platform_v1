@@ -69,7 +69,7 @@ class AuditIntegrityServiceTest {
     void reportsAnIntactChain() {
         givenChainOf(3);
 
-        AuditIntegrityResponse report = service.verifyLatest(null);
+        AuditIntegrityResponse report = service.verifyLatest(null, null);
 
         assertTrue(report.intact());
         assertEquals(3, report.verifiedEvents());
@@ -83,7 +83,7 @@ class AuditIntegrityServiceTest {
         chain.set(1, tampered);
         given(chain, 3);
 
-        AuditIntegrityResponse report = service.verifyLatest(null);
+        AuditIntegrityResponse report = service.verifyLatest(null, null);
 
         assertFalse(report.intact());
         assertEquals(2L, report.brokenAtSequenceNumber());
@@ -97,7 +97,7 @@ class AuditIntegrityServiceTest {
         chain.remove(1);
         given(chain, 3);
 
-        AuditIntegrityResponse report = service.verifyLatest(null);
+        AuditIntegrityResponse report = service.verifyLatest(null, null);
 
         assertFalse(report.intact());
         assertEquals(2L, report.brokenAtSequenceNumber());

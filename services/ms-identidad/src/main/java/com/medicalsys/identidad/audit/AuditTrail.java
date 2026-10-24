@@ -11,6 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -116,6 +119,14 @@ public class AuditTrail {
      * hecho sea idempotente.
      */
     private Map<String, Object> toBody(AuditEventDraft draft, HttpServletRequest request, String correlationId) {
+        // Quien hace un ABM, cambia un nivel MAC o un rol (el OSI, un administrador) es quien tiene la sesion:
+        // su correo y sus roles salen del token, para que la bitacora diga quien fue y con que rol.
+        Jwt caller = currentJwt();
+        boolean actorIsCaller = caller != null && draft.actorUserId() != null
+                && draft.actorUserId().toString().equals(caller.getSubject());
+        List<String> callerRoles = actorIsCaller ? caller.getClaimAsStringList("roles") : null;
+        boolean withoutRoles = draft.actorRoles() == null || draft.actorRoles().isEmpty();
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("eventId", UUID.randomUUID());
         body.put("serviceName", SERVICE_NAME);
@@ -124,8 +135,9 @@ public class AuditTrail {
         body.put("severity", draft.severity());
         body.put("outcome", draft.outcome());
         body.put("actorUserId", draft.actorUserId());
-        body.put("actorDisplayName", draft.actorDisplayName());
-        body.put("actorRoles", draft.actorRoles() == null ? List.of() : draft.actorRoles());
+        body.put("actorDisplayName", draft.actorDisplayName() != null || !actorIsCaller
+                ? draft.actorDisplayName() : caller.getClaimAsString("email"));
+        body.put("actorRoles", !withoutRoles ? draft.actorRoles() : callerRoles != null ? callerRoles : List.of());
         body.put("actorIp", clientIp(request));
         body.put("resourceType", draft.resourceType());
         body.put("resourcePublicId", draft.resourcePublicId());
@@ -134,7 +146,9 @@ public class AuditTrail {
         body.put("requestPath", request == null ? null : request.getRequestURI());
         body.put("responseStatus", draft.responseStatus());
         body.put("reason", draft.reason());
-        body.put("organizationId", draft.organizationId());
+        // Sin organizacion ms-auditoria rechaza el evento (asi se perdian los 403 de este servicio): la del token.
+        body.put("organizationId", draft.organizationId() != null || caller == null
+                ? draft.organizationId() : parseUuid(caller.getClaimAsString("organizationId")));
         body.put("metadata", withUserAgent(draft.metadata(), request));
         body.put("correlationIdHint", correlationId);
         return body;
@@ -158,6 +172,19 @@ public class AuditTrail {
         return RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes servletAttributes
                 ? servletAttributes.getRequest()
                 : null;
+    }
+
+    private Jwt currentJwt() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getPrincipal() instanceof Jwt jwt ? jwt : null;
+    }
+
+    private static UUID parseUuid(String value) {
+        try {
+            return value == null ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     /** El correlationId viaja por header, como en el resto de saltos internos, no en el cuerpo. */

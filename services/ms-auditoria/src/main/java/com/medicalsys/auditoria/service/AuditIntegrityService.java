@@ -2,7 +2,6 @@ package com.medicalsys.auditoria.service;
 
 import com.medicalsys.auditoria.common.error.BusinessRuleException;
 import com.medicalsys.auditoria.common.error.ErrorCode;
-import com.medicalsys.auditoria.common.tenant.RequestContextHolder;
 import com.medicalsys.auditoria.domain.model.AuditChainHead;
 import com.medicalsys.auditoria.domain.model.AuditEvent;
 import com.medicalsys.auditoria.repository.AuditChainHeadRepository;
@@ -59,8 +58,8 @@ public class AuditIntegrityService {
      * @param window numero de eventos a recalcular; null aplica {@link #DEFAULT_WINDOW}
      */
     @Transactional(readOnly = true)
-    public AuditIntegrityResponse verifyLatest(Integer window) {
-        UUID organizationId = RequestContextHolder.require().organizationId();
+    public AuditIntegrityResponse verifyLatest(UUID requestedOrganizationId, Integer window) {
+        UUID organizationId = AuditScope.resolveSingle(requestedOrganizationId);
         int size = resolveWindow(window);
 
         long lastSequence = chainHeads.peekByOrganizationId(organizationId)

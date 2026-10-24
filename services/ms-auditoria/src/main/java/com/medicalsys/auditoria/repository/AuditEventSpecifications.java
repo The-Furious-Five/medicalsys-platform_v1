@@ -24,13 +24,16 @@ public final class AuditEventSpecifications {
     /**
      * Arma la consulta del tenant con los criterios recibidos.
      *
-     * <p>{@code organizationId} es un parametro aparte y no parte del filtro: viene del contexto de
-     * la solicitud y siempre se aplica, incluso si el filtro llega vacio.
+     * <p>{@code organizationId} es un parametro aparte y no parte del filtro: lo resuelve
+     * {@code AuditScope} desde el contexto de la solicitud y siempre se aplica, incluso si el filtro
+     * llega vacio. Solo es nulo con alcance de plataforma, que ve todas las organizaciones.
      */
     public static Specification<AuditEvent> of(UUID organizationId, AuditEventFilter filter) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(builder.equal(root.get("organizationId"), organizationId));
+            if (organizationId != null) {
+                predicates.add(builder.equal(root.get("organizationId"), organizationId));
+            }
 
             if (filter.from() != null) {
                 predicates.add(builder.greaterThanOrEqualTo(root.get("occurredAt"), filter.from()));
