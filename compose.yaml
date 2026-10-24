@@ -232,7 +232,8 @@ services:
       test: ["CMD-SHELL", "bash -c '(exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null'"]
       interval: 10s
       timeout: 10s
-      retries: 30
+      # En un VPS pequeno el primer arranque (importar el realm) pasa de 5 minutos: 90 x 10 s = 15 min.
+      retries: 90
       start_period: 40s
     logging: *medicalsys-logging
 
