@@ -1,7 +1,7 @@
 package com.medicalsys.identidad.domain;
 
 /**
- * Codigos de los roles de sistema que siembra V2. No es la lista de roles validos: desde RBAC-02
+ * Codigos de los roles de sistema que siembran V2 y V9. No es la lista de roles validos: desde RBAC-02
  * se crean otros por la API y {@link Role#getCode()} es un texto libre con formato controlado.
  */
 public enum RoleCode {
@@ -10,5 +10,11 @@ public enum RoleCode {
     PHYSICIAN,
     RECEPTIONIST,
     PATIENT,
-    BILLING_CLERK
+    BILLING_CLERK,
+    // ISO-01
+    OSI,
+    AUDITOR,
+    NURSE,
+    LAB_TECHNICIAN,
+    MARKETING_MANAGER
 }

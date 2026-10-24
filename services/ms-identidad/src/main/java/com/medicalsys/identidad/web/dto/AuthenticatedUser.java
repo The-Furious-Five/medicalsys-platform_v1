@@ -1,5 +1,6 @@
 package com.medicalsys.identidad.web.dto;
 
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserStatus;
 import java.util.List;
 import java.util.UUID;
@@ -10,6 +11,7 @@ public record AuthenticatedUser(
         String fullName,
         UUID organizationPublicId,
         UserStatus status,
+        SecurityLevel clearance,
         String language,
         List<String> roles,
         List<String> permissions) {

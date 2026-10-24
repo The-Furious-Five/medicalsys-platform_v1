@@ -32,6 +32,11 @@ public class Permission {
     @Column(name = "is_sensitive", nullable = false)
     private boolean sensitive;
 
+    /** Clasificacion MAC (ISO-01): solo la reciben las cuentas con un nivel que la cubra. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "classification", nullable = false, length = 20)
+    private SecurityLevel classification = SecurityLevel.INTERNAL;
+
     protected Permission() {
     }
 
@@ -61,5 +66,13 @@ public class Permission {
 
     public boolean isSensitive() {
         return sensitive;
+    }
+
+    public SecurityLevel getClassification() {
+        return classification;
+    }
+
+    public void setClassification(SecurityLevel classification) {
+        this.classification = classification;
     }
 }

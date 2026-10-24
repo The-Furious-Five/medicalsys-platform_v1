@@ -98,6 +98,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/unlock").hasAuthority("identity.user.unlock")
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/users/*/reset-password").hasAuthority("identity.user.reset")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*/status").hasAuthority("identity.user.change_status")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/identity/users/*/clearance").hasAuthority("identity.clearance.manage")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/identity/users/*").hasAuthority("identity.user.update")
                         // Una operacion nueva sobre cuentas no queda abierta por omision: necesita su propio permiso.
                         .requestMatchers("/api/v1/identity/users/**").denyAll()

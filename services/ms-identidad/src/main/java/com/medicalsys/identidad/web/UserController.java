@@ -2,6 +2,7 @@ package com.medicalsys.identidad.web;
 
 import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.service.UserService;
+import com.medicalsys.identidad.web.dto.ChangeClearanceRequest;
 import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
 import com.medicalsys.identidad.web.dto.PageResponse;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -83,6 +85,13 @@ public class UserController {
     @PostMapping("/{publicId}/reset-password")
     public TemporaryPasswordResponse resetPassword(Authentication authentication, @PathVariable UUID publicId) {
         return userService.resetPassword(publicId, Actors.publicId(authentication));
+    }
+
+    /** ISO-01 (MAC): nivel de autorizacion de la cuenta (permiso identity.clearance.manage, OSI). */
+    @PutMapping("/{publicId}/clearance")
+    public UserResponse changeClearance(Authentication authentication, @PathVariable UUID publicId,
+                                        @Valid @RequestBody ChangeClearanceRequest request) {
+        return userService.changeClearance(publicId, request, Actors.publicId(authentication));
     }
 
     @PostMapping("/{publicId}/roles")

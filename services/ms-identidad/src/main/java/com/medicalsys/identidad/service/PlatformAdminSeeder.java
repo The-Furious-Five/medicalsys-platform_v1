@@ -3,6 +3,7 @@ package com.medicalsys.identidad.service;
 import com.medicalsys.identidad.config.IdentityProperties;
 import com.medicalsys.identidad.domain.Role;
 import com.medicalsys.identidad.domain.RoleCode;
+import com.medicalsys.identidad.domain.SecurityLevel;
 import com.medicalsys.identidad.domain.UserAccount;
 import com.medicalsys.identidad.domain.UserRole;
 import com.medicalsys.identidad.repository.RoleRepository;
@@ -20,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Crea una única cuenta bootstrap con alcance de plataforma.
+ * Crea las cuentas bootstrap con alcance de plataforma: PLATFORM_ADMIN y, desde ISO-01, el OSI. Son
+ * dos personas distintas (pares incompatibles) y el OSI es la única que puede otorgar permisos, así
+ * que sin él nadie podría corregir los roles después de V9.
  *
  * <p>Está deshabilitada por defecto. La contraseña llega exclusivamente por variable de entorno y
  * solo se utiliza al crear la cuenta por primera vez. Reiniciar el servicio es seguro: el seeder es
@@ -50,31 +53,41 @@ public class PlatformAdminSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        IdentityProperties.PlatformAdmin config = properties.getPlatformAdmin();
+        seed(properties.getPlatformAdmin(), RoleCode.PLATFORM_ADMIN, SecurityLevel.CONFIDENTIAL, "PLATFORM_ADMIN");
+        seed(properties.getSecurityOfficer(), RoleCode.OSI, SecurityLevel.RESTRICTED, "OSI");
+    }
+
+    private void seed(IdentityProperties.PlatformAdmin config, RoleCode roleCode, SecurityLevel clearance,
+                      String envPrefix) {
         if (!config.isEnabled()) {
             return;
         }
         if (!StringUtils.hasText(config.getPassword()) || config.getPassword().length() < 8) {
             throw new IllegalStateException(
-                    "PLATFORM_ADMIN_PASSWORD es obligatorio y debe tener al menos 8 caracteres");
+                    envPrefix + "_PASSWORD es obligatorio y debe tener al menos 8 caracteres");
         }
         if (config.getOrganizationPublicId() == null) {
             throw new IllegalStateException(
-                    "PLATFORM_ADMIN_ORGANIZATION debe indicar un tenant de contexto para el gateway");
+                    envPrefix + "_ORGANIZATION debe indicar un tenant de contexto para el gateway");
         }
 
         if (!users.existsByEmailIgnoreCase(config.getEmail())) {
             userService.createSeedAccount(new CreateUserRequest(
                     config.getEmail(), config.getFullName(), config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
-                    List.of(new RoleAssignmentRequest(RoleCode.PLATFORM_ADMIN.name(), null, null, null, null))));
-            log.info("Cuenta PLATFORM_ADMIN creada: {}", config.getEmail());
+                    List.of(new RoleAssignmentRequest(roleCode.name(), null, null, null, null))));
+            log.info("Cuenta {} creada: {}", roleCode, config.getEmail());
         }
 
         UserAccount user = users.findByEmailIgnoreCase(config.getEmail()).orElseThrow();
-        // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con PLATFORM_ADMIN_PASSWORD.
+        // IAM-03: la credencial vive en Keycloak; si falta allí, se repone con la contraseña configurada.
         linker.restoreConfiguredCredential(user, config.getPassword());
         boolean changed = false;
+        // MAC: el bootstrap nunca queda por debajo del nivel que su rol necesita.
+        if (!user.getClearance().covers(clearance)) {
+            user.setClearance(clearance);
+            changed = true;
+        }
         if (!config.getPublicId().equals(user.getPublicId())) {
             user.setPublicId(config.getPublicId());
             changed = true;
@@ -85,7 +98,7 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
         boolean hasPlatformRole = false;
         for (UserRole assignment : user.getRoleAssignments()) {
-            if (assignment.getRole().is(RoleCode.PLATFORM_ADMIN)) {
+            if (assignment.getRole().is(roleCode)) {
                 hasPlatformRole = true;
                 if (assignment.getOrganizationPublicId() != null) {
                     assignment.setOrganizationPublicId(null);
@@ -94,14 +107,14 @@ public class PlatformAdminSeeder implements ApplicationRunner {
             }
         }
         if (!hasPlatformRole) {
-            Role role = roles.findByCode(RoleCode.PLATFORM_ADMIN.name())
-                    .orElseThrow(() -> new IllegalStateException("El rol PLATFORM_ADMIN no fue sembrado"));
+            Role role = roles.findByCode(roleCode.name())
+                    .orElseThrow(() -> new IllegalStateException("El rol " + roleCode + " no fue sembrado"));
             user.getRoleAssignments().add(new UserRole(user, role, null, null, null, null, null));
             changed = true;
         }
         if (changed) {
             users.save(user);
-            log.info("Cuenta PLATFORM_ADMIN reconciliada: {}", config.getEmail());
+            log.info("Cuenta {} reconciliada: {}", roleCode, config.getEmail());
         }
     }
 }

@@ -225,11 +225,23 @@ forzado y reutilizar una contraseña anterior se rechaza.
 Se crean al arrancar si no existen, con la contraseña hasheada. Desactivables con
 `IDENTITY_DEMO_USERS_ENABLED=false`.
 
-| Correo | Rol |
-|---|---|
-| `admin@medicalsys.demo` | `ADMINISTRATOR` |
-| `recepcion@medicalsys.demo` | `RECEPTIONIST` |
-| `doctor@medicalsys.demo` | `PHYSICIAN` |
+Una cuenta por rol (ISO-01), cada una con el nivel MAC que su rol necesita. Ese nivel solo se fija
+al crearla: después lo decide el OSI y un reinicio no lo pisa.
+
+| Correo | Rol | Nivel MAC |
+|---|---|---|
+| `osi@medicalsys.demo` | `OSI` | `RESTRICTED` |
+| `auditor@medicalsys.demo` | `AUDITOR` | `CONFIDENTIAL` |
+| `admin@medicalsys.demo` | `ADMINISTRATOR` | `CONFIDENTIAL` |
+| `doctor@medicalsys.demo` (y `pediatria@`, `ginecologia@`, …) | `PHYSICIAN` | `RESTRICTED` |
+| `enfermeria@medicalsys.demo` | `NURSE` | `CONFIDENTIAL` |
+| `laboratorio@medicalsys.demo` | `LAB_TECHNICIAN` | `CONFIDENTIAL` |
+| `recepcion@medicalsys.demo` | `RECEPTIONIST` | `CONFIDENTIAL` |
+| `caja@medicalsys.demo` | `BILLING_CLERK` | `CONFIDENTIAL` |
+| `marketing@medicalsys.demo` | `MARKETING_MANAGER` | `CONFIDENTIAL` |
+
+Fuera de la demo, el primer OSI se crea con `OSI_SEED_ENABLED=true` y `OSI_PASSWORD` (ver
+`docs/seguridad/iso-01-roles-mac-dac.md`).
 
 ## Construir y ejecutar
 

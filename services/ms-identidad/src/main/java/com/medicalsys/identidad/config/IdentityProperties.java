@@ -11,6 +11,8 @@ public class IdentityProperties {
     private final Keycloak keycloak = new Keycloak();
     private final DemoUsers demoUsers = new DemoUsers();
     private final PlatformAdmin platformAdmin = new PlatformAdmin();
+    /** ISO-01: primera cuenta OSI. Mismos campos que la de plataforma, otro rol y otra cuenta. */
+    private final PlatformAdmin securityOfficer = new PlatformAdmin();
 
     public Jwt getJwt() {
         return jwt;
@@ -26,6 +28,10 @@ public class IdentityProperties {
 
     public PlatformAdmin getPlatformAdmin() {
         return platformAdmin;
+    }
+
+    public PlatformAdmin getSecurityOfficer() {
+        return securityOfficer;
     }
 
     public static class Jwt {
