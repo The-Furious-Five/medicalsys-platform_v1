@@ -136,7 +136,8 @@ public class DocumentsController {
     }
 
     @GetMapping("/{documentId}/integrity")
-    @RequiresRole({Role.PHYSICIAN, Role.RECEPTIONIST, Role.ADMINISTRATOR, Role.PLATFORM_ADMIN})
+    // CRY-02: consultar la integridad es leer metadatos del documento (mismos roles que documents.document.read).
+    @RequiresPermission("documents.document.read")
     public DocumentIntegrityResponse integrity(@PathVariable UUID documentId,
             HttpServletRequest servletRequest) {
         return DocumentIntegrityResponse.from(service.checkIntegrity(

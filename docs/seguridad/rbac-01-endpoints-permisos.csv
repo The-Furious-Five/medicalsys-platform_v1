@@ -190,6 +190,7 @@ ms-documental,GET,/api/v1/documents/{documentId}/content,PERMISO,documents.docum
 ms-documental,POST,/api/v1/documents/{documentId}/links,PERMISO,documents.document.link,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.link,replica control vigente
 ms-documental,GET,/api/v1/documents,PERMISO,documents.document.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.read,replica control vigente
 ms-documental,GET,/api/v1/documents/{documentId},PERMISO,documents.document.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.read,replica control vigente
+ms-documental,GET,/api/v1/documents/{documentId}/integrity,PERMISO,documents.document.read,DOCUMENT_MANAGEMENT,no,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.read,CRY-02 verificacion de integridad
 ms-documental,POST,/api/v1/documents,PERMISO,documents.document.upload,DOCUMENT_MANAGEMENT,si,PLATFORM_ADMIN ADMINISTRATOR PHYSICIAN RECEPTIONIST,@RequiresPermission documents.document.upload,replica control vigente
 ms-documental,GET,/api/v1/documents/ping,PUBLICO,,,,,@PublicEndpoint,
 ms-documental,GET,/internal/v1/documents/{documentId},INTERNO,,,,,@InternalEndpoint,
