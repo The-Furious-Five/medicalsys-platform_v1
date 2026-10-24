@@ -85,11 +85,18 @@ IDENTITY_DEMO_ORGANIZATION=00000000-0000-4000-8000-0000000000a1
 IDENTITY_DEMO_USERS_ENABLED=true
 IDENTITY_DEMO_PASSWORD=CAMBIAR
 
-# Cuenta de plataforma: la unica con identity.role.manage, necesaria para crear roles y editar la
-# matriz de accesos (RBAC-02/RBAC-05). Su contrasena tambien debe cumplir la politica de IAM-02.
+# Cuenta de plataforma: opera organizaciones, planes y cuentas (sin acceso clinico ni gestion de
+# permisos desde ISO-01). Su contrasena tambien debe cumplir la politica de IAM-02.
 PLATFORM_ADMIN_SEED_ENABLED=true
 PLATFORM_ADMIN_EMAIL=CAMBIAR
 PLATFORM_ADMIN_PASSWORD=CAMBIAR
+
+# Oficial de Seguridad de la Informacion (ISO-01): el unico rol que crea roles, otorga permisos y fija
+# niveles MAC, necesario para la matriz de accesos (RBAC-02/RBAC-05). Debe ser OTRA persona que la de
+# plataforma (roles incompatibles).
+OSI_SEED_ENABLED=true
+OSI_EMAIL=CAMBIAR
+OSI_PASSWORD=CAMBIAR
 
 # MySQL
 MYSQL_ROOT_PASSWORD=CAMBIAR
