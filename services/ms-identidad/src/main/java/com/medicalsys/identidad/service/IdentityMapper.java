@@ -71,7 +71,8 @@ public class IdentityMapper {
                 role.isSystem(),
                 role.isActive(),
                 role.getPermissions().stream().map(this::toPermissionResponse).toList(),
-                role.getAssignableRoles().stream().map(Role::getCode).sorted().toList());
+                role.getAssignableRoles().stream().map(Role::getCode).sorted().toList(),
+                role.getAccessModel());
     }
 
     public PermissionResponse toPermissionResponse(Permission permission) {
@@ -107,13 +108,13 @@ public class IdentityMapper {
                 .toList();
     }
 
-    /** RBAC concede y MAC filtra: los permisos de los roles vigentes que el nivel de la cuenta cubre. */
+    /** Cada asignacion vigente concede permisos; solo los roles MAC los filtran por nivel de la cuenta. */
     public List<String> activePermissionCodes(UserAccount user) {
         LocalDate today = LocalDate.now();
         return user.getRoleAssignments().stream()
                 .filter(assignment -> isEffective(assignment, today))
-                .flatMap(assignment -> assignment.getRole().getPermissions().stream())
-                .filter(user::clears)
+                .flatMap(assignment -> assignment.getRole().getPermissions().stream()
+                        .filter(permission -> assignment.getRole().permits(user, permission)))
                 .map(Permission::getCode)
                 .distinct()
                 .sorted()

@@ -210,8 +210,9 @@ public class UserService {
                 : UserStatus.PENDING_ACTIVATION);
 
         boolean withRoles = request.roles() != null && !request.roles().isEmpty();
-        // identity.user.create no basta: sin esto, crear la cuenta con roles evitaria identity.role.assign.
-        if (actor != null && withRoles && !actor.holds(ASSIGN_PERMISSION)) {
+        // El alta con roles requiere asignacion general o el permiso limitado a la asignacion inicial.
+        if (actor != null && withRoles && !actor.holds(ASSIGN_PERMISSION)
+                && !actor.holds("identity.role.assign_initial")) {
             throw ApiException.forbidden("Crear una cuenta con roles requiere el permiso " + ASSIGN_PERMISSION);
         }
         if (withRoles) {

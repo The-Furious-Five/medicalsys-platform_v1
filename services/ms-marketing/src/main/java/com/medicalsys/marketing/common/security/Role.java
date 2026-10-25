@@ -8,18 +8,25 @@ import java.util.Optional;
  *
  * <p>ms-marketing no crea roles: solo verifica los que el gateway propaga desde claims confiables.
  *
- * <p>{@code MARKETING_MANAGER} esta declarado para el dia en que ms-identidad lo emita, pero hoy
- * ningun token lo trae. Por eso toda operacion de gestion acepta ademas {@code ADMINISTRATOR}: si
- * dependiera solo del rol futuro, el servicio quedaria inalcanzable en el entorno actual.
+ * <p>Los permisos del JWT autorizan las operaciones. Los codigos de rol preservan la trazabilidad
+ * de las quince funciones de la matriz aprobada.
  */
 public enum Role {
     PLATFORM_ADMIN,
+    OSI,
+    AUDITOR,
+    EXTERNAL_AUDITOR,
     ADMINISTRATOR,
-    MARKETING_MANAGER,
     PHYSICIAN,
+    MEDICAL_INTERN,
+    NURSE,
+    LAB_TECHNICIAN,
     RECEPTIONIST,
+    BILLING_CLERK,
+    BILLING_SUPERVISOR,
+    MARKETING_MANAGER,
     PATIENT,
-    BILLING_CLERK;
+    DEVOPS;
 
     /** Traduce un codigo recibido en el header; un rol desconocido se ignora en vez de fallar. */
     public static Optional<Role> parse(String code) {

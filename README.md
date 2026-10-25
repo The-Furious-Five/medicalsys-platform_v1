@@ -55,7 +55,7 @@ vez antes de levantar: los contenedores de inicialización creados en la red vie
 
 ## Datos de demostración
 
-El entorno local arranca con el padrón de un policlínico ficticio de La Paz: 10 cuentas, 3
+El entorno local arranca con el padrón de un policlínico ficticio de La Paz: cuentas para los 15 roles de la matriz, 3
 sucursales, 13 prestaciones, 14 pacientes, 7 profesionales, 16 citas repartidas alrededor del
 día de hoy, 5 expedientes con narrativa clínica, 5 facturas y el módulo de marketing con sus
 campañas y cupones.
@@ -154,5 +154,6 @@ Varias suites usan Testcontainers y se saltan solas si Docker no está disponibl
 - `docs/CORRECCIONES_POST_DEMO.md` — revisión técnica por microservicio.
 - `docs/contracts` y `docs/demo` — contratos y guion de la demostración.
 - `services/<servicio>/README.md` y `services/<servicio>/docs/` — detalle de cada servicio.
+- [`docs/seguridad/matriz-roles/README.md`](docs/seguridad/matriz-roles/README.md) — matriz aprobada de 15 roles, permisos y aplicación de V11.
 - `docs/seguridad/` — OWASP Top 10 (sección 11), reporte de escaneo (sección 13), reportes y evidencia.
 - `docs/seguridad/politicas/` — políticas y procedimientos (PO-02, PO-07, PR-04).

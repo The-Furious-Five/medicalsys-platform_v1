@@ -1,0 +1,964 @@
+{
+  "source": "Matriz de Roles.xlsx",
+  "sha256": "950c6963aaba7bc776e9c5eb3dcf93f7f42ec17fb0750c1f88ec833c4a354b85",
+  "resources": [
+    {
+      "column": "D",
+      "name": "Servidores",
+      "permissions": [
+        "infrastructure.server.manage"
+      ]
+    },
+    {
+      "column": "E",
+      "name": "Bases de datos",
+      "permissions": [
+        "infrastructure.database.manage"
+      ]
+    },
+    {
+      "column": "G",
+      "name": "Módulo de Administración de Usuarios: Altas",
+      "permissions": [
+        "identity.role.assign_initial",
+        "identity.role.read",
+        "identity.user.create",
+        "identity.user.read"
+      ]
+    },
+    {
+      "column": "H",
+      "name": "Módulo de Administración de Usuarios: Bajas",
+      "permissions": [
+        "identity.user.change_status"
+      ]
+    },
+    {
+      "column": "I",
+      "name": "Módulo de Administración de Usuarios: Cambio perfil",
+      "permissions": [
+        "identity.clearance.manage",
+        "identity.permission.grant",
+        "identity.role.assign",
+        "identity.role.manage",
+        "identity.role.read",
+        "identity.user.reset",
+        "identity.user.unlock",
+        "identity.user.update"
+      ]
+    },
+    {
+      "column": "K",
+      "name": "Sucursales y tarifario",
+      "permissions": [
+        "tenancy.branch.change_status",
+        "tenancy.branch.create",
+        "tenancy.branch.read",
+        "tenancy.branch.update",
+        "tenancy.organization.read",
+        "tenancy.organization.update",
+        "tenancy.service_offering.change_status",
+        "tenancy.service_offering.create",
+        "tenancy.service_offering.read",
+        "tenancy.service_offering.update"
+      ]
+    },
+    {
+      "column": "L",
+      "name": "Suscripción y planes",
+      "permissions": [
+        "tenancy.plan.read",
+        "tenancy.subscription.change_status",
+        "tenancy.subscription.read",
+        "tenancy.subscription.read_history",
+        "tenancy.subscription.subscribe",
+        "tenancy.usage.read",
+        "tenancy.usage.record"
+      ]
+    },
+    {
+      "column": "M",
+      "name": "Alta de organizaciones",
+      "permissions": [
+        "tenancy.organization.change_status",
+        "tenancy.organization.create",
+        "tenancy.organization.read",
+        "tenancy.organization.update"
+      ]
+    },
+    {
+      "column": "O",
+      "name": "Ficha del paciente",
+      "permissions": [
+        "patients.notification_preference.read",
+        "patients.notification_preference.update",
+        "patients.patient.create",
+        "patients.patient.read",
+        "patients.patient.update"
+      ]
+    },
+    {
+      "column": "P",
+      "name": "Fusión de duplicados",
+      "permissions": [
+        "patients.merge.create",
+        "patients.merge.read"
+      ]
+    },
+    {
+      "column": "Q",
+      "name": "Acceso otro centro (OTP)",
+      "permissions": [
+        "patients.access_grant.confirm",
+        "patients.access_grant.read",
+        "patients.access_grant.request",
+        "patients.access_grant.revoke"
+      ]
+    },
+    {
+      "column": "S",
+      "name": "Citas",
+      "permissions": [
+        "scheduling.appointment.attend",
+        "scheduling.appointment.cancel",
+        "scheduling.appointment.check_in",
+        "scheduling.appointment.confirm",
+        "scheduling.appointment.create",
+        "scheduling.appointment.no_show",
+        "scheduling.appointment.read",
+        "scheduling.appointment.reschedule"
+      ]
+    },
+    {
+      "column": "T",
+      "name": "Disponibilidad y bloqueos",
+      "permissions": [
+        "scheduling.availability.create",
+        "scheduling.availability.deactivate",
+        "scheduling.availability.read",
+        "scheduling.block.create",
+        "scheduling.block.delete",
+        "scheduling.block.read"
+      ]
+    },
+    {
+      "column": "U",
+      "name": "Reservas y recursos",
+      "permissions": [
+        "scheduling.reservation.cancel",
+        "scheduling.reservation.create",
+        "scheduling.reservation.mark_in_use",
+        "scheduling.reservation.read",
+        "scheduling.reservation.release",
+        "scheduling.resource.change_status",
+        "scheduling.resource.create",
+        "scheduling.resource.read",
+        "scheduling.resource.update"
+      ]
+    },
+    {
+      "column": "W",
+      "name": "Expediente clínico",
+      "permissions": [
+        "clinical.addendum.read",
+        "clinical.background.create",
+        "clinical.background.deactivate",
+        "clinical.background.read",
+        "clinical.diagnosis.read",
+        "clinical.encounter.read",
+        "clinical.prescription.read",
+        "clinical.procedure.read",
+        "clinical.record.change_status",
+        "clinical.record.create",
+        "clinical.record.read",
+        "clinical.record.share"
+      ]
+    },
+    {
+      "column": "X",
+      "name": "Narrativa cifrada",
+      "permissions": [
+        "clinical.narrative.read"
+      ]
+    },
+    {
+      "column": "Y",
+      "name": "Registro y firma",
+      "permissions": [
+        "clinical.addendum.create",
+        "clinical.diagnosis.create",
+        "clinical.diagnosis.read",
+        "clinical.diagnosis.update",
+        "clinical.encounter.open",
+        "clinical.encounter.sign",
+        "clinical.encounter.update_notes",
+        "clinical.encounter.void",
+        "clinical.prescription.attach_document",
+        "clinical.prescription.change_status",
+        "clinical.prescription.create",
+        "clinical.prescription.read",
+        "clinical.procedure.create",
+        "clinical.procedure.read"
+      ]
+    },
+    {
+      "column": "Z",
+      "name": "Signos vitales y alergias",
+      "permissions": [
+        "clinical.allergy.create",
+        "clinical.allergy.read",
+        "clinical.allergy.update",
+        "clinical.vital_sign.create",
+        "clinical.vital_sign.read"
+      ]
+    },
+    {
+      "column": "AA",
+      "name": "Estudios y resultados",
+      "permissions": [
+        "clinical.study_order.change_status",
+        "clinical.study_order.create",
+        "clinical.study_order.read",
+        "clinical.study_order.schedule_collection",
+        "clinical.study_result.create",
+        "clinical.study_result.read"
+      ]
+    },
+    {
+      "column": "AC",
+      "name": "Documentos clínicos",
+      "permissions": [
+        "documents.document.classify",
+        "documents.document.download",
+        "documents.document.link",
+        "documents.document.read",
+        "documents.document.upload"
+      ]
+    },
+    {
+      "column": "AD",
+      "name": "Consentimientos",
+      "permissions": [
+        "documents.consent.generate",
+        "documents.consent.read",
+        "documents.consent.reject",
+        "documents.consent.request_otp",
+        "documents.consent.sign"
+      ]
+    },
+    {
+      "column": "AE",
+      "name": "Plantillas consentimiento",
+      "permissions": [
+        "documents.consent_template.create",
+        "documents.consent_template.publish",
+        "documents.consent_template.read"
+      ]
+    },
+    {
+      "column": "AG",
+      "name": "Emisión de facturas",
+      "permissions": [
+        "billing.invoice.issue",
+        "billing.invoice.read"
+      ]
+    },
+    {
+      "column": "AH",
+      "name": "Anulación de facturas",
+      "permissions": [
+        "billing.invoice.read",
+        "billing.invoice.void"
+      ]
+    },
+    {
+      "column": "AI",
+      "name": "Cupones y puntos",
+      "permissions": [
+        "marketing.coupon.redeem",
+        "marketing.coupon.validate",
+        "marketing.loyalty_account.read",
+        "marketing.loyalty_movement.create",
+        "marketing.loyalty_program.create",
+        "marketing.loyalty_program.deactivate",
+        "marketing.loyalty_program.read",
+        "marketing.promotion.create",
+        "marketing.promotion.deactivate",
+        "marketing.promotion.read"
+      ]
+    },
+    {
+      "column": "AK",
+      "name": "Plantillas y reglas",
+      "permissions": [
+        "notifications.rule.create",
+        "notifications.rule.read",
+        "notifications.rule.update",
+        "notifications.template.create",
+        "notifications.template.read",
+        "notifications.template.update"
+      ]
+    },
+    {
+      "column": "AM",
+      "name": "Campañas",
+      "permissions": [
+        "marketing.campaign.build_audience",
+        "marketing.campaign.cancel",
+        "marketing.campaign.create",
+        "marketing.campaign.finish",
+        "marketing.campaign.launch",
+        "marketing.campaign.pause",
+        "marketing.campaign.read",
+        "marketing.campaign.schedule",
+        "marketing.opt_out.update",
+        "marketing.patient_activity.read",
+        "marketing.recipient.read",
+        "marketing.segment.create",
+        "marketing.segment.deactivate",
+        "marketing.segment.delete",
+        "marketing.segment.evaluate",
+        "marketing.segment.read",
+        "marketing.segment.update"
+      ]
+    },
+    {
+      "column": "AN",
+      "name": "Anuncios",
+      "permissions": [
+        "marketing.advertisement.create",
+        "marketing.advertisement.finish",
+        "marketing.advertisement.pause",
+        "marketing.advertisement.publish",
+        "marketing.advertisement.read",
+        "marketing.advertisement.track",
+        "marketing.advertisement.view"
+      ]
+    },
+    {
+      "column": "AP",
+      "name": "Bitácora",
+      "permissions": [
+        "audit.log.read",
+        "audit.log.verify",
+        "audit.log.read_platform"
+      ]
+    },
+    {
+      "column": "AQ",
+      "name": "Exportación de bitácora",
+      "permissions": [
+        "audit.log.export"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "code": "PLATFORM_ADMIN",
+      "name": "Admin. de plataforma",
+      "model": "MAC",
+      "scope": "PLATFORM",
+      "resources": [
+        "K",
+        "L",
+        "M"
+      ],
+      "permissions": [
+        "tenancy.branch.change_status",
+        "tenancy.branch.create",
+        "tenancy.branch.read",
+        "tenancy.branch.update",
+        "tenancy.organization.change_status",
+        "tenancy.organization.create",
+        "tenancy.organization.read",
+        "tenancy.organization.update",
+        "tenancy.plan.read",
+        "tenancy.service_offering.change_status",
+        "tenancy.service_offering.create",
+        "tenancy.service_offering.read",
+        "tenancy.service_offering.update",
+        "tenancy.subscription.change_status",
+        "tenancy.subscription.read",
+        "tenancy.subscription.read_history",
+        "tenancy.subscription.subscribe",
+        "tenancy.usage.read",
+        "tenancy.usage.record"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "OSI",
+      "name": "Oficial Seguridad (OSI)",
+      "model": "MAC",
+      "scope": "PLATFORM",
+      "resources": [
+        "G",
+        "H",
+        "I",
+        "AP"
+      ],
+      "permissions": [
+        "audit.log.read",
+        "audit.log.verify",
+        "identity.clearance.manage",
+        "identity.permission.grant",
+        "identity.role.assign",
+        "identity.role.assign_initial",
+        "identity.role.manage",
+        "identity.role.read",
+        "identity.user.change_status",
+        "identity.user.create",
+        "identity.user.read",
+        "identity.user.reset",
+        "identity.user.unlock",
+        "identity.user.update",
+        "audit.log.read_platform"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "AUDITOR",
+      "name": "Auditor interno",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "AP",
+        "AQ"
+      ],
+      "permissions": [
+        "audit.log.export",
+        "audit.log.read",
+        "audit.log.verify"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "EXTERNAL_AUDITOR",
+      "name": "Auditor externo",
+      "model": "DAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "AP"
+      ],
+      "permissions": [
+        "audit.log.read"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "ADMINISTRATOR",
+      "name": "Admin. de organización",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "G",
+        "K",
+        "L",
+        "O",
+        "P",
+        "S",
+        "T",
+        "U",
+        "AE",
+        "AK"
+      ],
+      "permissions": [
+        "documents.consent_template.create",
+        "documents.consent_template.publish",
+        "documents.consent_template.read",
+        "identity.role.assign_initial",
+        "identity.role.read",
+        "identity.user.create",
+        "identity.user.read",
+        "notifications.rule.create",
+        "notifications.rule.read",
+        "notifications.rule.update",
+        "notifications.template.create",
+        "notifications.template.read",
+        "notifications.template.update",
+        "patients.merge.create",
+        "patients.merge.read",
+        "patients.notification_preference.read",
+        "patients.notification_preference.update",
+        "patients.patient.create",
+        "patients.patient.read",
+        "patients.patient.update",
+        "scheduling.appointment.attend",
+        "scheduling.appointment.cancel",
+        "scheduling.appointment.check_in",
+        "scheduling.appointment.confirm",
+        "scheduling.appointment.create",
+        "scheduling.appointment.no_show",
+        "scheduling.appointment.read",
+        "scheduling.appointment.reschedule",
+        "scheduling.availability.create",
+        "scheduling.availability.deactivate",
+        "scheduling.availability.read",
+        "scheduling.block.create",
+        "scheduling.block.delete",
+        "scheduling.block.read",
+        "scheduling.reservation.cancel",
+        "scheduling.reservation.create",
+        "scheduling.reservation.mark_in_use",
+        "scheduling.reservation.read",
+        "scheduling.reservation.release",
+        "scheduling.resource.change_status",
+        "scheduling.resource.create",
+        "scheduling.resource.read",
+        "scheduling.resource.update",
+        "tenancy.branch.change_status",
+        "tenancy.branch.create",
+        "tenancy.branch.read",
+        "tenancy.branch.update",
+        "tenancy.organization.read",
+        "tenancy.organization.update",
+        "tenancy.plan.read",
+        "tenancy.service_offering.change_status",
+        "tenancy.service_offering.create",
+        "tenancy.service_offering.read",
+        "tenancy.service_offering.update",
+        "tenancy.subscription.change_status",
+        "tenancy.subscription.read",
+        "tenancy.subscription.read_history",
+        "tenancy.subscription.subscribe",
+        "tenancy.usage.read",
+        "tenancy.usage.record"
+      ],
+      "dependencies": [
+        "professionals.professional.read"
+      ]
+    },
+    {
+      "code": "PHYSICIAN",
+      "name": "Médico",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "Q",
+        "S",
+        "T",
+        "U",
+        "W",
+        "X",
+        "Y",
+        "Z",
+        "AA",
+        "AC",
+        "AD"
+      ],
+      "permissions": [
+        "clinical.addendum.create",
+        "clinical.addendum.read",
+        "clinical.allergy.create",
+        "clinical.allergy.read",
+        "clinical.allergy.update",
+        "clinical.background.create",
+        "clinical.background.deactivate",
+        "clinical.background.read",
+        "clinical.diagnosis.create",
+        "clinical.diagnosis.read",
+        "clinical.diagnosis.update",
+        "clinical.encounter.open",
+        "clinical.encounter.read",
+        "clinical.encounter.sign",
+        "clinical.encounter.update_notes",
+        "clinical.encounter.void",
+        "clinical.narrative.read",
+        "clinical.prescription.attach_document",
+        "clinical.prescription.change_status",
+        "clinical.prescription.create",
+        "clinical.prescription.read",
+        "clinical.procedure.create",
+        "clinical.procedure.read",
+        "clinical.record.change_status",
+        "clinical.record.create",
+        "clinical.record.read",
+        "clinical.record.share",
+        "clinical.study_order.change_status",
+        "clinical.study_order.create",
+        "clinical.study_order.read",
+        "clinical.study_order.schedule_collection",
+        "clinical.study_result.create",
+        "clinical.study_result.read",
+        "clinical.vital_sign.create",
+        "clinical.vital_sign.read",
+        "documents.consent.generate",
+        "documents.consent.read",
+        "documents.consent.reject",
+        "documents.consent.request_otp",
+        "documents.consent.sign",
+        "documents.document.classify",
+        "documents.document.download",
+        "documents.document.link",
+        "documents.document.read",
+        "documents.document.upload",
+        "patients.access_grant.confirm",
+        "patients.access_grant.read",
+        "patients.access_grant.request",
+        "patients.access_grant.revoke",
+        "patients.notification_preference.read",
+        "patients.patient.read",
+        "scheduling.appointment.attend",
+        "scheduling.appointment.cancel",
+        "scheduling.appointment.check_in",
+        "scheduling.appointment.confirm",
+        "scheduling.appointment.create",
+        "scheduling.appointment.no_show",
+        "scheduling.appointment.read",
+        "scheduling.appointment.reschedule",
+        "scheduling.availability.create",
+        "scheduling.availability.deactivate",
+        "scheduling.availability.read",
+        "scheduling.block.create",
+        "scheduling.block.delete",
+        "scheduling.block.read",
+        "scheduling.reservation.cancel",
+        "scheduling.reservation.create",
+        "scheduling.reservation.mark_in_use",
+        "scheduling.reservation.read",
+        "scheduling.reservation.release",
+        "scheduling.resource.change_status",
+        "scheduling.resource.create",
+        "scheduling.resource.read",
+        "scheduling.resource.update"
+      ],
+      "dependencies": [
+        "catalogs.icd10.read",
+        "catalogs.medication.read",
+        "catalogs.study_type.read",
+        "documents.consent_template.read",
+        "professionals.professional.read",
+        "tenancy.branch.read",
+        "tenancy.service_offering.read"
+      ]
+    },
+    {
+      "code": "MEDICAL_INTERN",
+      "name": "Pasante de medicina",
+      "model": "DAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "W",
+        "Z"
+      ],
+      "permissions": [
+        "clinical.addendum.read",
+        "clinical.allergy.create",
+        "clinical.allergy.read",
+        "clinical.allergy.update",
+        "clinical.background.read",
+        "clinical.diagnosis.read",
+        "clinical.encounter.read",
+        "clinical.prescription.read",
+        "clinical.procedure.read",
+        "clinical.record.read",
+        "clinical.vital_sign.create",
+        "clinical.vital_sign.read",
+        "patients.notification_preference.read",
+        "patients.patient.read"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "NURSE",
+      "name": "Enfermería",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "S",
+        "U",
+        "W",
+        "Z",
+        "AA",
+        "AC"
+      ],
+      "permissions": [
+        "clinical.addendum.read",
+        "clinical.allergy.create",
+        "clinical.allergy.read",
+        "clinical.allergy.update",
+        "clinical.background.create",
+        "clinical.background.deactivate",
+        "clinical.background.read",
+        "clinical.diagnosis.read",
+        "clinical.encounter.read",
+        "clinical.prescription.read",
+        "clinical.procedure.read",
+        "clinical.record.change_status",
+        "clinical.record.create",
+        "clinical.record.read",
+        "clinical.record.share",
+        "clinical.study_order.change_status",
+        "clinical.study_order.create",
+        "clinical.study_order.read",
+        "clinical.study_order.schedule_collection",
+        "clinical.study_result.create",
+        "clinical.study_result.read",
+        "clinical.vital_sign.create",
+        "clinical.vital_sign.read",
+        "documents.document.classify",
+        "documents.document.download",
+        "documents.document.link",
+        "documents.document.read",
+        "documents.document.upload",
+        "patients.notification_preference.read",
+        "patients.patient.read",
+        "scheduling.appointment.attend",
+        "scheduling.appointment.cancel",
+        "scheduling.appointment.check_in",
+        "scheduling.appointment.confirm",
+        "scheduling.appointment.create",
+        "scheduling.appointment.no_show",
+        "scheduling.appointment.read",
+        "scheduling.appointment.reschedule",
+        "scheduling.reservation.cancel",
+        "scheduling.reservation.create",
+        "scheduling.reservation.mark_in_use",
+        "scheduling.reservation.read",
+        "scheduling.reservation.release",
+        "scheduling.resource.change_status",
+        "scheduling.resource.create",
+        "scheduling.resource.read",
+        "scheduling.resource.update"
+      ],
+      "dependencies": [
+        "catalogs.study_type.read",
+        "professionals.professional.read",
+        "scheduling.availability.read",
+        "scheduling.block.read",
+        "tenancy.branch.read",
+        "tenancy.service_offering.read"
+      ]
+    },
+    {
+      "code": "LAB_TECHNICIAN",
+      "name": "Laboratorio",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "AA",
+        "AC"
+      ],
+      "permissions": [
+        "clinical.study_order.change_status",
+        "clinical.study_order.create",
+        "clinical.study_order.read",
+        "clinical.study_order.schedule_collection",
+        "clinical.study_result.create",
+        "clinical.study_result.read",
+        "documents.document.classify",
+        "documents.document.download",
+        "documents.document.link",
+        "documents.document.read",
+        "documents.document.upload",
+        "patients.notification_preference.read",
+        "patients.patient.read"
+      ],
+      "dependencies": [
+        "catalogs.study_type.read"
+      ]
+    },
+    {
+      "code": "RECEPTIONIST",
+      "name": "Recepción",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "Q",
+        "S",
+        "U",
+        "AD",
+        "AN"
+      ],
+      "permissions": [
+        "documents.consent.generate",
+        "documents.consent.read",
+        "documents.consent.reject",
+        "documents.consent.request_otp",
+        "documents.consent.sign",
+        "marketing.advertisement.create",
+        "marketing.advertisement.finish",
+        "marketing.advertisement.pause",
+        "marketing.advertisement.publish",
+        "marketing.advertisement.read",
+        "marketing.advertisement.track",
+        "marketing.advertisement.view",
+        "patients.access_grant.confirm",
+        "patients.access_grant.read",
+        "patients.access_grant.request",
+        "patients.access_grant.revoke",
+        "patients.notification_preference.read",
+        "patients.notification_preference.update",
+        "patients.patient.create",
+        "patients.patient.read",
+        "patients.patient.update",
+        "scheduling.appointment.attend",
+        "scheduling.appointment.cancel",
+        "scheduling.appointment.check_in",
+        "scheduling.appointment.confirm",
+        "scheduling.appointment.create",
+        "scheduling.appointment.no_show",
+        "scheduling.appointment.read",
+        "scheduling.appointment.reschedule",
+        "scheduling.reservation.cancel",
+        "scheduling.reservation.create",
+        "scheduling.reservation.mark_in_use",
+        "scheduling.reservation.read",
+        "scheduling.reservation.release",
+        "scheduling.resource.change_status",
+        "scheduling.resource.create",
+        "scheduling.resource.read",
+        "scheduling.resource.update"
+      ],
+      "dependencies": [
+        "documents.consent_template.read",
+        "professionals.professional.read",
+        "scheduling.availability.read",
+        "scheduling.block.read",
+        "tenancy.branch.read",
+        "tenancy.service_offering.read"
+      ]
+    },
+    {
+      "code": "BILLING_CLERK",
+      "name": "Cajero 1",
+      "model": "RBAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "O",
+        "AG",
+        "AI"
+      ],
+      "permissions": [
+        "billing.invoice.issue",
+        "billing.invoice.read",
+        "marketing.coupon.redeem",
+        "marketing.coupon.validate",
+        "marketing.loyalty_account.read",
+        "marketing.loyalty_movement.create",
+        "marketing.loyalty_program.create",
+        "marketing.loyalty_program.deactivate",
+        "marketing.loyalty_program.read",
+        "marketing.promotion.create",
+        "marketing.promotion.deactivate",
+        "marketing.promotion.read",
+        "patients.notification_preference.read",
+        "patients.patient.read"
+      ],
+      "dependencies": [
+        "catalogs.tax.read",
+        "tenancy.branch.read",
+        "tenancy.service_offering.read"
+      ]
+    },
+    {
+      "code": "BILLING_SUPERVISOR",
+      "name": "Cajero 2",
+      "model": "RBAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "AH"
+      ],
+      "permissions": [
+        "billing.invoice.read",
+        "billing.invoice.void"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "MARKETING_MANAGER",
+      "name": "Marketing",
+      "model": "MAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "AI",
+        "AK",
+        "AM",
+        "AN"
+      ],
+      "permissions": [
+        "marketing.advertisement.create",
+        "marketing.advertisement.finish",
+        "marketing.advertisement.pause",
+        "marketing.advertisement.publish",
+        "marketing.advertisement.read",
+        "marketing.advertisement.track",
+        "marketing.advertisement.view",
+        "marketing.campaign.build_audience",
+        "marketing.campaign.cancel",
+        "marketing.campaign.create",
+        "marketing.campaign.finish",
+        "marketing.campaign.launch",
+        "marketing.campaign.pause",
+        "marketing.campaign.read",
+        "marketing.campaign.schedule",
+        "marketing.coupon.redeem",
+        "marketing.coupon.validate",
+        "marketing.loyalty_account.read",
+        "marketing.loyalty_movement.create",
+        "marketing.loyalty_program.create",
+        "marketing.loyalty_program.deactivate",
+        "marketing.loyalty_program.read",
+        "marketing.opt_out.update",
+        "marketing.patient_activity.read",
+        "marketing.promotion.create",
+        "marketing.promotion.deactivate",
+        "marketing.promotion.read",
+        "marketing.recipient.read",
+        "marketing.segment.create",
+        "marketing.segment.deactivate",
+        "marketing.segment.delete",
+        "marketing.segment.evaluate",
+        "marketing.segment.read",
+        "marketing.segment.update",
+        "notifications.rule.create",
+        "notifications.rule.read",
+        "notifications.rule.update",
+        "notifications.template.create",
+        "notifications.template.read",
+        "notifications.template.update"
+      ],
+      "dependencies": [
+        "tenancy.service_offering.read"
+      ]
+    },
+    {
+      "code": "PATIENT",
+      "name": "Paciente",
+      "model": "DAC",
+      "scope": "ORGANIZATION",
+      "resources": [
+        "Q",
+        "AN"
+      ],
+      "permissions": [
+        "marketing.advertisement.track",
+        "marketing.advertisement.view",
+        "patients.self_access.confirm",
+        "patients.self_access.read",
+        "patients.self_access.revoke"
+      ],
+      "dependencies": []
+    },
+    {
+      "code": "DEVOPS",
+      "name": "Tecnología (DevOps)",
+      "model": "MAC",
+      "scope": "PLATFORM",
+      "resources": [
+        "D",
+        "E"
+      ],
+      "permissions": [
+        "infrastructure.database.manage",
+        "infrastructure.server.manage"
+      ],
+      "dependencies": []
+    }
+  ]
+}

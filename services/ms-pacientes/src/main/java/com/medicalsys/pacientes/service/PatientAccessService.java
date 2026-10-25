@@ -82,7 +82,7 @@ public class PatientAccessService {
         return toResponse(grant);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public PatientAccessGrantResponse confirmAccess(Patient patient, UUID grantPublicId, String otpCode) {
         PatientAccessGrant grant = find(patient, grantPublicId);
         if (grant.getStatus() != AccessGrantStatus.REQUESTED) {
@@ -128,6 +128,23 @@ public class PatientAccessService {
                 : grants.findAllByPatientAndRequestingOrganizationPublicIdOrderByRequestedAtDesc(
                         patient, requestingOrganizationId);
         return found.stream().map(this::toResponse).toList();
+    }
+
+    /** Solo se invoca con el paciente resuelto desde la identidad autenticada. */
+    @Transactional(readOnly = true)
+    public List<PatientAccessGrantResponse> listForOwner(Patient patient) {
+        return grants.findAllByPatientOrderByRequestedAtDesc(patient).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public PatientAccessGrantResponse revokeForOwner(Patient patient, UUID grantPublicId) {
+        PatientAccessGrant grant = find(patient, grantPublicId);
+        try {
+            grant.revoke();
+        } catch (IllegalStateException exception) {
+            throw new ApiException(ErrorCode.ACCESS_GRANT_NOT_AUTHORIZED, exception.getMessage());
+        }
+        return toResponse(grants.saveAndFlush(grant));
     }
 
     private PatientAccessGrant find(Patient patient, UUID grantPublicId) {
