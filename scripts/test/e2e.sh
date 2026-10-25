@@ -102,11 +102,15 @@ demo_account() {
 read -r ADMIN_USERNAME ADMIN_PASSWORD ADMIN_TOTP_SECRET ADMIN_TOKEN <<<"$(demo_account 00000000-0000-4000-8000-000000000901)"
 export ADMIN_USERNAME ADMIN_PASSWORD ADMIN_TOTP_SECRET
 read -r DOCTOR_USERNAME DOCTOR_PASSWORD DOCTOR_TOTP_SECRET DOCTOR_TOKEN <<<"$(demo_account 00000000-0000-4000-8000-000000000903)"
+read -r CASHIER_USERNAME _ _ CASHIER_TOKEN <<<"$(demo_account 00000000-0000-4000-8000-000000000904)"
 [ -n "${ADMIN_TOKEN:-}" ] && ok "administrador del centro ($ADMIN_USERNAME, reiniciado por el OSI, QR registrado)" \
   || fail "login del administrador demo"
 [ -n "${DOCTOR_TOKEN:-}" ] && ok "profesional de salud ($DOCTOR_USERNAME, reiniciado por el OSI, QR registrado)" \
   || fail "login del medico demo"
+[ -n "${CASHIER_TOKEN:-}" ] && ok "cajero ($CASHIER_USERNAME, reiniciado por el OSI, QR registrado)" \
+  || fail "login del cajero demo"
 ADMIN="Authorization: Bearer $ADMIN_TOKEN"; DOCTOR="Authorization: Bearer $DOCTOR_TOKEN"
+CASHIER="Authorization: Bearer $CASHIER_TOKEN"
 
 echo "== IAM-07: segundo factor"
 challenge="$(mfa_password_step "$DOCTOR_USERNAME" "$DOCTOR_PASSWORD")"
@@ -120,10 +124,14 @@ expect "el correo ya no sirve para entrar" 401 "$(code -X POST "$B/auth/login" -
 
 echo "== Modulos por rol (RBAC) y segregacion de funciones (ISO-01)"
 for p in /api/v1/identity/auth/me /api/v1/identity/users /api/v1/tenancy/organizacion "/api/v1/patients/search?q=a" \
-         /api/v1/professionals /api/v1/scheduling/appointments /api/v1/facturas /api/v1/notifications/templates \
-         "/api/v1/catalogs/tax?type=PAYMENT_METHOD_TYPE"; do
+         /api/v1/professionals /api/v1/scheduling/appointments /api/v1/notifications/templates; do
   expect "administrador: GET $p" 200 "$(code -H "$ADMIN" "$G$p")"
 done
+# Matriz aprobada (V11): la facturacion y el catalogo tributario son del cajero, no del administrador.
+for p in /api/v1/facturas "/api/v1/catalogs/tax?type=PAYMENT_METHOD_TYPE"; do
+  expect "cajero: GET $p" 200 "$(code -H "$CASHIER" "$G$p")"
+done
+expect "matriz: el administrador no factura" 403 "$(code -H "$ADMIN" "$G/api/v1/facturas")"
 for p in /api/v1/expedientes /api/v1/encuentros /api/v1/documents; do
   expect "medico: GET $p" 200 "$(code -H "$DOCTOR" "$G$p")"
 done
@@ -132,8 +140,8 @@ expect "ISO-01: el administrador ya no lee la bitacora" 403 "$(code -H "$ADMIN" 
 expect "ISO-01: el administrador ya no lee la historia clinica" 403 "$(code -H "$ADMIN" "$G/api/v1/expedientes")"
 expect "ISO-01: el administrador ya no gestiona roles" 403 "$(code -X POST -H "$ADMIN" -H "$J" "$G/api/v1/identity/roles" \
   -d '{"code":"NO_DEBE_EXISTIR","name":"x","scope":"ORGANIZATION"}')"
-expect "catalogos: falta ?type" 400 "$(code -H "$ADMIN" "$G/api/v1/catalogs/tax")"
-expect "catalogos: ?type invalido" 400 "$(code -H "$ADMIN" "$G/api/v1/catalogs/tax?type=NO_EXISTE")"
+expect "catalogos: falta ?type" 400 "$(code -H "$CASHIER" "$G/api/v1/catalogs/tax")"
+expect "catalogos: ?type invalido" 400 "$(code -H "$CASHIER" "$G/api/v1/catalogs/tax?type=NO_EXISTE")"
 expect "CRY-02: integridad de un documento inexistente" 404 \
   "$(code -H "$DOCTOR" "$G/api/v1/documents/00000000-0000-4000-8000-00000000dead/integrity")"
 
