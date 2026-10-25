@@ -45,3 +45,6 @@ docs/demo/evidence/
 
 # Override local de Compose para la demo (no se comparte)
 compose.override.yaml
+
+# Cuentas locales de prueba con contrasenas y secretos (scripts/dev/preparar-cuentas-locales.sh)
+*.local.md
