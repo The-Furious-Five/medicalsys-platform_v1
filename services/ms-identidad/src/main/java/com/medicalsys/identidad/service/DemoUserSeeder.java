@@ -137,7 +137,7 @@ public class DemoUserSeeder implements ApplicationRunner {
         boolean created = !users.existsByEmailIgnoreCase(account.email());
         if (created) {
             userService.createSeedAccount(new CreateUserRequest(
-                    account.email(), account.fullName(), null, account.phone(), organization, "es-BO", true,
+                    account.email(), account.fullName(), null, null, null, null, account.phone(), organization, "es-BO", true,
                     List.of(new RoleAssignmentRequest(account.role().name(), organization, null, null, null))),
                     publicId);
             log.info("Cuenta de demostracion creada: {} con rol {}", account.email(), account.role());

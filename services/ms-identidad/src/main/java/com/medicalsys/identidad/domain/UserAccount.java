@@ -33,6 +33,13 @@ public class UserAccount {
     @Column(name = "user_code", nullable = false, length = 16, updatable = false)
     private String userCode;
 
+    /**
+     * IAM-07: nombre con el que se inicia sesión (nombre.apellido.inicial). Se genera al crear la cuenta
+     * y no cambia nunca: Hibernate no lo incluye en ningún UPDATE.
+     */
+    @Column(name = "username", length = 40, updatable = false)
+    private String username;
+
     /** Usuario del realm medicalsys que guarda la credencial (IAM-03). Nulo hasta enlazar la cuenta. */
     @Column(name = "keycloak_user_id", length = 36, unique = true)
     private String keycloakUserId;
@@ -67,6 +74,13 @@ public class UserAccount {
 
     @Column(name = "encrypted_mfa_secret", length = 512)
     private byte[] encryptedMfaSecret;
+
+    /** Último paso TOTP aceptado: un código no se acepta dos veces (IAM-07). */
+    @Column(name = "mfa_last_used_step")
+    private Long mfaLastUsedStep;
+
+    @Column(name = "mfa_enrolled_at")
+    private Instant mfaEnrolledAt;
 
     @Column(name = "encryption_key_public_id")
     private UUID encryptionKeyPublicId;
@@ -158,6 +172,14 @@ public class UserAccount {
         this.publicId = publicId;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getUserCode() {
         return userCode;
     }
@@ -244,6 +266,33 @@ public class UserAccount {
 
     public void setEncryptedMfaSecret(byte[] encryptedMfaSecret) {
         this.encryptedMfaSecret = encryptedMfaSecret;
+    }
+
+    public Long getMfaLastUsedStep() {
+        return mfaLastUsedStep;
+    }
+
+    public void setMfaLastUsedStep(Long mfaLastUsedStep) {
+        this.mfaLastUsedStep = mfaLastUsedStep;
+    }
+
+    public Instant getMfaEnrolledAt() {
+        return mfaEnrolledAt;
+    }
+
+    /** Segundo factor confirmado con un código válido. */
+    public void enableMfa(long acceptedStep, Instant now) {
+        this.mfaEnabled = true;
+        this.mfaLastUsedStep = acceptedStep;
+        this.mfaEnrolledAt = now;
+    }
+
+    /** Sin segundo factor: el próximo ingreso vuelve a pedir el QR. */
+    public void resetMfa() {
+        this.mfaEnabled = false;
+        this.encryptedMfaSecret = null;
+        this.mfaLastUsedStep = null;
+        this.mfaEnrolledAt = null;
     }
 
     public UUID getEncryptionKeyPublicId() {

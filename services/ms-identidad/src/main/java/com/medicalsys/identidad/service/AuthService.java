@@ -8,14 +8,17 @@ import com.medicalsys.identidad.domain.UserStatus;
 import com.medicalsys.identidad.keycloak.KeycloakClient;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.IssuedToken;
+import com.medicalsys.identidad.security.mfa.MfaChallengeStore;
 import com.medicalsys.identidad.security.SessionStore;
 import com.medicalsys.identidad.security.TokenService;
 import com.medicalsys.identidad.web.dto.AuthenticatedUser;
 import com.medicalsys.identidad.web.dto.LoginRequest;
 import com.medicalsys.identidad.web.dto.LoginResponse;
+import com.medicalsys.identidad.web.dto.MfaChallengeResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -24,15 +27,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Inicio de sesión (IAM-03). La contraseña se valida contra Keycloak, que aplica la política, el
- * vencimiento y el bloqueo al 3er intento. Si es válida, ms-identidad emite su propio JWT con roles y
- * permisos: el contrato de /auth/login no cambia. Cada desenlace queda en la bitácora de ms-auditoria
- * (LOG-01).
+ * Inicio de sesión (IAM-03, IAM-07). Se entra con el nombre de usuario estándar; la contraseña se valida
+ * contra Keycloak, que aplica la política, el vencimiento y el bloqueo al 3er intento. Una contraseña
+ * válida no abre sesión: abre un desafío del segundo factor ({@link MfaService}) y recién con el código
+ * TOTP correcto ms-identidad emite su JWT con roles y permisos. Cada desenlace queda en la bitácora de
+ * ms-auditoria (LOG-01).
  */
 @Service
 public class AuthService {
 
-    private static final String INVALID_CREDENTIALS = "Correo o contrasena incorrectos";
+    static final String INVALID_CREDENTIALS = "Usuario o contrasena incorrectos";
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
@@ -45,11 +49,12 @@ public class AuthService {
     private final KeycloakAccountLinker linker;
     private final AuditTrail auditTrail;
     private final IdentityProperties properties;
+    private final MfaChallengeStore challenges;
 
     public AuthService(UserAccountRepository users, TokenService tokenService, SessionStore sessionStore,
                        IdentityMapper mapper, AccountAccessService accountAccess, KeycloakClient keycloak,
                        KeycloakAccountLinker linker, AuditTrail auditTrail,
-                       IdentityProperties properties) {
+                       IdentityProperties properties, MfaChallengeStore challenges) {
         this.users = users;
         this.tokenService = tokenService;
         this.sessionStore = sessionStore;
@@ -59,23 +64,29 @@ public class AuthService {
         this.linker = linker;
         this.auditTrail = auditTrail;
         this.properties = properties;
+        this.challenges = challenges;
     }
 
+    /** Primer paso: usuario y contraseña. Si son válidos, devuelve el desafío del segundo factor. */
     @Transactional
-    public LoginResponse login(LoginRequest request) {
-        Instant now = Instant.now();
-        String email = request.email().trim();
-        Optional<UserAccount> found = users.findByEmailIgnoreCase(email);
+    public MfaChallengeResponse login(LoginRequest request) {
+        String username = request.username().trim().toLowerCase(Locale.ROOT);
+        Optional<UserAccount> found = users.findByUsername(username);
         if (found.isEmpty()) {
-            // Mismo mensaje que una contrasena incorrecta: no revelamos si el correo existe.
+            // Mismo mensaje que una contrasena incorrecta: no revelamos si el usuario existe.
             // La cuenta no existe, asi que no tiene organizacion; ms-auditoria exige una. El intento se asienta
             // en la organizacion de la plataforma, que es la que ve los ataques de enumeracion de cuentas.
-            auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", null, email,
-                    properties.getPlatformAdmin().getOrganizationPublicId(), 401, "Correo no registrado"));
+            auditTrail.record(AuditEventDraft.authentication("LOGIN_FAILED", "DENIED", null, username,
+                    properties.getPlatformAdmin().getOrganizationPublicId(), 401, "Usuario no registrado"));
             throw ApiException.unauthorized(INVALID_CREDENTIALS);
         }
 
         UserAccount user = found.get();
+        if (user.getStatus() == UserStatus.LOCKED) {
+            // Bloqueo de Keycloak (3 contrasenas) o del segundo factor: solo un administrador lo levanta.
+            recordFailure(user, 423, "La cuenta esta bloqueada");
+            throw ApiException.accountLocked();
+        }
         if (user.getStatus() == UserStatus.INACTIVE) {
             recordFailure(user, 403, "La cuenta esta inactiva");
             throw ApiException.forbidden("La cuenta esta inactiva");
@@ -112,7 +123,17 @@ public class AuthService {
             }
         }
 
-        user.registerSuccessfulAccess(now);
+        MfaChallengeStore.Purpose purpose = user.isMfaEnabled()
+                ? MfaChallengeStore.Purpose.VERIFY : MfaChallengeStore.Purpose.ENROLL;
+        String token = challenges.open(user.getPublicId(), purpose);
+        return new MfaChallengeResponse(
+                purpose == MfaChallengeStore.Purpose.VERIFY ? "MFA_REQUIRED" : "MFA_ENROLLMENT_REQUIRED",
+                token, challenges.ttl().toSeconds(), user.getUsername());
+    }
+
+    /** Segundo paso superado (MfaService): recién aquí se abre la sesión. */
+    LoginResponse completeLogin(UserAccount user) {
+        user.registerSuccessfulAccess(Instant.now());
         List<String> roles = mapper.activeRoleCodes(user);
         List<String> permissions = mapper.activePermissionCodes(user);
         IssuedToken token = tokenService.issue(user, roles, permissions);
@@ -172,6 +193,7 @@ public class AuthService {
     private AuthenticatedUser describe(UserAccount user, List<String> roles, List<String> permissions) {
         return new AuthenticatedUser(
                 user.getPublicId(),
+                user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
                 user.getOrganizationPublicId(),

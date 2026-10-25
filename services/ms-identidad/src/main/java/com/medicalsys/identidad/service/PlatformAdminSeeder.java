@@ -85,7 +85,7 @@ public class PlatformAdminSeeder implements ApplicationRunner {
 
         if (!users.existsByEmailIgnoreCase(config.getEmail())) {
             userService.createSeedAccount(new CreateUserRequest(
-                    config.getEmail(), config.getFullName(), config.getPassword(), null,
+                    config.getEmail(), config.getFullName(), null, null, null, config.getPassword(), null,
                     config.getOrganizationPublicId(), "es-BO", true,
                     List.of(new RoleAssignmentRequest(roleCode.name(), null, null, null, null))),
                     config.getPublicId());
@@ -93,6 +93,8 @@ public class PlatformAdminSeeder implements ApplicationRunner {
         }
 
         UserAccount user = users.findByEmailIgnoreCase(config.getEmail()).orElseThrow();
+        // IAM-07: el usuario no es secreto y quien administra el servidor lo necesita para el primer ingreso.
+        log.info("Cuenta {} ({}): inicia sesion con el usuario {}", roleCode, config.getEmail(), user.getUsername());
         boolean changed = false;
         // MAC: el bootstrap nunca queda por debajo del nivel que su rol necesita.
         if (!user.getClearance().covers(clearance)) {

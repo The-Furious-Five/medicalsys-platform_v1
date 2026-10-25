@@ -62,6 +62,10 @@ medicalsys:
       client-id: ${KEYCLOAK_CLIENT_ID:ms-identidad}
       client-secret: ${KEYCLOAK_CLIENT_SECRET}
       timeout: ${KEYCLOAK_TIMEOUT:PT5S}
+    # IAM-07: segundo factor TOTP obligatorio. Sin IDENTITY_MFA_KEY la llave se deriva de JWT_SECRET.
+    mfa:
+      issuer: ${IDENTITY_MFA_ISSUER:MedicalSys}
+      encryption-key: ${IDENTITY_MFA_KEY:}
     demo-users:
       enabled: ${IDENTITY_DEMO_USERS_ENABLED:false}
       # Debe coincidir con el public_id de la organización DEMO sembrada por ms-tenencia.

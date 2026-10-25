@@ -282,9 +282,10 @@ cliente y los recrea desde el JWT.
 ```bash
 docker compose up -d mysql redis ms-identidad ms-marketing ms-gateway
 
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/identity/auth/login \
-  -H 'Content-Type: application/json' \
-  -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{email: "admin@medicalsys.demo", password: $p}')" | jq -r .accessToken)
+# IAM-07: usuario, contraseña y segundo factor (requiere jq y oathtool).
+IDENTITY_BASE=http://localhost:8080/api/v1/identity
+source services/ms-identidad/scripts/lib-mfa.sh
+TOKEN=$(mfa_login "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$ADMIN_TOTP_SECRET")
 
 curl -s http://localhost:8080/api/v1/campanas -H "Authorization: Bearer $TOKEN"
 

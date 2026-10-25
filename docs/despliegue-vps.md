@@ -74,11 +74,17 @@ llaves con las que se cifra la narrativa clinica, y con otra ya no se puede desc
 ```dotenv
 # Seguridad
 JWT_SECRET=CAMBIAR_minimo_32_bytes
+# Segundo factor (IAM-07): llave de los secretos TOTP, 32 bytes o mas (openssl rand -base64 48).
+# Definirla antes del primer ingreso y no cambiarla despues: las aplicaciones ya registradas
+# dejarian de servir y cada persona tendria que volver a escanear el QR.
+IDENTITY_MFA_KEY=CAMBIAR
 DEMO_MASTER_KEY=CAMBIAR
 CRYPTO_SERVICE_SHARED_SECRET=CAMBIAR
 IDENTITY_DEMO_ORGANIZATION=00000000-0000-4000-8000-0000000000a1
 
-# Cuentas demo del personal (admin@, recepcion@, doctor@medicalsys.demo...), para la presentacion.
+# Cuentas demo del personal del centro, para la presentacion. Se entra con el usuario estandar
+# (nombre.apellido.inicial, docs/seguridad/IAM-07-usuario-y-segundo-factor.md), no con el correo,
+# y con el codigo de Google Authenticator: el primer ingreso registra el QR.
 # No llevan contrasena aqui: cada una nace con una temporal aleatoria propia que nadie ve. Para usar
 # una, el OSI entra, pulsa «Reiniciar contrasena» sobre esa cuenta y se la pasa a la persona, que
 # elige la suya en el primer ingreso (PR-02). Ninguna cuenta comparte contrasena con otra.

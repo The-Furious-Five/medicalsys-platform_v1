@@ -22,6 +22,7 @@ import com.medicalsys.identidad.keycloak.PasswordPolicyException;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
+import com.medicalsys.identidad.security.mfa.MfaChallengeStore;
 import com.medicalsys.identidad.web.dto.ChangePasswordRequest;
 import com.medicalsys.identidad.web.dto.ChangeStatusRequest;
 import com.medicalsys.identidad.web.dto.CreateUserRequest;
@@ -52,11 +53,12 @@ class UserServiceTest {
     private final AuditTrail auditTrail = mock(AuditTrail.class);
 
     private final UserCodeGenerator userCodes = mock(UserCodeGenerator.class);
+    private final MfaChallengeStore mfaChallenges = mock(MfaChallengeStore.class);
 
     private final UserService service = new UserService(users, mock(RoleRepository.class),
             mock(IdentityMapper.class), sessionStore, governance, keycloak,
             mock(KeycloakAccountLinker.class), userCodes, temporaryPasswords,
-            mock(AccountAccessService.class), auditTrail);
+            mock(AccountAccessService.class), auditTrail, mock(UsernameGenerator.class), mfaChallenges);
 
     private UserAccount target;
 
@@ -118,12 +120,17 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("IAM-05 reinicio: PASSWORD_RESET sin la contraseña temporal en el evento")
+    @DisplayName("IAM-05 reinicio: PASSWORD_RESET sin la temporal y con el segundo factor borrado")
     void recordsPasswordResetWithoutTheTemporaryPassword() {
         when(temporaryPasswords.generate()).thenReturn("Kq7m-Xw3p-Rt9v-Hn4c");
         when(keycloak.userExists(KEYCLOAK_ID)).thenReturn(true);
+        target.enableMfa(7L, java.time.Instant.now());
 
         TemporaryPasswordResponse response = service.resetPassword(target.getPublicId(), ADMIN);
+
+        // IAM-07: el reinicio tambien borra el segundo factor; al entrar se vuelve a registrar el QR.
+        assertThat(target.isMfaEnabled()).isFalse();
+        assertThat(target.getEncryptedMfaSecret()).isNull();
 
         assertThat(response.temporaryPassword()).isEqualTo("Kq7m-Xw3p-Rt9v-Hn4c");
         AuditEventDraft draft = captureDraft();
@@ -223,7 +230,7 @@ class UserServiceTest {
     }
 
     private static CreateUserRequest seedRequest(String email, String password) {
-        return new CreateUserRequest(email, "Cuenta Sembrada", password, null, null, "es-BO", true, List.of());
+        return new CreateUserRequest(email, "Cuenta Sembrada", null, null, null, password, null, null, "es-BO", true, List.of());
     }
 
     private AuditEventDraft captureDraft() {

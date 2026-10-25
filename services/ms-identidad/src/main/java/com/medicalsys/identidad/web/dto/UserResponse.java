@@ -10,6 +10,7 @@ import java.util.UUID;
 public record UserResponse(
         UUID publicId,
         String userCode,
+        String username,
         UUID organizationPublicId,
         String email,
         String fullName,
@@ -29,7 +30,7 @@ public record UserResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL) String temporaryPassword) {
 
     public UserResponse withTemporaryPassword(String password) {
-        return new UserResponse(publicId, userCode, organizationPublicId, email, fullName, phoneE164, language,
+        return new UserResponse(publicId, userCode, username, organizationPublicId, email, fullName, phoneE164, language,
                 status, clearance, mfaEnabled, failedAttempts, lockedUntil, lastAccessAt, createdAt, updatedAt, roles, password);
     }
 }

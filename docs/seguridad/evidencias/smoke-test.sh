@@ -5,14 +5,16 @@
 # Uso: BASE=http://localhost:8080 bash docs/seguridad/evidencias/smoke-test.sh
 set -uo pipefail
 BASE=${BASE:-http://localhost:8080}
-DEMO_PASSWORD=${DEMO_PASSWORD:?Falta DEMO_PASSWORD, la contrasena actual de admin@medicalsys.demo}
-if python3 -c "" 2>/dev/null; then PY=python3; else PY=python; fi
+# IAM-07: usuario, contrasena y secreto TOTP del administrador del centro (requiere jq y oathtool).
+ADMIN_USERNAME=${ADMIN_USERNAME:?Falta ADMIN_USERNAME}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD}
+ADMIN_TOTP_SECRET=${ADMIN_TOTP_SECRET:?Falta ADMIN_TOTP_SECRET}
+IDENTITY_BASE="$BASE/api/v1/identity"
+source "$(cd "$(dirname "$0")/../.." && pwd)/services/ms-identidad/scripts/lib-mfa.sh"
 
-TOKEN=$(curl -sS -m 15 -X POST "$BASE/api/v1/identity/auth/login" -H 'Content-Type: application/json' \
-  -d "{\"email\":\"admin@medicalsys.demo\",\"password\":\"$DEMO_PASSWORD\"}" \
-  | "$PY" -c 'import json,sys;print(json.load(sys.stdin).get("accessToken",""))')
-[ -n "$TOKEN" ] || { echo "FALLO: no se pudo iniciar sesion como admin@medicalsys.demo"; exit 1; }
-echo "OK    login admin@medicalsys.demo"
+TOKEN=$(mfa_login "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$ADMIN_TOTP_SECRET")
+[ -n "$TOKEN" ] || { echo "FALLO: no se pudo iniciar sesion como $ADMIN_USERNAME"; exit 1; }
+echo "OK    login $ADMIN_USERNAME (contrasena y segundo factor)"
 
 FALLOS=0
 esperar() { # esperar <codigo> <servicio> <ruta>

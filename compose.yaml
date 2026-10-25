@@ -250,6 +250,9 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
       JWT_SECRET: ${JWT_SECRET}
+      # IAM-07: llave de los secretos TOTP (AES-256-GCM). Vacia, se deriva de JWT_SECRET; no cambiarla
+      # despues: los secretos ya registrados dejarian de descifrarse y cada persona tendria que volver al QR.
+      IDENTITY_MFA_KEY: ${IDENTITY_MFA_KEY:-}
       IDENTITY_DEMO_USERS_ENABLED: ${IDENTITY_DEMO_USERS_ENABLED:-false}
       # Sin contrasena comun: cada cuenta demo nace con una temporal propia y el OSI la reinicia.
       # true solo durante un arranque, para retirar la contrasena comun de bases anteriores.

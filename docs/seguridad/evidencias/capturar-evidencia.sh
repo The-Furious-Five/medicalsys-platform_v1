@@ -11,15 +11,19 @@
 # Variables:
 #   DC              comando compose del proyecto bajo prueba (por defecto "docker compose")
 #   BASE            URL del gateway (por defecto http://localhost:8080)
-#   DEMO_PASSWORD   contrasena actual de doctor@medicalsys.demo (no hay contrasena comun: la elige la
-#                   persona tras el reinicio del OSI)
+#   DOCTOR_USERNAME, DOCTOR_PASSWORD, DOCTOR_TOTP_SECRET
+#                   usuario, contrasena y secreto TOTP del medico (IAM-07; requiere jq y oathtool)
 #   WEBHOOK_SECRET  si se define, agrega las pruebas del webhook con firma valida e invalida
 set -uo pipefail
 
 FASE=${1:?Uso: capturar-evidencia.sh <antes|despues>}
 DC=${DC:-docker compose}
 BASE=${BASE:-http://localhost:8080}
-DEMO_PASSWORD=${DEMO_PASSWORD:?Falta DEMO_PASSWORD, la contrasena actual de doctor@medicalsys.demo}
+DOCTOR_USERNAME=${DOCTOR_USERNAME:?Falta DOCTOR_USERNAME}
+DOCTOR_PASSWORD=${DOCTOR_PASSWORD:?Falta DOCTOR_PASSWORD}
+DOCTOR_TOTP_SECRET=${DOCTOR_TOTP_SECRET:?Falta DOCTOR_TOTP_SECRET}
+IDENTITY_BASE="$BASE/api/v1/identity"
+source "$(cd "$(dirname "$0")/../.." && pwd)/services/ms-identidad/scripts/lib-mfa.sh"
 OUT="$(cd "$(dirname "$0")" && pwd)/$FASE"
 # En Windows "python3" puede ser el alias de la tienda, que existe pero no ejecuta nada.
 if python3 -c "" 2>/dev/null; then PY=python3; else PY=python; fi
@@ -70,12 +74,11 @@ encabezado() { echo "# $1"; echo "# Fase: $FASE — $(date -u +%Y-%m-%dT%H:%M:%S
 # --- HARD-02: el mismo token antes y despues de cerrar sesion ------------------------------------
 {
   encabezado "HARD-02 (SINS-13) Revocacion de sesion en el gateway — OWASP A07"
-  echo "## Inicio de sesion (doctor@medicalsys.demo)"
-  echo "\$ curl -X POST $BASE/api/v1/identity/auth/login -d '{\"email\":\"doctor@medicalsys.demo\",\"password\":\"***\"}'"
-  LOGIN=$(curl -sS -m 15 -X POST "$BASE/api/v1/identity/auth/login" -H 'Content-Type: application/json' \
-    -d "{\"email\":\"doctor@medicalsys.demo\",\"password\":\"$DEMO_PASSWORD\"}")
-  TOKEN=$(echo "$LOGIN" | "$PY" -c 'import json,sys;print(json.load(sys.stdin).get("accessToken",""))' 2>/dev/null)
-  if [ -z "$TOKEN" ]; then echo "LOGIN FALLIDO: $(echo "$LOGIN" | cut -c1-200)"; else echo "HTTP 200 — token emitido (${#TOKEN} caracteres, no se guarda)"; fi
+  echo "## Inicio de sesion ($DOCTOR_USERNAME): contrasena y codigo TOTP (IAM-07)"
+  echo "\$ curl -X POST $BASE/api/v1/identity/auth/login -d '{\"username\":\"$DOCTOR_USERNAME\",\"password\":\"***\"}'"
+  echo "\$ curl -X POST $BASE/api/v1/identity/auth/mfa/verify -d '{\"mfaToken\":\"***\",\"code\":\"******\"}'"
+  TOKEN=$(mfa_login "$DOCTOR_USERNAME" "$DOCTOR_PASSWORD" "$DOCTOR_TOTP_SECRET")
+  if [ -z "$TOKEN" ]; then echo "LOGIN FALLIDO"; else echo "HTTP 200 — token emitido (${#TOKEN} caracteres, no se guarda)"; fi
   echo
   probar "Historial con el token, sesion abierta" - "$BASE/api/v1/encuentros" -H "Authorization: Bearer $TOKEN"
   probar "Pacientes con el token, sesion abierta" - "$BASE/api/v1/patients/search?q=a" -H "Authorization: Bearer $TOKEN"

@@ -42,7 +42,10 @@ Desde IAM-03 las contraseñas viven en Keycloak (realm `medicalsys`, hash Argon2
 |---|---|---|
 | GET | `/api/v1/identity/ping` | Prueba de vida del servicio |
 | GET | `/actuator/health` | Salud, incluye MySQL y Redis |
-| POST | `/api/v1/identity/auth/login` | Devuelve el JWT y el perfil del usuario |
+| POST | `/api/v1/identity/auth/login` | Usuario y contraseña; responde 202 con el desafío del segundo factor (IAM-07) |
+| POST | `/api/v1/identity/auth/mfa/enrollment` | Primer ingreso: QR y clave para Google Authenticator |
+| POST | `/api/v1/identity/auth/mfa/activate` | Primer ingreso: el primer código activa el segundo factor y devuelve el JWT |
+| POST | `/api/v1/identity/auth/mfa/verify` | Ingresos siguientes: el código devuelve el JWT y el perfil |
 | POST | `/api/v1/identity/auth/change-password` | Sin sesión: primer ingreso con temporal o contraseña vencida (`email`, `currentPassword`, `newPassword`) |
 
 ### Autenticados (cabecera `Authorization: Bearer <token>`)
@@ -226,6 +229,7 @@ forzado y reutilizar una contraseña anterior se rechaza.
 | `IDENTITY_DEMO_USERS_ENABLED` | no | `true` | Crea las cuentas de demostración al arrancar |
 | `IDENTITY_DEMO_ORGANIZATION` | no | `11111111-…-111111111111` | Organización de la demo |
 | `IDENTITY_DEMO_ROTATE_PASSWORDS` | no | `false` | Un solo arranque: temporal nueva para las cuentas demo existentes |
+| `IDENTITY_MFA_KEY` | recomendado | derivada de `JWT_SECRET` | Llave AES-256-GCM de los secretos TOTP; no cambiarla una vez en uso |
 
 ## Cuentas de demostración
 

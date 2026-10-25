@@ -22,6 +22,7 @@ public class IdentityMapper {
         return new UserResponse(
                 user.getPublicId(),
                 user.getUserCode(),
+                user.getUsername(),
                 user.getOrganizationPublicId(),
                 user.getEmail(),
                 user.getFullName(),

@@ -83,6 +83,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**", "/error").permitAll()
                         .requestMatchers("/api/v1/identity/ping").permitAll()
                         .requestMatchers("/api/v1/identity/auth/login").permitAll()
+                        // IAM-07: el segundo factor llega antes de la sesion; lo protege el token del desafio.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/mfa/enrollment",
+                                "/api/v1/identity/auth/mfa/activate", "/api/v1/identity/auth/mfa/verify").permitAll()
                         // IAM-05: sin sesion para la contrasena temporal o vencida; la actual la valida
                         // Keycloak, que cuenta los fallos para el bloqueo al 3er intento.
                         .requestMatchers(HttpMethod.POST, "/api/v1/identity/auth/change-password").permitAll()

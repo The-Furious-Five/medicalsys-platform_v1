@@ -13,6 +13,7 @@ import com.medicalsys.identidad.keycloak.PasswordPolicyException;
 import com.medicalsys.identidad.repository.RoleRepository;
 import com.medicalsys.identidad.repository.UserAccountRepository;
 import com.medicalsys.identidad.security.SessionStore;
+import com.medicalsys.identidad.security.mfa.MfaChallengeStore;
 import com.medicalsys.identidad.service.RoleGovernance.Actor;
 import com.medicalsys.identidad.web.dto.ChangeClearanceRequest;
 import com.medicalsys.identidad.web.dto.ChangePasswordRequest;
@@ -56,12 +57,14 @@ public class UserService {
     private final TemporaryPasswordGenerator temporaryPasswords;
     private final AccountAccessService accountAccess;
     private final AuditTrail auditTrail;
+    private final UsernameGenerator usernames;
+    private final MfaChallengeStore mfaChallenges;
 
     public UserService(UserAccountRepository users, RoleRepository roles, IdentityMapper mapper,
                        SessionStore sessionStore, RoleGovernance governance,
                        KeycloakClient keycloak, KeycloakAccountLinker linker, UserCodeGenerator userCodes,
                        TemporaryPasswordGenerator temporaryPasswords, AccountAccessService accountAccess,
-                       AuditTrail auditTrail) {
+                       AuditTrail auditTrail, UsernameGenerator usernames, MfaChallengeStore mfaChallenges) {
         this.users = users;
         this.roles = roles;
         this.mapper = mapper;
@@ -73,6 +76,8 @@ public class UserService {
         this.temporaryPasswords = temporaryPasswords;
         this.accountAccess = accountAccess;
         this.auditTrail = auditTrail;
+        this.usernames = usernames;
+        this.mfaChallenges = mfaChallenges;
     }
 
     /**
@@ -186,9 +191,17 @@ public class UserService {
         }
         Actor actor = governance.resolve(actorPublicId);
 
+        // IAM-07: el usuario sale de nombres y apellidos y no se edita nunca después.
+        boolean structured = StringUtils.hasText(request.givenNames()) || StringUtils.hasText(request.firstSurname());
+        UsernameGenerator.NameParts parts = structured
+                ? new UsernameGenerator.NameParts(request.givenNames(), request.firstSurname(), request.secondSurname())
+                : UsernameGenerator.parse(request.fullName());
+        String fullName = StringUtils.hasText(request.fullName()) ? request.fullName().trim() : parts.fullName();
+
         UserAccount user = new UserAccount();
         user.setEmail(email);
-        user.setFullName(request.fullName().trim());
+        user.setFullName(fullName);
+        user.setUsername(usernames.next(parts));
         user.setPhoneE164(StringUtils.hasText(request.phoneE164()) ? request.phoneE164() : null);
         user.setOrganizationPublicId(governance.organizationForNewAccount(actor, request.organizationPublicId()));
         user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "es-BO");
@@ -291,6 +304,8 @@ public class UserService {
             if (user.isLinkedToIdentityProvider()) {
                 keycloak.unlock(user.getKeycloakUserId());
             }
+            // Y el de los codigos de segundo factor (IAM-07).
+            mfaChallenges.clearFailures(user.getPublicId());
         }
         // Baja (IAM-04): se deshabilita en Keycloak, nunca se borra, para conservar la trazabilidad.
         if ((target == UserStatus.INACTIVE || target == UserStatus.LOCKED) && user.isLinkedToIdentityProvider()) {
@@ -333,8 +348,8 @@ public class UserService {
      */
     @Transactional
     public void changePasswordWithoutSession(ChangePasswordRequest request) {
-        UserAccount user = users.findByEmailIgnoreCase(request.email().trim())
-                .orElseThrow(() -> ApiException.unauthorized("Correo o contrasena incorrectos"));
+        UserAccount user = users.findByUsername(request.username().trim().toLowerCase(java.util.Locale.ROOT))
+                .orElseThrow(() -> ApiException.unauthorized(AuthService.INVALID_CREDENTIALS));
         if (user.getStatus() == UserStatus.INACTIVE) {
             throw ApiException.forbidden("La cuenta esta inactiva");
         }
@@ -347,7 +362,7 @@ public class UserService {
                     accountAccess.registerLockout(user.getId());
                     throw ApiException.accountLocked();
                 }
-                throw ApiException.unauthorized("Correo o contrasena incorrectos");
+                throw ApiException.unauthorized(AuthService.INVALID_CREDENTIALS);
             }
         }
         applyNewPassword(user, keycloakUserId, request);
@@ -362,6 +377,7 @@ public class UserService {
             throw ApiException.conflict("La cuenta esta dada de baja: reactivala en lugar de desbloquearla");
         }
         keycloak.unlock(keycloakUserId(user));
+        mfaChallenges.clearFailures(user.getPublicId());
         user.setLockedUntil(null);
         if (user.getStatus() == UserStatus.LOCKED) {
             user.setStatus(UserStatus.ACTIVE);
@@ -399,16 +415,27 @@ public class UserService {
             user.setPasswordHash(null);
         }
         user.setPasswordUpdatedAt(Instant.now());
+        // IAM-07: el reinicio tambien borra el segundo factor (p. ej. telefono perdido): al entrar con la
+        // temporal, la persona vuelve a registrar el QR. Por eso exige verificar su identidad antes.
+        boolean hadMfa = user.isMfaEnabled();
+        user.resetMfa();
+        mfaChallenges.clearFailures(user.getPublicId());
         sessionStore.closeAll(user.getPublicId());
         log.info("Contrasena temporal emitida para la cuenta {} por {}", user.getUserCode(), actorPublicId);
         // La temporal nunca viaja en el evento: solo consta que se emitio y quien la pidio.
-        record("PASSWORD_RESET", actorPublicId, user, null, Map.of());
-        return new TemporaryPasswordResponse(user.getPublicId(), user.getUserCode(), temporaryPassword);
+        record("PASSWORD_RESET", actorPublicId, user, null, Map.of("mfaReset", String.valueOf(hadMfa)));
+        return new TemporaryPasswordResponse(user.getPublicId(), user.getUserCode(), user.getUsername(),
+                temporaryPassword);
     }
 
     private void applyNewPassword(UserAccount user, String keycloakUserId, ChangePasswordRequest request) {
         if (request.currentPassword().equals(request.newPassword())) {
             throw ApiException.badRequest("La nueva contrasena debe ser distinta de la actual");
+        }
+        // Keycloak aplica notUsername sobre su username (el UUID); el usuario de MedicalSys se revisa aqui.
+        if (user.getUsername() != null
+                && request.newPassword().toLowerCase(java.util.Locale.ROOT).contains(user.getUsername())) {
+            throw ApiException.passwordPolicy("La contrasena no puede contener tu nombre de usuario.");
         }
         try {
             // temporary = false tambien quita UPDATE_PASSWORD: el usuario ya puede entrar.
