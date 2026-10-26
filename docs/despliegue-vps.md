@@ -169,3 +169,39 @@ sudo mkdir -p /opt/medicalsys-frontend && sudo chown deploy: /opt/medicalsys-fro
 
 En **Actions**, abre la ejecucion del commit bueno y pulsa **Re-run all jobs**. Las imagenes
 de ese commit siguen en GHCR.
+
+## Despliegue desde la computadora (sin GitHub)
+
+`scripts/deploy/deploy-local.sh` construye las imagenes con el codigo tal como esta en disco (aunque no
+este commiteado), las sube al VPS por SSH con la llave de `deploy` y levanta los servicios. El `.env` del
+VPS no se toca y el proximo despliegue de GitHub reemplaza lo subido.
+
+```bash
+bash scripts/deploy/deploy-local.sh ms-identidad ms-gateway   # solo esos microservicios
+bash scripts/deploy/deploy-local.sh todos                      # los 14 (sube varios GB: tarda)
+bash scripts/deploy/deploy-local.sh --frontend                 # el frontend de ../medicalsys_frontend
+bash scripts/deploy/deploy-local.sh --levantar                 # no construye: arranca lo que este caido
+```
+
+La llave `~/.ssh/los5furiosos-deploy` tiene frase de paso. Para no escribirla en cada despliegue, se
+carga una sola vez en el agente SSH de Windows, que la guarda cifrada con tu usuario de Windows y la
+recuerda entre reinicios. En PowerShell **como administrador** (solo la primera vez):
+
+```powershell
+Get-Service ssh-agent | Set-Service -StartupType Automatic
+Start-Service ssh-agent
+```
+
+Despues, en una PowerShell normal (pide la frase de paso una vez):
+
+```powershell
+ssh-add $HOME\.ssh\los5furiosos-deploy
+ssh-add -l
+```
+
+El script usa el `ssh` de Windows, que consulta ese agente: ya no pide la frase. Para quitarla del
+agente: `ssh-add -d $HOME\.ssh\los5furiosos-deploy`.
+
+Si un `docker compose up` en el VPS se corta a mitad (por ejemplo, se cerro la sesion SSH mientras
+esperaba a Keycloak), los servicios quedan en estado «Created» y el login responde con un error generico.
+`--levantar` los arranca con `nohup`, asi que ya no depende de que la conexion siga abierta.
